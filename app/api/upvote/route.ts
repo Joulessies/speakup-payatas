@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mockReports, seedIfNeeded } from "../../reports/route";
+import { mockReports, seedIfNeeded } from "../reports/route";
 
 // Track which hashes have upvoted which reports
 const upvoteMap = new Map<string, Set<string>>(); // reportId -> Set<hash>

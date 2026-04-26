@@ -177,7 +177,7 @@ main {
 
 /* ── Print styles for QR page ── */
 @media print {
-  nav, .print\\:hidden { display: none !important; }
+  nav { display: none !important; }
   main { padding-bottom: 0 !important; }
   body { background: white !important; }
 }
