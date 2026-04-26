@@ -26,6 +26,7 @@ export async function GET(request: Request) {
       severity: r.severity,
       status: r.status,
       created_at: r.created_at,
+      action_history: r.action_history ?? [],
     }))
     .sort(
       (a, b) =>

@@ -70,6 +70,15 @@ const translations = {
     trackPending: "Pending",
     trackVerified: "Verified",
     trackResolved: "Resolved",
+    trackSubmitted: "Submitted",
+    trackInProgress: "In Progress",
+    trackUseMyId: "Use my device Anonymous ID",
+    trackClear: "Clear",
+    trackTip: "Tip: You can paste your full hash or the first 8+ characters.",
+    trackResultsFor: (_query: string) => "Results for:",
+    trackMinCharsError: "Please enter at least 8 characters of your Anonymous ID.",
+    trackSearchFailedError: "Could not fetch reports right now. Please try again.",
+    trackConfirmReport: "Confirm this report",
 
     // Admin
     adminOverview: "Overview",
@@ -162,6 +171,15 @@ const translations = {
     trackPending: "Naghihintay",
     trackVerified: "Na-verify",
     trackResolved: "Nalutas",
+    trackSubmitted: "Naipasa",
+    trackInProgress: "Inaaksyunan",
+    trackUseMyId: "Gamitin ang Anonymous ID ng device ko",
+    trackClear: "I-clear",
+    trackTip: "Tip: Maaari mong i-paste ang buong hash o unang 8+ character.",
+    trackResultsFor: (_query: string) => "Mga resulta para sa:",
+    trackMinCharsError: "Maglagay ng hindi bababa sa 8 character ng iyong Anonymous ID.",
+    trackSearchFailedError: "Hindi makuha ang mga ulat ngayon. Pakisubukang muli.",
+    trackConfirmReport: "Kumpirmahin ang ulat na ito",
 
     // Admin
     adminOverview: "Buod",

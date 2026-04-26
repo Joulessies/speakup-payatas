@@ -86,18 +86,27 @@ export default function AnalyticsPage() {
 
   const totalRecent = data.trend_data.reduce((s, d) => s + d.count, 0);
   const topCategory = Object.entries(data.category_distribution).sort((a, b) => b[1] - a[1])[0];
+  const anomalyClusters = data.ranked_clusters.filter((c) => c.anomaly.isAnomaly);
 
   return (
     <div className={`flex-1 overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-24 md:px-8 md:py-10 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-24 md:px-8 md:py-10 space-y-6">
         {/* Page header */}
-        <div>
-          <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
-            Analytics
-          </h1>
-          <p className={`text-sm mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-            Algorithm-based incident analysis for Barangay Payatas-A
-          </p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+              Analytics
+            </h1>
+            <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+              Algorithm-based incident analysis for Barangay Payatas-A
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className={`${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-600"} w-fit`}
+          >
+            14-day snapshot
+          </Badge>
         </div>
 
         {/* Anomaly Alert Banner */}
@@ -112,7 +121,7 @@ export default function AnalyticsPage() {
               <p className="text-sm font-semibold">
                 {data.anomaly_count} anomal{data.anomaly_count > 1 ? "ies" : "y"} detected
               </p>
-              <p className={`text-xs ${isDark ? "text-red-300/60" : "text-red-600/60"}`}>
+              <p className={`text-xs ${isDark ? "text-red-300/70" : "text-red-600/70"}`}>
                 Unusual activity spikes detected in {data.anomaly_count} cluster{data.anomaly_count > 1 ? "s" : ""}
               </p>
             </div>
@@ -120,7 +129,7 @@ export default function AnalyticsPage() {
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { icon: BarChart3, label: "Total Reports", value: data.total_reports },
             { icon: TrendingUp, label: "Last 14 Days", value: totalRecent },
@@ -129,8 +138,8 @@ export default function AnalyticsPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className={`flex flex-col gap-2 p-4 rounded-2xl ${
-                isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"
+              className={`flex flex-col gap-2 p-4 rounded-2xl border ${
+                isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"
               }`}
             >
               <stat.icon className={`h-4 w-4 ${isDark ? "text-white/30" : "text-gray-400"}`} />
@@ -144,57 +153,64 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {/* Trend Chart */}
-        <div className={`p-5 rounded-2xl ${isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"}`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-              Incident Trend (14 days)
-            </h2>
-            {topCategory && (
-              <Badge variant="outline" className={`text-[10px] ${isDark ? "border-white/10 text-white/40" : ""}`}>
-                Top: {topCategory[0]} ({topCategory[1]})
-              </Badge>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Trend Chart */}
+          <div className={`lg:col-span-2 p-5 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                Incident Trend (14 days)
+              </h2>
+              {topCategory && (
+                <Badge variant="outline" className={`text-[10px] ${isDark ? "border-white/10 text-white/50" : "text-gray-600 border-gray-200"}`}>
+                  Top: {topCategory[0]} ({topCategory[1]})
+                </Badge>
+              )}
+            </div>
+            <TrendChart data={data.trend_data} isDark={isDark} />
           </div>
-          <TrendChart data={data.trend_data} isDark={isDark} />
-        </div>
 
-        {/* Category Distribution */}
-        <div className={`p-5 rounded-2xl ${isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"}`}>
-          <h2 className={`text-sm font-semibold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
-            Category Distribution
-          </h2>
-          <div className="space-y-2">
-            {Object.entries(data.category_distribution)
-              .sort((a, b) => b[1] - a[1])
-              .map(([cat, count]) => {
-                const pct = Math.round((count / data.total_reports) * 100);
-                return (
-                  <div key={cat} className="flex items-center gap-3">
-                    <span className={`text-xs capitalize w-24 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                      {cat}
-                    </span>
-                    <div className={`flex-1 h-2 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                      <div
-                        className="h-full rounded-full bg-indigo-500 transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+          {/* Category Distribution */}
+          <div className={`p-5 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
+            <h2 className={`text-sm font-semibold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
+              Category Distribution
+            </h2>
+            <div className="space-y-2.5">
+              {Object.entries(data.category_distribution)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, count]) => {
+                  const pct = data.total_reports > 0 ? Math.round((count / data.total_reports) * 100) : 0;
+                  return (
+                    <div key={cat} className="flex items-center gap-3">
+                      <span className={`text-xs capitalize w-24 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                        {cat}
+                      </span>
+                      <div className={`flex-1 h-2 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                        <div
+                          className="h-full rounded-full bg-indigo-500 transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-mono w-14 text-right ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        {count} ({pct}%)
+                      </span>
                     </div>
-                    <span className={`text-xs font-mono w-12 text-right ${isDark ? "text-white/40" : "text-gray-400"}`}>
-                      {count} ({pct}%)
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+            </div>
           </div>
         </div>
 
         {/* Urgency Rankings */}
-        <div className={`p-5 rounded-2xl ${isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"}`}>
-          <h2 className={`text-sm font-semibold mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
-            Urgency Rankings
-          </h2>
-          <p className={`text-xs mb-4 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+        <div className={`p-5 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+              Urgency Rankings
+            </h2>
+            <Badge variant="outline" className={`text-[10px] ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-600"}`}>
+              {data.ranked_clusters.length} clusters
+            </Badge>
+          </div>
+          <p className={`text-xs mb-4 ${isDark ? "text-white/35" : "text-gray-500"}`}>
             score = severity × density × recency (72h half-life)
           </p>
           <div className="space-y-2">
@@ -216,7 +232,7 @@ export default function AnalyticsPage() {
                   }`}
                 >
                   {/* Rank */}
-                  <span className={`text-lg font-bold w-6 text-center ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                  <span className={`text-base font-bold w-6 text-center ${isDark ? "text-white/20" : "text-gray-300"}`}>
                     {i + 1}
                   </span>
 
@@ -251,7 +267,7 @@ export default function AnalyticsPage() {
                   </div>
 
                   {/* Count */}
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center min-w-[52px]">
                     <span className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
                       {cluster.count}
                     </span>
@@ -266,8 +282,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Anomaly Details */}
-        {data.ranked_clusters.some((c) => c.anomaly.isAnomaly) && (
-          <div className={`p-5 rounded-2xl ${isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"}`}>
+        {anomalyClusters.length > 0 && (
+          <div className={`p-5 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className={`h-4 w-4 ${isDark ? "text-red-400" : "text-red-500"}`} />
               <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -275,9 +291,7 @@ export default function AnalyticsPage() {
               </h2>
             </div>
             <div className="space-y-2">
-              {data.ranked_clusters
-                .filter((c) => c.anomaly.isAnomaly)
-                .map((cluster, i) => (
+              {anomalyClusters.map((cluster, i) => (
                   <div
                     key={i}
                     className={`flex items-start gap-3 px-4 py-3 rounded-xl ${

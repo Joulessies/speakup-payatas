@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
+import type { ReportAction } from "@/types";
 
 // In-memory store for mock reports (resets on server restart)
-const mockReports: {
+type WorkflowStatus = "pending" | "verified" | "in_progress" | "resolved";
+
+interface MockReport {
   id: string;
   reporter_hash: string;
   category: string;
@@ -10,9 +13,12 @@ const mockReports: {
   latitude: number;
   longitude: number;
   severity: number;
-  status: string;
+  status: WorkflowStatus;
   created_at: string;
-}[] = [];
+  action_history: ReportAction[];
+}
+
+const mockReports: MockReport[] = [];
 
 // Seed some sample data around Payatas
 const SEED_DATA = [
@@ -58,6 +64,15 @@ function seedIfNeeded() {
       created_at: new Date(
         Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
       ).toISOString(),
+      action_history: [
+        {
+          id: crypto.randomUUID(),
+          status: "pending",
+          note: "Report submitted by resident.",
+          actor: "System",
+          created_at: new Date().toISOString(),
+        },
+      ],
     });
   }
 }
@@ -97,6 +112,15 @@ export async function POST(request: Request) {
       severity: severity ?? 1,
       status: "pending",
       created_at: new Date().toISOString(),
+      action_history: [
+        {
+          id: crypto.randomUUID(),
+          status: "pending" as const,
+          note: "Report submitted.",
+          actor: "Resident",
+          created_at: new Date().toISOString(),
+        },
+      ],
     };
 
     mockReports.push(report);
@@ -105,6 +129,67 @@ export async function POST(request: Request) {
       { success: true, report: { id: report.id, created_at: report.created_at } },
       { status: 201 },
     );
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+}
+
+export async function GET(request: Request) {
+  seedIfNeeded();
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get("status");
+  const limit = Number(searchParams.get("limit") ?? "30");
+
+  const validStatus = new Set(["pending", "verified", "in_progress", "resolved"]);
+  const filtered = mockReports
+    .filter((r) => (status && validStatus.has(status) ? r.status === status : true))
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    .slice(0, Number.isFinite(limit) ? Math.max(1, Math.min(limit, 100)) : 30);
+
+  return NextResponse.json({ reports: filtered });
+}
+
+export async function PATCH(request: Request) {
+  seedIfNeeded();
+  try {
+    const body = await request.json();
+    const { report_id, status, note, actor } = body as {
+      report_id?: string;
+      status?: WorkflowStatus;
+      note?: string;
+      actor?: string;
+    };
+
+    if (!report_id || !status) {
+      return NextResponse.json(
+        { error: "Missing report_id or status" },
+        { status: 400 },
+      );
+    }
+
+    const validStatus: WorkflowStatus[] = ["pending", "verified", "in_progress", "resolved"];
+    if (!validStatus.includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+
+    const report = mockReports.find((r) => r.id === report_id);
+    if (!report) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
+
+    report.status = status;
+    report.action_history.push({
+      id: crypto.randomUUID(),
+      status,
+      note: note?.trim() || `Status changed to ${status.replace("_", " ")}.`,
+      actor: actor?.trim() || "Admin",
+      created_at: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ success: true, report });
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }

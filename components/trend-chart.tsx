@@ -31,7 +31,7 @@ export default function TrendChart({
   return (
     <div className="w-full">
       {/* Y-axis labels + bars */}
-      <div className="flex items-end gap-[3px] h-[140px] px-1">
+      <div className="flex items-end gap-[4px] h-[152px] px-1.5">
         {data.map((point) => {
           const barHeight = (point.count / maxCount) * barMaxHeight;
           const categories = Object.entries(point.categories);
@@ -44,7 +44,7 @@ export default function TrendChart({
             >
               {/* Tooltip */}
               <div
-                className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[9px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none ${
+                className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none ${
                   isDark ? "bg-white/10 text-white" : "bg-gray-800 text-white"
                 }`}
               >
@@ -53,7 +53,7 @@ export default function TrendChart({
 
               {/* Stacked bar */}
               <div
-                className="w-full rounded-t-sm overflow-hidden transition-all"
+                className="w-full rounded-t-md overflow-hidden transition-all"
                 style={{ height: Math.max(barHeight, point.count > 0 ? 4 : 0) }}
               >
                 {categories.length > 0 ? (
@@ -84,7 +84,7 @@ export default function TrendChart({
       </div>
 
       {/* X-axis dates */}
-      <div className="flex gap-[3px] px-1 mt-1.5">
+      <div className="flex gap-[4px] px-1.5 mt-2">
         {data.map((point, i) => {
           // Only show labels every 2–3 days to avoid clutter
           const show = i === 0 || i === data.length - 1 || i % 3 === 0;
@@ -92,7 +92,7 @@ export default function TrendChart({
             <div key={point.date} className="flex-1 text-center">
               {show && (
                 <span
-                  className={`text-[8px] font-medium ${
+                  className={`text-[9px] font-medium ${
                     isDark ? "text-white/30" : "text-gray-400"
                   }`}
                 >
@@ -108,16 +108,16 @@ export default function TrendChart({
       </div>
 
       {/* Category legend */}
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3.5">
         {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
           <div key={cat} className="flex items-center gap-1">
             <span
-              className="w-2 h-2 rounded-sm"
+              className="w-2.5 h-2.5 rounded-sm"
               style={{ backgroundColor: color }}
             />
             <span
-              className={`text-[9px] capitalize ${
-                isDark ? "text-white/40" : "text-gray-400"
+              className={`text-[10px] capitalize ${
+                isDark ? "text-white/45" : "text-gray-500"
               }`}
             >
               {cat}

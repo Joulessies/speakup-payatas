@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
@@ -73,6 +73,20 @@ export default function AdminDashboard() {
   );
   const [panelOpen, setPanelOpen] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [workflowReports, setWorkflowReports] = useState<
+    {
+      id: string;
+      category: string;
+      description: string;
+      status: "pending" | "verified" | "in_progress" | "resolved";
+      created_at: string;
+      action_history?: { id: string; status: string; note: string; actor: string; created_at: string }[];
+    }[]
+  >([]);
+  const [workflowLoading, setWorkflowLoading] = useState(true);
+  const [workflowSaving, setWorkflowSaving] = useState<string | null>(null);
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, "pending" | "verified" | "in_progress" | "resolved">>({});
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -89,6 +103,51 @@ export default function AdminDashboard() {
       }
     })();
   }, []);
+
+  const loadWorkflowReports = async () => {
+    setWorkflowLoading(true);
+    try {
+      const res = await fetch("/api/reports?limit=20");
+      const data = await res.json();
+      const reports = data.reports ?? [];
+      setWorkflowReports(reports);
+      const nextDrafts: Record<string, "pending" | "verified" | "in_progress" | "resolved"> = {};
+      for (const r of reports) nextDrafts[r.id] = r.status;
+      setStatusDrafts(nextDrafts);
+    } catch {
+      setWorkflowReports([]);
+    } finally {
+      setWorkflowLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWorkflowReports();
+  }, []);
+
+  const handleWorkflowUpdate = async (reportId: string) => {
+    const nextStatus = statusDrafts[reportId];
+    if (!nextStatus) return;
+    setWorkflowSaving(reportId);
+    try {
+      await fetch("/api/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report_id: reportId,
+          status: nextStatus,
+          note: noteDrafts[reportId]?.trim() || "",
+          actor: "Admin",
+        }),
+      });
+      setNoteDrafts((prev) => ({ ...prev, [reportId]: "" }));
+      await loadWorkflowReports();
+    } catch (err) {
+      console.error("Workflow update failed:", err);
+    } finally {
+      setWorkflowSaving(null);
+    }
+  };
 
   const toggleCategory = (cat: string) => {
     setActiveCategories((prev) => {
@@ -150,6 +209,14 @@ export default function AdminDashboard() {
           activeCategories={activeCategories}
           toggleCategory={toggleCategory}
           t={t}
+          workflowReports={workflowReports}
+          workflowLoading={workflowLoading}
+          workflowSaving={workflowSaving}
+          statusDrafts={statusDrafts}
+          setStatusDrafts={setStatusDrafts}
+          noteDrafts={noteDrafts}
+          setNoteDrafts={setNoteDrafts}
+          handleWorkflowUpdate={handleWorkflowUpdate}
         />
       </aside>
 
@@ -229,6 +296,14 @@ export default function AdminDashboard() {
             activeCategories={activeCategories}
             toggleCategory={toggleCategory}
             t={t}
+            workflowReports={workflowReports}
+            workflowLoading={workflowLoading}
+            workflowSaving={workflowSaving}
+            statusDrafts={statusDrafts}
+            setStatusDrafts={setStatusDrafts}
+            noteDrafts={noteDrafts}
+            setNoteDrafts={setNoteDrafts}
+            handleWorkflowUpdate={handleWorkflowUpdate}
           />
         </div>
       </div>
@@ -250,6 +325,14 @@ function SidebarContent({
   activeCategories,
   toggleCategory,
   t,
+  workflowReports,
+  workflowLoading,
+  workflowSaving,
+  statusDrafts,
+  setStatusDrafts,
+  noteDrafts,
+  setNoteDrafts,
+  handleWorkflowUpdate,
 }: {
   isDark: boolean;
   loading: boolean;
@@ -262,6 +345,23 @@ function SidebarContent({
   activeCategories: Set<string>;
   toggleCategory: (cat: string) => void;
   t: ReturnType<typeof import("@/lib/i18n").getTranslations>;
+  workflowReports: {
+    id: string;
+    category: string;
+    description: string;
+    status: "pending" | "verified" | "in_progress" | "resolved";
+    created_at: string;
+    action_history?: { id: string; status: string; note: string; actor: string; created_at: string }[];
+  }[];
+  workflowLoading: boolean;
+  workflowSaving: string | null;
+  statusDrafts: Record<string, "pending" | "verified" | "in_progress" | "resolved">;
+  setStatusDrafts: Dispatch<
+    SetStateAction<Record<string, "pending" | "verified" | "in_progress" | "resolved">>
+  >;
+  noteDrafts: Record<string, string>;
+  setNoteDrafts: Dispatch<SetStateAction<Record<string, string>>>;
+  handleWorkflowUpdate: (reportId: string) => Promise<void>;
 }) {
   const exportCSV = () => {
     const header = "Cluster,Latitude,Longitude,Report Count,Top Category,Density\n";
@@ -471,6 +571,104 @@ function SidebarContent({
           {t.adminExportCSV}
         </button>
       )}
+
+      {/* Workflow */}
+      <div>
+        <h2
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"
+            }`}
+        >
+          Status Workflow
+        </h2>
+        {workflowLoading ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-xs opacity-70">Loading workflow queue…</span>
+          </div>
+        ) : workflowReports.length === 0 ? (
+          <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>No reports available.</p>
+        ) : (
+          <div className="space-y-2">
+            {workflowReports.map((report) => {
+              const latestAction = report.action_history?.[report.action_history.length - 1];
+              return (
+                <div
+                  key={report.id}
+                  className={`rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.01]"
+                    }`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className={`text-xs font-semibold capitalize ${isDark ? "text-white/80" : "text-gray-800"}`}>
+                        {report.category}
+                      </p>
+                      <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                        {report.description || "No description"}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className={isDark ? "border-white/10 text-white/55" : ""}>
+                      {report.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <select
+                      value={statusDrafts[report.id] ?? report.status}
+                      onChange={(e) =>
+                        setStatusDrafts((prev) => ({
+                          ...prev,
+                          [report.id]: e.target.value as
+                            | "pending"
+                            | "verified"
+                            | "in_progress"
+                            | "resolved",
+                        }))
+                      }
+                      className={`h-8 rounded-lg px-2 text-xs border ${isDark
+                        ? "bg-white/[0.05] border-white/10 text-white"
+                        : "bg-white border-gray-200 text-gray-700"
+                        }`}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="verified">Verified</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="resolved">Resolved</option>
+                    </select>
+                    <input
+                      value={noteDrafts[report.id] ?? ""}
+                      onChange={(e) =>
+                        setNoteDrafts((prev) => ({ ...prev, [report.id]: e.target.value }))
+                      }
+                      placeholder="Action note (optional)"
+                      className={`h-8 rounded-lg px-2 text-xs border ${isDark
+                        ? "bg-white/[0.05] border-white/10 text-white placeholder:text-white/30"
+                        : "bg-white border-gray-200 text-gray-700 placeholder:text-gray-400"
+                        }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleWorkflowUpdate(report.id)}
+                      disabled={workflowSaving === report.id}
+                      className={`h-8 rounded-lg text-xs font-medium transition-colors ${isDark
+                        ? "bg-white/[0.07] text-white/70 hover:bg-white/[0.12]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                    >
+                      {workflowSaving === report.id ? "Saving..." : "Update status"}
+                    </button>
+                  </div>
+
+                  {latestAction && (
+                    <p className={`mt-2 text-[10px] ${isDark ? "text-white/30" : "text-gray-500"}`}>
+                      Last action: {latestAction.note}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

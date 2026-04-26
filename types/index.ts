@@ -7,9 +7,18 @@ export interface Report {
   longitude: number;
   severity: number;
   photo_url?: string;
-  status?: "pending" | "verified" | "resolved";
+  status?: "pending" | "verified" | "in_progress" | "resolved";
   created_at?: string;
   synced_at?: string;
+  action_history?: ReportAction[];
+}
+
+export interface ReportAction {
+  id: string;
+  status: "pending" | "verified" | "in_progress" | "resolved";
+  note: string;
+  actor: string;
+  created_at: string;
 }
 
 export interface OfflineReport extends Report {

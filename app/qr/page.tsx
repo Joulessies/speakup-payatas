@@ -9,7 +9,7 @@ import { Download, QrCode, Printer, ShieldCheck, MapPin } from "lucide-react";
 export default function QRPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const [url, setUrl] = useState("https://speakup-payatas.vercel.app");
+  const [url, setUrl] = useState("https://speakup-payatas-jpob.vercel.app/");
 
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}&bgcolor=ffffff&color=1e1b4b`;
 

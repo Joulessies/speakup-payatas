@@ -1,6 +1,8 @@
 "use client";
 
 import { useTheme } from "@/components/theme-provider";
+import { BlockMath } from "react-katex";
+import "katex/dist/katex.min.css";
 import {
   ShieldCheck,
   Database,
@@ -28,15 +30,20 @@ export default function AboutPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const sectionClass = `p-5 md:p-6 rounded-2xl ${isDark ? "bg-white/[0.03]" : "bg-white border border-gray-100"}`;
+  const sectionClass = `p-5 md:p-6 rounded-2xl border ${
+    isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"
+  }`;
   const headingClass = `text-base md:text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`;
   const textClass = `text-sm leading-relaxed ${isDark ? "text-white/60" : "text-gray-600"}`;
   const subheadClass = `text-sm font-semibold mt-4 mb-2 ${isDark ? "text-white/80" : "text-gray-800"}`;
-  const codeClass = `px-3 py-2 rounded-xl text-xs font-mono ${isDark ? "bg-white/[0.04] text-white/70" : "bg-gray-50 text-gray-700"}`;
+  const codeClass = `px-3 py-3 rounded-xl text-xs ${
+    isDark ? "bg-white/[0.04] border border-white/[0.06] text-white/80" : "bg-gray-50 border border-gray-100 text-gray-700"
+  }`;
+  const eqCaptionClass = `mt-1 text-[11px] ${isDark ? "text-white/35" : "text-gray-500"}`;
 
   return (
     <div className={`flex-1 overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
-      <div className="max-w-3xl mx-auto px-4 py-8 pb-24 md:py-12 space-y-5">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:py-12 space-y-5">
         {/* Title */}
         <div className="text-center mb-2">
           <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${
@@ -47,7 +54,7 @@ export default function AboutPage() {
           <h1 className={`text-2xl md:text-3xl font-bold tracking-tight mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
             Methodology & Algorithms
           </h1>
-          <p className={`text-sm max-w-md mx-auto ${isDark ? "text-white/40" : "text-gray-500"}`}>
+          <p className={`text-sm max-w-2xl mx-auto ${isDark ? "text-white/45" : "text-gray-500"}`}>
             SpeakUp: Algorithm-Based Anonymous Reporting Platform for Barangay Payatas-A
           </p>
         </div>
@@ -93,9 +100,14 @@ export default function AboutPage() {
           </p>
 
           <h3 className={subheadClass}>Parameters</h3>
-          <div className={codeClass}>
-            <div>ε (epsilon) = <strong>50 meters</strong> — maximum distance between two points in a cluster</div>
-            <div>minPts = <strong>3</strong> — minimum reports to form a cluster</div>
+          <div className={`${codeClass} overflow-x-auto`}>
+            <div className="mb-2">
+              <BlockMath math={"\\varepsilon = 50\\,\\text{meters}"} />
+            </div>
+            <div>
+              <BlockMath math={"\\mathrm{minPts} = 3"} />
+            </div>
+            <p className={eqCaptionClass}>Eq. (1) DBSCAN neighborhood and minimum cluster density parameters.</p>
           </div>
 
           <h3 className={subheadClass}>Coordinate Projection</h3>
@@ -103,9 +115,10 @@ export default function AboutPage() {
             GPS coordinates (latitude, longitude) are converted to a meter-based local plane 
             using the Haversine approximation at Payatas latitude (~14.7°N):
           </p>
-          <div className={`${codeClass} mt-2`}>
-            <div>x = longitude × 111,320 × cos(14.7°)</div>
-            <div>y = latitude × 111,320</div>
+          <div className={`${codeClass} mt-2 space-y-2 overflow-x-auto`}>
+            <BlockMath math={"x = \\lambda \\cdot 111{,}320 \\cdot \\cos(14.7^{\\circ})"} />
+            <BlockMath math={"y = \\phi \\cdot 111{,}320"} />
+            <p className={eqCaptionClass}>Eq. (2) Local planar projection used before spatial clustering.</p>
           </div>
           <p className={`${textClass} mt-2`}>
             This ensures the epsilon of 50m accurately represents spatial distance. Reports not 
@@ -125,13 +138,14 @@ export default function AboutPage() {
           </p>
 
           <h3 className={subheadClass}>Formula</h3>
-          <div className={codeClass}>
-            <div className="font-bold mb-1">urgency_score = severity × density × recency</div>
+          <div className={`${codeClass} space-y-2 overflow-x-auto`}>
+            <BlockMath math={"U = S \\times D \\times R"} />
             <div className="mt-2 space-y-1">
-              <div>severity_factor = report_severity / 5 <span className={isDark ? "text-white/30" : "text-gray-400"}>→ 0.2 to 1.0</span></div>
-              <div>density_factor = min(cluster_count / 3, 3.0) <span className={isDark ? "text-white/30" : "text-gray-400"}>→ 0.33 to 3.0</span></div>
-              <div>recency_factor = e<sup>−λt</sup> <span className={isDark ? "text-white/30" : "text-gray-400"}>→ exponential decay</span></div>
+              <BlockMath math={"S = \\frac{\\text{report severity}}{5} \\in [0.2, 1.0]"} />
+              <BlockMath math={"D = \\min\\left(\\frac{\\text{cluster count}}{3},\\,3.0\\right) \\in [0.33, 3.0]"} />
+              <BlockMath math={"R = e^{-\\lambda t}"} />
             </div>
+            <p className={eqCaptionClass}>Eq. (3) Composite urgency score from severity, density, and recency factors.</p>
           </div>
 
           <h3 className={subheadClass}>Decay Function</h3>
@@ -140,9 +154,10 @@ export default function AboutPage() {
             A report submitted now scores 1.0, drops to 0.5 after 3 days, and 0.25 after 6 days. 
             This ensures recent incidents are prioritized while older reports naturally de-escalate.
           </p>
-          <div className={`${codeClass} mt-2`}>
-            <div>λ = ln(2) / 72 ≈ 0.00963</div>
-            <div>recency = e<sup>−0.00963 × hours_since_creation</sup></div>
+          <div className={`${codeClass} mt-2 space-y-2 overflow-x-auto`}>
+            <BlockMath math={"\\lambda = \\frac{\\ln(2)}{72} \\approx 0.00963"} />
+            <BlockMath math={"R(t) = e^{-0.00963\\,t}"} />
+            <p className={eqCaptionClass}>Eq. (4) Exponential recency decay with 72-hour half-life.</p>
           </div>
 
           <h3 className={subheadClass}>Score Normalization</h3>
@@ -176,15 +191,17 @@ export default function AboutPage() {
           </p>
 
           <h3 className={subheadClass}>Trigger 1: Absolute Threshold</h3>
-          <div className={codeClass}>
-            If reports_in_last_24h ≥ <strong>5</strong> → flag as anomaly
+          <div className={`${codeClass} overflow-x-auto`}>
+            <BlockMath math={"\\text{If } N_{24h} \\ge 5,\\ \\text{flag as anomaly}"} />
+            <p className={eqCaptionClass}>Eq. (5) Absolute anomaly threshold based on recent incident count.</p>
           </div>
 
           <h3 className={subheadClass}>Trigger 2: Rate Comparison</h3>
-          <div className={`${codeClass} mt-2`}>
-            <div>avg_daily_rate = total_reports / span_days</div>
-            <div>spike_ratio = recent_24h_count / avg_daily_rate</div>
-            <div>If spike_ratio ≥ <strong>2.0</strong> → flag as anomaly</div>
+          <div className={`${codeClass} mt-2 space-y-2 overflow-x-auto`}>
+            <BlockMath math={"\\bar{r}_{\\text{daily}} = \\frac{N_{\\text{total}}}{d_{\\text{span}}}"} />
+            <BlockMath math={"\\rho = \\frac{N_{24h}}{\\bar{r}_{\\text{daily}}}"} />
+            <BlockMath math={"\\text{If } \\rho \\ge 2.0,\\ \\text{flag as anomaly}"} />
+            <p className={eqCaptionClass}>Eq. (6) Spike-ratio anomaly detection using rolling daily baseline.</p>
           </div>
 
           <p className={`${textClass} mt-3`}>
