@@ -13,9 +13,9 @@ const instrumentSans = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "SpeakUp Payatas — Anonymous Community Reporting",
+  title: "SpeakUp Payatas (D2) — Anonymous Community Reporting",
   description:
-    "Report incidents anonymously in Payatas, Quezon City. Works offline. Your identity stays private.",
+    "Report incidents anonymously in Payatas, Quezon City (District 2). Works offline. Your identity stays private.",
 };
 
 export default function RootLayout({

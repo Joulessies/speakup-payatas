@@ -53,8 +53,8 @@ const translations = {
     sevCritical: "Critical",
 
     // Branding
-    brandName: "SpeakUp Payatas",
-    brandLocation: "Payatas, Quezon City",
+    brandName: "SpeakUp Payatas (D2)",
+    brandLocation: "Payatas, Quezon City (District 2)",
     brandDescription:
       "Report incidents anonymously. Your identity is protected with SHA-256 encryption.",
 
@@ -145,8 +145,8 @@ const translations = {
     sevCritical: "Kritikal",
 
     // Branding
-    brandName: "SpeakUp Payatas",
-    brandLocation: "Payatas, Lungsod Quezon",
+    brandName: "SpeakUp Payatas (D2)",
+    brandLocation: "Payatas, Lungsod Quezon (District 2)",
     brandDescription:
       "Mag-ulat ng insidente nang hindi nagpapakilala. Protektado ang iyong pagkakakilanlan gamit ang SHA-256.",
 

@@ -14,7 +14,7 @@ export interface Report {
 
 export interface OfflineReport extends Report {
   offline_id?: number;
-  is_synced: number; // 0 or 1 for Dexie indexing
+  is_synced: number;
 }
 
 export interface ClusterResult {
