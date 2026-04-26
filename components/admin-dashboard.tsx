@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import ThemeToggle from "@/components/theme-toggle";
 import {
   Loader2,
   ChevronUp,
@@ -170,7 +169,6 @@ export default function AdminDashboard() {
           <Layers className="h-3.5 w-3.5" />
           Heatmap
         </button>
-        <ThemeToggle />
       </div>
 
       {/* Mobile heatmap FAB */}
@@ -282,11 +280,11 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-4 p-4 md:gap-5 md:p-5">
       {/* Stats */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"
             }`}
         >
           {t.adminOverview}
@@ -305,7 +303,7 @@ function SidebarContent({
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={`flex flex-col items-center gap-1 py-3 rounded-xl ${isDark ? "bg-white/[0.04]" : "bg-black/[0.03]"
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl border ${isDark ? "bg-white/[0.04] border-white/[0.06]" : "bg-black/[0.03] border-black/[0.05]"
                   }`}
               >
                 <span
@@ -314,7 +312,7 @@ function SidebarContent({
                   {stat.value}
                 </span>
                 <span
-                  className={`text-[10px] font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}
+                  className={`text-[10px] font-medium ${isDark ? "text-white/45" : "text-gray-500"}`}
                 >
                   {stat.label}
                 </span>
@@ -327,7 +325,7 @@ function SidebarContent({
       {/* Category filters */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"
             }`}
         >
           {t.adminFilterCategory}
@@ -339,13 +337,13 @@ function SidebarContent({
               <button
                 key={cat}
                 onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${isActive
+                className={`flex min-h-8 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${isActive
                   ? isDark
-                    ? "bg-white/10 text-white"
-                    : "bg-gray-100 text-gray-900"
+                    ? "bg-white/10 text-white ring-1 ring-white/15"
+                    : "bg-gray-100 text-gray-900 ring-1 ring-gray-200"
                   : isDark
-                    ? "bg-white/[0.03] text-white/25"
-                    : "bg-black/[0.02] text-gray-300"
+                    ? "bg-white/[0.03] text-white/45 hover:bg-white/[0.06]"
+                    : "bg-black/[0.02] text-gray-400 hover:bg-black/[0.05]"
                   }`}
               >
                 {CATEGORY_ICONS[cat]}
@@ -359,7 +357,7 @@ function SidebarContent({
       {/* Cluster list */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"
             }`}
         >
           {t.adminHotspotsCount(clusters.length)}
@@ -381,13 +379,13 @@ function SidebarContent({
               <button
                 key={i}
                 onClick={() => setSelectedCluster(isSelected ? null : i)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${isSelected
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left border transition-all ${isSelected
                   ? isDark
-                    ? "bg-indigo-500/15 ring-1 ring-indigo-500/30"
-                    : "bg-indigo-50 ring-1 ring-indigo-200"
+                    ? "bg-indigo-500/15 border-indigo-500/35 ring-1 ring-indigo-500/25"
+                    : "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200"
                   : isDark
-                    ? "bg-white/[0.03] hover:bg-white/[0.06]"
-                    : "bg-black/[0.02] hover:bg-black/[0.04]"
+                    ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+                    : "bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]"
                   }`}
               >
                 <div className="flex flex-col items-center gap-1 min-w-[40px]">
@@ -415,15 +413,13 @@ function SidebarContent({
                       {topCategory ? topCategory[0] : "Mixed"}
                     </span>
                   </div>
-                  <span
-                    className={`text-[10px] font-mono ${isDark ? "text-white/25" : "text-gray-400"}`}
-                  >
+                  <span className={`block text-[10px] font-mono truncate ${isDark ? "text-white/30" : "text-gray-400"}`}>
                     {cluster.latitude.toFixed(5)}, {cluster.longitude.toFixed(5)}
                   </span>
                 </div>
                 <Badge
                   variant="outline"
-                  className={`text-[10px] shrink-0 ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"
+                    className={`text-[10px] shrink-0 ${isDark ? "border-white/10 text-white/45" : "border-gray-200 text-gray-500"
                     }`}
                 >
                   {Object.keys(cluster.category_breakdown).length} type
@@ -438,12 +434,12 @@ function SidebarContent({
       {/* Legend */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"
             }`}
         >
           {t.adminDensityLegend}
         </h2>
-        <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
           {[
             { color: "bg-emerald-500", label: t.adminDensityLow },
             { color: "bg-amber-500", label: t.adminDensityMedium },
@@ -466,9 +462,9 @@ function SidebarContent({
       {clusters.length > 0 && (
         <button
           onClick={exportCSV}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-colors ${isDark
-            ? "bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white"
-            : "bg-black/[0.04] text-gray-500 hover:bg-black/[0.08] hover:text-gray-900"
+          className={`mt-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-colors ${isDark
+            ? "bg-white/[0.06] border-white/10 text-white/75 hover:bg-white/10 hover:text-white"
+            : "bg-black/[0.04] border-black/10 text-gray-600 hover:bg-black/[0.08] hover:text-gray-900"
             }`}
         >
           <Download className="h-3.5 w-3.5" />

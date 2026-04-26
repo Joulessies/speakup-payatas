@@ -36,13 +36,13 @@ export default function NavBar() {
 
   const navLinkClass = (href: string) => {
     const isActive = pathname === href;
-    return `shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
+    return `shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
       isActive
         ? isDark
-          ? "bg-white/10 text-white"
+          ? "bg-white/12 text-white"
           : "bg-gray-100 text-gray-900"
         : isDark
-          ? "text-white/50 hover:text-white hover:bg-white/[0.06]"
+          ? "text-white/60 hover:text-white hover:bg-white/[0.06]"
           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
     }`;
   };
@@ -51,7 +51,7 @@ export default function NavBar() {
     <>
       {/* ── Desktop top nav ── */}
       <nav
-        className={`hidden md:flex items-center justify-between gap-2 px-3 lg:px-6 h-12 border-b z-50 backdrop-blur-xl shrink-0 ${
+        className={`hidden md:flex items-center justify-between gap-3 px-4 lg:px-6 h-14 border-b z-50 backdrop-blur-xl shrink-0 ${
           isDark
             ? "bg-black/60 border-white/[0.06]"
             : "bg-white/70 border-black/[0.06]"
@@ -64,7 +64,7 @@ export default function NavBar() {
               className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`}
             />
             <span
-              className={`hidden lg:inline text-sm font-bold tracking-tight ${
+              className={`hidden lg:inline text-base font-semibold tracking-tight ${
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
@@ -74,11 +74,11 @@ export default function NavBar() {
 
           <div className={`hidden lg:block w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
 
-          <div className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto">
+          <div className="flex min-w-0 items-center gap-0.5">
             {MAIN_NAV.map((item) => (
               <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
                 <item.icon className="h-4 w-4" />
-                <span className="hidden lg:inline">{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
@@ -86,13 +86,15 @@ export default function NavBar() {
 
         {/* Right: utilities */}
         <div className="flex shrink-0 items-center gap-0.5">
-          {UTIL_NAV.map((item) => (
-            <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
-              <item.icon className="h-4 w-4" />
-              <span className="hidden xl:inline text-xs">{item.label}</span>
-            </Link>
-          ))}
-          <div className={`w-px h-5 mx-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
+          <div className="hidden lg:flex items-center gap-0.5">
+            {UTIL_NAV.map((item) => (
+              <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                <item.icon className="h-4 w-4" />
+                <span className="hidden 2xl:inline text-xs">{item.label}</span>
+              </Link>
+            ))}
+            <div className={`w-px h-5 mx-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
+          </div>
           <LanguageToggle />
           <ThemeToggle />
         </div>
@@ -126,7 +128,7 @@ export default function NavBar() {
                 <item.icon
                   className={`h-[22px] w-[22px] ${isActive ? "scale-105" : ""} transition-transform`}
                 />
-                <span className={`text-[10px] font-semibold leading-none ${isActive ? "" : "opacity-70"}`}>
+                <span className={`w-full truncate px-1 text-center text-[10px] font-semibold leading-none ${isActive ? "" : "opacity-70"}`}>
                   {item.label}
                 </span>
               </Link>

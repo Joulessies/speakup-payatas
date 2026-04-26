@@ -249,15 +249,15 @@ export default function ReportForm() {
 
   return (
     <Card
-      className={`w-full backdrop-blur-xl shadow-2xl rounded-2xl ${
+      className={`w-full h-full max-h-full flex flex-col overflow-hidden backdrop-blur-xl shadow-2xl rounded-2xl ${
         isDark
           ? "border-white/[0.08] bg-black/50 text-white"
           : "border-black/[0.06] bg-white/70 text-gray-900"
       }`}
     >
-      <CardHeader className="px-5 pt-5 pb-3 md:px-6 md:pt-6 md:pb-4 space-y-2">
+      <CardHeader className="px-4 pt-4 pb-2 md:px-5 md:pt-5 md:pb-3 space-y-1.5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[17px] md:text-xl font-semibold tracking-tight">
+          <CardTitle className="text-base md:text-lg font-semibold tracking-tight">
             {t.reportTitle}
           </CardTitle>
           <Badge
@@ -286,7 +286,7 @@ export default function ReportForm() {
         )}
       </CardHeader>
 
-      <CardContent className="px-5 pb-5 md:px-6 md:pb-6">
+      <CardContent className="flex-1 min-h-0 overflow-hidden px-4 pb-4 md:px-5 md:pb-5">
         {submitted ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
@@ -298,13 +298,13 @@ export default function ReportForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             {/* Category grid */}
             <div className="space-y-2">
               <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
                 {t.reportWhatHappened}
               </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-1.5 md:gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
                 {CATEGORIES.map((cat) => {
                   const isSelected = category === cat.key;
                   return (
@@ -344,7 +344,7 @@ export default function ReportForm() {
                 placeholder={t.reportDescriptionPlaceholder}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={2}
+                rows={1}
                 className="resize-none text-sm"
               />
             </div>
@@ -384,7 +384,7 @@ export default function ReportForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className={`w-full h-12 gap-2 rounded-xl text-sm ${
+                  className={`w-full h-10 gap-2 rounded-xl text-sm ${
                     isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"
                   }`}
                   onClick={() => fileInputRef.current?.click()}
@@ -447,7 +447,7 @@ export default function ReportForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className={`w-full h-12 gap-2 rounded-xl text-sm ${
+                  className={`w-full h-10 gap-2 rounded-xl text-sm ${
                     isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"
                   }`}
                   onClick={detectGPS}
@@ -467,7 +467,7 @@ export default function ReportForm() {
             )}
 
             {/* Submit */}
-            <Button type="submit" className="w-full h-12 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
+            <Button type="submit" className="w-full h-10 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : online ? <Send className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
               {submitting ? t.reportSubmitting : online ? t.reportSubmit : t.reportSaveOffline}
             </Button>

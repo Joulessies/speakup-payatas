@@ -29,11 +29,11 @@ export default function RootLayout({
       className={cn("h-full antialiased dark", instrumentSans.variable)}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="h-dvh overflow-hidden flex flex-col font-sans">
         <ThemeProvider>
           <LanguageProvider>
             <NavBar />
-            <main className="flex flex-col flex-1 pb-14 md:pb-0">
+            <main className="flex flex-col flex-1 min-h-0 overflow-hidden pb-14 md:pb-0">
               {children}
             </main>
             <Toaster richColors position="top-center" />

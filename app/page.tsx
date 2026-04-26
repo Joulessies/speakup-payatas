@@ -2,7 +2,6 @@
 
 import ReportForm from "@/components/report-form";
 import BackgroundMapWrapper from "@/components/background-map-wrapper";
-import ThemeToggle from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
 import { ShieldCheck } from "lucide-react";
 
@@ -11,7 +10,7 @@ export default function HomePage() {
   const isDark = theme === "dark";
 
   return (
-    <div className="relative flex flex-1 min-h-screen overflow-hidden">
+    <div className="relative flex h-full min-h-0 w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         <BackgroundMapWrapper />
       </div>
@@ -23,11 +22,7 @@ export default function HomePage() {
           }`}
       />
 
-      <div className="absolute top-4 right-4 z-[3]">
-        <ThemeToggle />
-      </div>
-
-      <div className="relative z-[2] flex flex-col justify-start md:justify-center w-full md:max-w-xl px-4 py-6 md:px-12 md:py-12 overflow-y-auto">
+      <div className="relative z-[2] flex h-full min-h-0 w-full flex-col justify-start md:justify-center md:max-w-xl px-4 py-4 md:px-12 md:py-8 overflow-hidden">
         <div className="flex flex-col gap-2 mb-6 md:mb-8">
           <div className="flex items-center gap-2.5">
             <div
@@ -55,7 +50,9 @@ export default function HomePage() {
           </p>
         </div>
 
-        <ReportForm />
+        <div className="origin-top md:origin-top-left max-[900px]:scale-[0.94] max-[800px]:scale-[0.88]">
+          <ReportForm />
+        </div>
       </div>
     </div>
   );
