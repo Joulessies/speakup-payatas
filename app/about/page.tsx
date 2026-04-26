@@ -65,7 +65,7 @@ export default function AboutPage() {
             DBSCAN spatial clustering, urgency auto-scoring, and anomaly detection.
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Lock, label: "SHA-256 Anonymity" },
               { icon: Wifi, label: "Offline-First PWA" },
@@ -201,8 +201,11 @@ export default function AboutPage() {
           </div>
           <div className="grid gap-2">
             {TECH_STACK.map((tech) => (
-              <div key={tech.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                <span className={`text-sm font-semibold min-w-[140px] ${isDark ? "text-white/80" : "text-gray-800"}`}>
+              <div
+                key={tech.name}
+                className={`flex flex-col items-start gap-1.5 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3 rounded-xl ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}
+              >
+                <span className={`text-sm font-semibold sm:min-w-[140px] ${isDark ? "text-white/80" : "text-gray-800"}`}>
                   {tech.name}
                 </span>
                 <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>

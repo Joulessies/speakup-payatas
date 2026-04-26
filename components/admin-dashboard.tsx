@@ -134,11 +134,10 @@ export default function AdminDashboard() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${
-          isDark
-            ? "bg-black/80 backdrop-blur-xl border-white/[0.06]"
-            : "bg-white/80 backdrop-blur-xl border-black/[0.06]"
-        }`}
+        className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark
+          ? "bg-black/80 backdrop-blur-xl border-white/[0.06]"
+          : "bg-white/80 backdrop-blur-xl border-black/[0.06]"
+          }`}
       >
         <SidebarContent
           isDark={isDark}
@@ -159,15 +158,14 @@ export default function AdminDashboard() {
       <div className="hidden md:flex gap-2 absolute top-4 right-4 z-[1000]">
         <button
           onClick={() => setShowHeatmap(!showHeatmap)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-xl transition-colors ${
-            showHeatmap
-              ? isDark
-                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-              : isDark
-                ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80"
-                : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80"
-          }`}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-xl transition-colors ${showHeatmap
+            ? isDark
+              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+              : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+            : isDark
+              ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80"
+              : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80"
+            }`}
         >
           <Layers className="h-3.5 w-3.5" />
           Heatmap
@@ -178,33 +176,30 @@ export default function AdminDashboard() {
       {/* Mobile heatmap FAB */}
       <button
         onClick={() => setShowHeatmap(!showHeatmap)}
-        className={`md:hidden absolute top-4 right-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full shadow-lg backdrop-blur-xl transition-colors ${
-          showHeatmap
-            ? isDark
-              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-              : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-            : isDark
-              ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80"
-              : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80"
-        }`}
+        className={`md:hidden absolute top-4 right-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full shadow-lg backdrop-blur-xl transition-colors ${showHeatmap
+          ? isDark
+            ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+            : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+          : isDark
+            ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80"
+            : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80"
+          }`}
       >
         <Layers className="h-4 w-4" />
       </button>
 
       {/* Mobile bottom panel */}
       <div
-        className={`md:hidden absolute bottom-0 left-0 right-0 z-[1000] transition-transform duration-300 ${
-          panelOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"
-        }`}
+        className={`md:hidden absolute bottom-0 left-0 right-0 z-[1000] transition-transform duration-300 ${panelOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"
+          }`}
       >
         {/* Pull handle */}
         <button
           onClick={() => setPanelOpen(!panelOpen)}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-t-2xl border-t ${
-            isDark
-              ? "bg-black/90 border-white/[0.08] text-white/70"
-              : "bg-white/90 border-black/[0.08] text-gray-600"
-          }`}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-t-2xl border-t ${isDark
+            ? "bg-black/90 border-white/[0.08] text-white/70"
+            : "bg-white/90 border-black/[0.08] text-gray-600"
+            }`}
         >
           {panelOpen ? (
             <ChevronDown className="h-4 w-4" />
@@ -218,9 +213,8 @@ export default function AdminDashboard() {
           </span>
         </button>
         <div
-          className={`h-[60vh] overflow-y-auto ${
-            isDark ? "bg-black/90 backdrop-blur-xl" : "bg-white/90 backdrop-blur-xl"
-          }`}
+          className={`h-[60vh] overflow-y-auto ${isDark ? "bg-black/90 backdrop-blur-xl" : "bg-white/90 backdrop-blur-xl"
+            }`}
         >
           <SidebarContent
             isDark={isDark}
@@ -292,9 +286,8 @@ function SidebarContent({
       {/* Stats */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${
-            isDark ? "text-white/40" : "text-gray-400"
-          }`}
+          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+            }`}
         >
           {t.adminOverview}
         </h2>
@@ -312,9 +305,8 @@ function SidebarContent({
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={`flex flex-col items-center gap-1 py-3 rounded-xl ${
-                  isDark ? "bg-white/[0.04]" : "bg-black/[0.03]"
-                }`}
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl ${isDark ? "bg-white/[0.04]" : "bg-black/[0.03]"
+                  }`}
               >
                 <span
                   className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
@@ -335,9 +327,8 @@ function SidebarContent({
       {/* Category filters */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${
-            isDark ? "text-white/40" : "text-gray-400"
-          }`}
+          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+            }`}
         >
           {t.adminFilterCategory}
         </h2>
@@ -348,15 +339,14 @@ function SidebarContent({
               <button
                 key={cat}
                 onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                  isActive
-                    ? isDark
-                      ? "bg-white/10 text-white"
-                      : "bg-gray-100 text-gray-900"
-                    : isDark
-                      ? "bg-white/[0.03] text-white/25"
-                      : "bg-black/[0.02] text-gray-300"
-                }`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${isActive
+                  ? isDark
+                    ? "bg-white/10 text-white"
+                    : "bg-gray-100 text-gray-900"
+                  : isDark
+                    ? "bg-white/[0.03] text-white/25"
+                    : "bg-black/[0.02] text-gray-300"
+                  }`}
               >
                 {CATEGORY_ICONS[cat]}
                 {cat === "infrastructure" ? "Infra" : cat}
@@ -369,9 +359,8 @@ function SidebarContent({
       {/* Cluster list */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${
-            isDark ? "text-white/40" : "text-gray-400"
-          }`}
+          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+            }`}
         >
           {t.adminHotspotsCount(clusters.length)}
         </h2>
@@ -392,15 +381,14 @@ function SidebarContent({
               <button
                 key={i}
                 onClick={() => setSelectedCluster(isSelected ? null : i)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
-                  isSelected
-                    ? isDark
-                      ? "bg-indigo-500/15 ring-1 ring-indigo-500/30"
-                      : "bg-indigo-50 ring-1 ring-indigo-200"
-                    : isDark
-                      ? "bg-white/[0.03] hover:bg-white/[0.06]"
-                      : "bg-black/[0.02] hover:bg-black/[0.04]"
-                }`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${isSelected
+                  ? isDark
+                    ? "bg-indigo-500/15 ring-1 ring-indigo-500/30"
+                    : "bg-indigo-50 ring-1 ring-indigo-200"
+                  : isDark
+                    ? "bg-white/[0.03] hover:bg-white/[0.06]"
+                    : "bg-black/[0.02] hover:bg-black/[0.04]"
+                  }`}
               >
                 <div className="flex flex-col items-center gap-1 min-w-[40px]">
                   <span
@@ -421,9 +409,8 @@ function SidebarContent({
                   <div className="flex items-center gap-1.5 mb-1">
                     {topCategory && CATEGORY_ICONS[topCategory[0]]}
                     <span
-                      className={`text-sm font-medium capitalize truncate ${
-                        isDark ? "text-white/80" : "text-gray-700"
-                      }`}
+                      className={`text-sm font-medium capitalize truncate ${isDark ? "text-white/80" : "text-gray-700"
+                        }`}
                     >
                       {topCategory ? topCategory[0] : "Mixed"}
                     </span>
@@ -436,9 +423,8 @@ function SidebarContent({
                 </div>
                 <Badge
                   variant="outline"
-                  className={`text-[10px] shrink-0 ${
-                    isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"
-                  }`}
+                  className={`text-[10px] shrink-0 ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"
+                    }`}
                 >
                   {Object.keys(cluster.category_breakdown).length} type
                   {Object.keys(cluster.category_breakdown).length > 1 ? "s" : ""}
@@ -452,9 +438,8 @@ function SidebarContent({
       {/* Legend */}
       <div>
         <h2
-          className={`text-xs font-medium uppercase tracking-wider mb-3 ${
-            isDark ? "text-white/40" : "text-gray-400"
-          }`}
+          className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-gray-400"
+            }`}
         >
           {t.adminDensityLegend}
         </h2>
@@ -481,11 +466,10 @@ function SidebarContent({
       {clusters.length > 0 && (
         <button
           onClick={exportCSV}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-colors ${
-            isDark
-              ? "bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white"
-              : "bg-black/[0.04] text-gray-500 hover:bg-black/[0.08] hover:text-gray-900"
-          }`}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-colors ${isDark
+            ? "bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white"
+            : "bg-black/[0.04] text-gray-500 hover:bg-black/[0.08] hover:text-gray-900"
+            }`}
         >
           <Download className="h-3.5 w-3.5" />
           {t.adminExportCSV}

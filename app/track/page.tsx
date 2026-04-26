@@ -121,7 +121,7 @@ export default function TrackPage() {
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="flex gap-2 mb-6">
+        <form onSubmit={handleSearch} className="mb-6 flex flex-col gap-2 sm:flex-row">
           <Input
             value={hash}
             onChange={(e) => setHash(e.target.value)}
@@ -130,7 +130,7 @@ export default function TrackPage() {
               isDark ? "bg-white/[0.06] border-white/10 text-white placeholder:text-white/30" : "bg-white border-gray-200"
             }`}
           />
-          <Button type="submit" disabled={loading || !hash.trim()} className="shrink-0">
+          <Button type="submit" disabled={loading || !hash.trim()} className="w-full shrink-0 sm:w-auto">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.trackSearch}
           </Button>
         </form>

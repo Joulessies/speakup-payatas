@@ -36,7 +36,7 @@ export default function NavBar() {
 
   const navLinkClass = (href: string) => {
     const isActive = pathname === href;
-    return `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+    return `shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
       isActive
         ? isDark
           ? "bg-white/10 text-white"
@@ -51,20 +51,20 @@ export default function NavBar() {
     <>
       {/* ── Desktop top nav ── */}
       <nav
-        className={`hidden md:flex items-center justify-between px-6 h-12 border-b z-50 backdrop-blur-xl shrink-0 ${
+        className={`hidden md:flex items-center justify-between gap-2 px-3 lg:px-6 h-12 border-b z-50 backdrop-blur-xl shrink-0 ${
           isDark
             ? "bg-black/60 border-white/[0.06]"
             : "bg-white/70 border-black/[0.06]"
         }`}
       >
         {/* Left: brand + main links */}
-        <div className="flex items-center gap-5">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-5">
+          <Link href="/" className="flex shrink-0 items-center gap-2">
             <ShieldCheck
               className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`}
             />
             <span
-              className={`text-sm font-bold tracking-tight ${
+              className={`hidden lg:inline text-sm font-bold tracking-tight ${
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
@@ -72,24 +72,24 @@ export default function NavBar() {
             </span>
           </Link>
 
-          <div className={`w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
+          <div className={`hidden lg:block w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
 
-          <div className="flex items-center gap-0.5">
+          <div className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto">
             {MAIN_NAV.map((item) => (
               <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span className="hidden lg:inline">{item.label}</span>
               </Link>
             ))}
           </div>
         </div>
 
         {/* Right: utilities */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           {UTIL_NAV.map((item) => (
             <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
               <item.icon className="h-4 w-4" />
-              <span className="text-xs">{item.label}</span>
+              <span className="hidden xl:inline text-xs">{item.label}</span>
             </Link>
           ))}
           <div className={`w-px h-5 mx-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
