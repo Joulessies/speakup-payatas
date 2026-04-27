@@ -1,34 +1,32 @@
 import type { MetadataRoute } from "next";
-
 export default function manifest(): MetadataRoute.Manifest {
-  return {
-    name: "SpeakUp Payatas",
-    short_name: "SpeakUp",
-    description:
-      "Anonymous community incident reporting for Payatas, Quezon City. Works offline.",
-    start_url: "/",
-    display: "standalone",
-    background_color: "#0a0a0a",
-    theme_color: "#6366f1",
-    orientation: "portrait",
-    categories: ["social", "utilities"],
-    icons: [
-      {
-        src: "/icons/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        src: "/icons/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
-      {
-        src: "/icons/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
-    ],
-  };
+    return {
+        name: "SpeakUp Payatas",
+        short_name: "SpeakUp",
+        description: "Anonymous community incident reporting for Payatas, Quezon City. Works offline.",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#0a0a0a",
+        theme_color: "#6366f1",
+        orientation: "portrait",
+        categories: ["social", "utilities"],
+        icons: [
+            {
+                src: "/icons/icon-192.png",
+                sizes: "192x192",
+                type: "image/png",
+            },
+            {
+                src: "/icons/icon-512.png",
+                sizes: "512x512",
+                type: "image/png",
+            },
+            {
+                src: "/icons/icon-512.png",
+                sizes: "512x512",
+                type: "image/png",
+                purpose: "maskable",
+            },
+        ],
+    };
 }
