@@ -1,16 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, useMapEvents, } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { PAYATAS_CENTER, PAYATAS_BOUNDARY } from "@/lib/payatas-boundary";
 import { useTheme } from "./theme-provider";
 import HeatmapLayer from "./heatmap-layer";
 import type { ClusterResult } from "@/types";
 interface AdminMapProps {
-    clusters: ClusterResult[];
+    clusters: (ClusterResult & { weighted_score?: number })[];
     selectedCluster: number | null;
     onClusterClick: (index: number) => void;
     showHeatmap?: boolean;
+    heatPoints?: [
+        number,
+        number,
+        number
+    ][];
+    onMapBoundsChange?: (bounds: {
+        north: number;
+        south: number;
+        east: number;
+        west: number;
+    }) => void;
 }
 function getClusterColor(count: number): string {
     if (count >= 15)
@@ -24,7 +35,36 @@ function getClusterColor(count: number): string {
 function getClusterRadius(count: number): number {
     return Math.min(8 + count * 2.5, 40);
 }
-export default function AdminMapInner({ clusters, selectedCluster, onClusterClick, showHeatmap = false, }: AdminMapProps) {
+function MapBoundsTracker({ onChange }: {
+    onChange?: AdminMapProps["onMapBoundsChange"];
+}) {
+    useMapEvents({
+        moveend: (event) => {
+            if (!onChange)
+                return;
+            const bounds = event.target.getBounds();
+            onChange({
+                north: bounds.getNorth(),
+                south: bounds.getSouth(),
+                east: bounds.getEast(),
+                west: bounds.getWest(),
+            });
+        },
+        zoomend: (event) => {
+            if (!onChange)
+                return;
+            const bounds = event.target.getBounds();
+            onChange({
+                north: bounds.getNorth(),
+                south: bounds.getSouth(),
+                east: bounds.getEast(),
+                west: bounds.getWest(),
+            });
+        },
+    });
+    return null;
+}
+export default function AdminMapInner({ clusters, selectedCluster, onClusterClick, showHeatmap = false, heatPoints, onMapBoundsChange, }: AdminMapProps) {
     const [mounted, setMounted] = useState(false);
     const { theme } = useTheme();
     const isDark = theme === "dark";
@@ -35,22 +75,17 @@ export default function AdminMapInner({ clusters, selectedCluster, onClusterClic
         number,
         number
     ]);
-    const heatPoints: [
+    const fallbackHeatPoints: [
         number,
         number,
         number
-    ][] = clusters.flatMap((c) => Array(c.count)
-        .fill(null)
-        .map(() => [
-        c.latitude + (Math.random() - 0.5) * 0.001,
-        c.longitude + (Math.random() - 0.5) * 0.001,
-        Math.min(c.count / 3, 5),
-    ] as [
+    ][] = clusters.map((c) => [c.latitude, c.longitude, Math.max(1, c.weighted_score ?? c.count)] as [
         number,
         number,
         number
-    ]));
-    return (<MapContainer center={[PAYATAS_CENTER.lat, PAYATAS_CENTER.lng]} zoom={15} className="w-full h-full" zoomControl={false}>
+    ]);
+    return (<MapContainer center={[PAYATAS_CENTER.lat, PAYATAS_CENTER.lng]} zoom={15} className="w-full h-full" zoomControl={true} keyboard={true}>
+      <MapBoundsTracker onChange={onMapBoundsChange}/>
       <TileLayer key={theme} attribution='&copy; <a href="https://carto.com/">CARTO</a>' url={isDark
             ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"}/>
@@ -64,7 +99,7 @@ export default function AdminMapInner({ clusters, selectedCluster, onClusterClic
         }}/>
 
       
-      <HeatmapLayer points={heatPoints} visible={showHeatmap}/>
+      <HeatmapLayer points={heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints} visible={showHeatmap}/>
 
       
       {clusters.map((cluster, i) => (<CircleMarker key={i} center={[cluster.latitude, cluster.longitude]} radius={getClusterRadius(cluster.count)} pathOptions={{

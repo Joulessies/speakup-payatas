@@ -4,6 +4,7 @@ import type { ReportAction } from "@/types";
 type WorkflowStatus = "pending" | "verified" | "in_progress" | "resolved";
 interface MockReport {
     id: string;
+    receipt_id?: string;
     reporter_hash: string;
     category: string;
     description: string;
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     seedIfNeeded();
     try {
         const body = await request.json();
-        const { reporter_hash, category, description, latitude, longitude, severity } = body;
+        const { reporter_hash, receipt_id, category, description, latitude, longitude, severity } = body;
         if (!reporter_hash || !category || !latitude || !longitude) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
         }
         const report = {
             id: crypto.randomUUID(),
+            receipt_id: typeof receipt_id === "string" ? receipt_id : undefined,
             reporter_hash,
             category,
             description: description || "",

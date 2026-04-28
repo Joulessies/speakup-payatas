@@ -10,6 +10,7 @@ import { Search, Loader2, FileWarning, Shield, ThumbsUp, Send, Eye, Wrench, } fr
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 interface TrackedReport {
     id: string;
+    receipt_id?: string;
     category: string;
     description: string;
     severity: number;
@@ -51,39 +52,39 @@ export default function TrackPage() {
     const { theme } = useTheme();
     const { t } = useLanguage();
     const isDark = theme === "dark";
-    const [hash, setHash] = useState("");
+    const [queryInput, setQueryInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [reports, setReports] = useState<TrackedReport[] | null>(null);
     const [confirmations, setConfirmations] = useState<Record<string, number>>({});
     const [confirming, setConfirming] = useState<string | null>(null);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [lastQuery, setLastQuery] = useState("");
-    const normalizeHashInput = (value: string) => value
+    const normalizeInput = (value: string) => value
         .trim()
         .replaceAll("`", "")
         .replace("…", "")
-        .replace(/\s+/g, "")
-        .toLowerCase();
+        .replace(/\s+/g, "");
     const handleUseMyHash = async () => {
         const generated = await generateReporterHash(getDeviceId());
-        setHash(generated.slice(0, 12));
+        setQueryInput(generated.slice(0, 12));
         setSearchError(null);
     };
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        const normalizedHash = normalizeHashInput(hash);
-        if (!normalizedHash)
+        const normalizedQuery = normalizeInput(queryInput);
+        if (!normalizedQuery)
             return;
-        if (normalizedHash.length < 8) {
+        const looksLikeReceipt = normalizedQuery.toUpperCase().startsWith("SPK-");
+        if (!looksLikeReceipt && normalizedQuery.length < 8) {
             setSearchError(t.trackMinCharsError);
             setReports(null);
             return;
         }
         setSearchError(null);
-        setLastQuery(normalizedHash);
+        setLastQuery(normalizedQuery);
         setLoading(true);
         try {
-            const res = await fetch(`/api/track?hash=${encodeURIComponent(normalizedHash)}`);
+            const res = await fetch(`/api/track?q=${encodeURIComponent(normalizedQuery)}`);
             if (!res.ok) {
                 throw new Error("Track search failed");
             }
@@ -142,8 +143,8 @@ export default function TrackPage() {
         <Card className={`mb-6 ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
           <CardContent className="p-4 space-y-3">
             <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
-              <Input value={hash} onChange={(e) => setHash(e.target.value)} placeholder={t.trackPlaceholder} className={`font-mono text-sm ${isDark ? "bg-white/[0.06] border-white/10 text-white placeholder:text-white/30" : "bg-white border-gray-200"}`}/>
-              <Button type="submit" disabled={loading || !normalizeHashInput(hash)} className="w-full shrink-0 sm:w-auto">
+              <Input value={queryInput} onChange={(e) => setQueryInput(e.target.value)} placeholder={t.trackPlaceholder} className={`font-mono text-sm ${isDark ? "bg-white/[0.06] border-white/10 text-white placeholder:text-white/30" : "bg-white border-gray-200"}`}/>
+              <Button type="submit" disabled={loading || !normalizeInput(queryInput)} className="w-full shrink-0 sm:w-auto">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : t.trackSearch}
               </Button>
             </form>
@@ -154,8 +155,8 @@ export default function TrackPage() {
             : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800"}`}>
                 {t.trackUseMyId}
               </button>
-              {hash && (<button type="button" onClick={() => {
-                setHash("");
+              {queryInput && (<button type="button" onClick={() => {
+                setQueryInput("");
                 setReports(null);
                 setSearchError(null);
                 setLastQuery("");
@@ -213,6 +214,9 @@ export default function TrackPage() {
                             hour: "2-digit", minute: "2-digit",
                         })}
                           </CardDescription>
+                          {report.receipt_id && (<p className={`mt-1 text-[10px] font-mono ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                              Receipt: {report.receipt_id}
+                            </p>)}
                         </CardHeader>
 
                         <CardContent className="px-4 pb-4 space-y-3">

@@ -1,5 +1,6 @@
 export interface Report {
     id?: string;
+    receipt_id?: string;
     reporter_hash: string;
     category: ReportCategory;
     description: string;

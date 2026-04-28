@@ -3,16 +3,24 @@ import { mockReports, seedIfNeeded } from "../reports/route";
 export async function GET(request: Request) {
     seedIfNeeded();
     const { searchParams } = new URL(request.url);
-    const hash = searchParams.get("hash")?.trim();
-    if (!hash) {
-        return NextResponse.json({ error: "Missing hash parameter" }, { status: 400 });
+    const query = (searchParams.get("q") ?? searchParams.get("hash"))?.trim();
+    if (!query) {
+        return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
     }
+    const normalizedQuery = query.toLowerCase();
     const matched = mockReports
-        .filter((r) => r.reporter_hash === hash ||
-        r.reporter_hash.startsWith(hash) ||
-        hash.startsWith(r.reporter_hash.slice(0, 12)))
+        .filter((r) => {
+        const hash = r.reporter_hash.toLowerCase();
+        const receipt = r.receipt_id?.toLowerCase() ?? "";
+        return (hash === normalizedQuery ||
+            hash.startsWith(normalizedQuery) ||
+            normalizedQuery.startsWith(hash.slice(0, 12)) ||
+            (receipt.length > 0 &&
+                (receipt === normalizedQuery || receipt.startsWith(normalizedQuery))));
+    })
         .map((r) => ({
         id: r.id,
+        receipt_id: r.receipt_id,
         category: r.category,
         description: r.description,
         severity: r.severity,
