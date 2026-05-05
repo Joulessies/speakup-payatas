@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { useLanguage } from "@/components/language-provider";
 import TrendChart from "@/components/trend-chart";
 import { Loader2, TrendingUp, AlertTriangle, Zap, BarChart3, MapPin, ArrowUpRight, } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +26,30 @@ interface AnalyticsData {
     anomaly_count: number;
     total_reports: number;
 }
+
+/** Accepts API success bodies and normalizes missing fields so the UI never calls .reduce on undefined. */
+function normalizeAnalyticsResponse(value: unknown): AnalyticsData | null {
+    if (!value || typeof value !== "object") return null;
+    const o = value as Record<string, unknown>;
+    const trendRaw = o.trend_data;
+    const clustersRaw = o.ranked_clusters;
+    const catRaw = o.category_distribution;
+    if (!Array.isArray(trendRaw) || !Array.isArray(clustersRaw)) return null;
+    const category_distribution =
+        catRaw !== null && typeof catRaw === "object" && !Array.isArray(catRaw)
+            ? (catRaw as Record<string, number>)
+            : {};
+    const anomaly_count = typeof o.anomaly_count === "number" ? o.anomaly_count : 0;
+    const total_reports = typeof o.total_reports === "number" ? o.total_reports : 0;
+    return {
+        trend_data: trendRaw as TrendPoint[],
+        ranked_clusters: clustersRaw as RankedCluster[],
+        category_distribution,
+        anomaly_count,
+        total_reports,
+    };
+}
+
 const URGENCY_COLORS = {
     critical: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20", dot: "bg-red-500" },
     high: { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20", dot: "bg-orange-500" },
@@ -35,19 +58,39 @@ const URGENCY_COLORS = {
 };
 export default function AnalyticsPage() {
     const { theme } = useTheme();
-    const { t } = useLanguage();
     const isDark = theme === "dark";
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         (async () => {
             try {
                 const res = await fetch("/api/analytics", { method: "POST" });
-                const json = await res.json();
-                setData(json);
+                const json: unknown = await res.json();
+                if (!res.ok) {
+                    const msg = json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string"
+                        ? (json as { error: string }).error
+                        : `Request failed (${res.status})`;
+                    setErrorMessage(msg);
+                    setData(null);
+                    return;
+                }
+                const normalized = normalizeAnalyticsResponse(json);
+                if (!normalized) {
+                    const msg = json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string"
+                        ? (json as { error: string }).error
+                        : "Invalid analytics response from server.";
+                    setErrorMessage(msg);
+                    setData(null);
+                    return;
+                }
+                setErrorMessage(null);
+                setData(normalized);
             }
             catch (err) {
                 console.error("Analytics fetch failed:", err);
+                setErrorMessage(err instanceof Error ? err.message : "Network error");
+                setData(null);
             }
             finally {
                 setLoading(false);
@@ -60,13 +103,22 @@ export default function AnalyticsPage() {
       </div>);
     }
     if (!data) {
-        return (<div className={`flex items-center justify-center flex-1 ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        return (<div className={`flex flex-col items-center justify-center flex-1 gap-2 px-4 ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
         <p className={isDark ? "text-white/40" : "text-gray-400"}>Failed to load analytics.</p>
+        {errorMessage && (
+          <p className={`text-sm text-center max-w-md ${isDark ? "text-red-300/80" : "text-red-600"}`}>
+            {errorMessage}
+          </p>
+        )}
       </div>);
     }
-    const totalRecent = data.trend_data.reduce((s, d) => s + d.count, 0);
-    const topCategory = Object.entries(data.category_distribution).sort((a, b) => b[1] - a[1])[0];
-    const anomalyClusters = data.ranked_clusters.filter((c) => c.anomaly.isAnomaly);
+    const trendSeries = Array.isArray(data.trend_data) ? data.trend_data : [];
+    const rankedClustersSafe = Array.isArray(data.ranked_clusters) ? data.ranked_clusters : [];
+    const categoryDistributionSafe =
+        data.category_distribution && typeof data.category_distribution === "object" ? data.category_distribution : {};
+    const totalRecent = trendSeries.reduce((s, d) => s + (typeof d?.count === "number" ? d.count : 0), 0);
+    const topCategory = Object.entries(categoryDistributionSafe).sort((a, b) => b[1] - a[1])[0];
+    const anomalyClusters = rankedClustersSafe.filter((c) => c?.anomaly?.isAnomaly);
     return (<div className={`flex-1 overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
       <div className="max-w-6xl mx-auto px-4 py-6 pb-24 md:px-8 md:py-10 space-y-6">
         
@@ -104,7 +156,7 @@ export default function AnalyticsPage() {
           {[
             { icon: BarChart3, label: "Total Reports", value: data.total_reports },
             { icon: TrendingUp, label: "Last 14 Days", value: totalRecent },
-            { icon: Zap, label: "Hotspots", value: data.ranked_clusters.length },
+            { icon: Zap, label: "Hotspots", value: rankedClustersSafe.length },
             { icon: AlertTriangle, label: "Anomalies", value: data.anomaly_count },
         ].map((stat) => (<div key={stat.label} className={`flex flex-col gap-2 p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
               <stat.icon className={`h-4 w-4 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
@@ -128,7 +180,7 @@ export default function AnalyticsPage() {
                   Top: {topCategory[0]} ({topCategory[1]})
                 </Badge>)}
             </div>
-            <TrendChart data={data.trend_data} isDark={isDark}/>
+            <TrendChart data={trendSeries} isDark={isDark}/>
           </div>
 
           
@@ -137,7 +189,7 @@ export default function AnalyticsPage() {
               Category Distribution
             </h2>
             <div className="space-y-2.5">
-              {Object.entries(data.category_distribution)
+              {Object.entries(categoryDistributionSafe)
             .sort((a, b) => b[1] - a[1])
             .map(([cat, count]) => {
             const pct = data.total_reports > 0 ? Math.round((count / data.total_reports) * 100) : 0;
@@ -164,14 +216,14 @@ export default function AnalyticsPage() {
               Urgency Rankings
             </h2>
             <Badge variant="outline" className={`text-[10px] ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-600"}`}>
-              {data.ranked_clusters.length} clusters
+              {rankedClustersSafe.length} clusters
             </Badge>
           </div>
           <p className={`text-xs mb-4 ${isDark ? "text-white/35" : "text-gray-500"}`}>
             score = severity × density × recency (72h half-life)
           </p>
           <div className="space-y-2">
-            {data.ranked_clusters.map((cluster, i) => {
+            {rankedClustersSafe.map((cluster, i) => {
             const colors = URGENCY_COLORS[cluster.urgency.label];
             const topCat = Object.entries(cluster.category_breakdown).sort((a, b) => b[1] - a[1])[0];
             return (<div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${cluster.anomaly.isAnomaly

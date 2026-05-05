@@ -1,26 +1,30 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { PAYATAS_CENTER, PAYATAS_BOUNDARY } from "@/lib/payatas-boundary";
+import { Circle, GoogleMap, InfoWindow, Polygon } from "@react-google-maps/api";
+import { PAYATAS_CENTER } from "@/lib/payatas-boundary";
+import {
+    clusterFillColor,
+    clusterRadiusMeters,
+    getGoogleMapsApiKey,
+    googleMapPublicPageOptions,
+    payatasBoundaryPath,
+} from "@/lib/payatas-google-maps";
+import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
 import type { ClusterResult } from "@/types";
-function getClusterColor(count: number): string {
-    if (count >= 15)
-        return "#ef4444";
-    if (count >= 10)
-        return "#f97316";
-    if (count >= 5)
-        return "#eab308";
-    return "#22c55e";
-}
-function getClusterRadius(count: number): number {
-    return Math.min(8 + count * 2.5, 40);
-}
-export default function MapInner() {
+import { useTheme } from "./theme-provider";
+import MapsMissingKey from "./maps-missing-key";
+
+function MapInnerLoaded() {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
+    const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
     const [clusters, setClusters] = useState<ClusterResult[]>([]);
     const [totalReports, setTotalReports] = useState(0);
     const [noiseCount, setNoiseCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [popupIndex, setPopupIndex] = useState<number | null>(null);
+    const boundaryPath = payatasBoundaryPath();
     useEffect(() => {
         (async () => {
             try {
@@ -38,23 +42,24 @@ export default function MapInner() {
             }
         })();
     }, []);
-    const boundaryLatLng = PAYATAS_BOUNDARY.map(([lng, lat]) => [lat, lng] as [
-        number,
-        number
-    ]);
-    return (<div className="relative w-full h-full">
+    if (loadError) {
+        return (<div className="flex h-full w-full items-center justify-center bg-muted/40">
+          <p className="text-sm text-destructive">Could not load Google Maps.</p>
+        </div>);
+    }
+    if (!isLoaded) {
+        return <div className="h-full w-full bg-muted/30 animate-pulse"/>;
+    }
+    return (<div className="relative h-full w-full">
       
-      <div className="absolute top-4 left-4 z-[1000] bg-black/80 backdrop-blur-sm text-white rounded-xl px-4 py-3 space-y-1 text-sm border border-white/10">
-        <p className="font-semibold text-base tracking-tight">
-          SpeakUp Payatas
-        </p>
+      <div className="absolute top-4 left-4 z-[1] rounded-xl border border-white/10 bg-black/80 px-4 py-3 text-sm text-white backdrop-blur-sm space-y-1">
+        <p className="text-base font-semibold tracking-tight">SpeakUp Payatas</p>
         {loading ? (<p className="text-white/60">Loading clusters…</p>) : (<>
             <p>
               <span className="text-white/60">Reports:</span> {totalReports}
             </p>
             <p>
-              <span className="text-white/60">Hotspots:</span>{" "}
-              {clusters.length}
+              <span className="text-white/60">Hotspots:</span> {clusters.length}
             </p>
             <p>
               <span className="text-white/60">Scattered:</span> {noiseCount}
@@ -63,52 +68,63 @@ export default function MapInner() {
       </div>
 
       
-      <div className="absolute bottom-6 left-4 z-[1000] bg-black/80 backdrop-blur-sm text-white rounded-xl px-4 py-3 space-y-1.5 text-xs border border-white/10">
-        <p className="font-medium text-sm">Density</p>
+      <div className="absolute bottom-6 left-4 z-[1] rounded-xl border border-white/10 bg-black/80 px-4 py-3 text-xs text-white backdrop-blur-sm space-y-1.5">
+        <p className="text-sm font-medium">Density</p>
         {[
             { color: "#22c55e", label: "Low (< 5)" },
             { color: "#eab308", label: "Medium (5-9)" },
             { color: "#f97316", label: "High (10-14)" },
             { color: "#ef4444", label: "Critical (15+)" },
         ].map((item) => (<div key={item.color} className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}/>
+            <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: item.color }}/>
             {item.label}
           </div>))}
       </div>
 
-      <MapContainer center={[PAYATAS_CENTER.lat, PAYATAS_CENTER.lng]} zoom={15} className="w-full h-full" zoomControl={false}>
-        <TileLayer attribution='&copy; <a href="https://carto.com/">CARTO</a>' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"/>
+      <GoogleMap mapContainerClassName="h-full w-full" center={PAYATAS_CENTER} zoom={15} options={googleMapPublicPageOptions(isDark)} onClick={() => setPopupIndex(null)}>
+        <Polygon paths={boundaryPath} options={{
+                strokeColor: "#6366f1",
+                strokeWeight: 0,
+                strokeOpacity: 0,
+                fillColor: "#6366f1",
+                fillOpacity: 0.05,
+            }}/>
 
-        
-        <Polygon positions={boundaryLatLng} pathOptions={{
-            color: "#6366f1",
-            weight: 2,
-            fillColor: "#6366f1",
-            fillOpacity: 0.05,
-            dashArray: "6 4",
-        }}/>
+        {clusters.map((cluster, i) => {
+            const fill = clusterFillColor(cluster.count);
+            const radius = clusterRadiusMeters(cluster.count);
+            return (<Circle key={i} center={{ lat: cluster.latitude, lng: cluster.longitude }} radius={radius} options={{
+                    fillColor: fill,
+                    fillOpacity: 0.7,
+                    strokeOpacity: 0,
+                    strokeWeight: 0,
+                }} onClick={() => setPopupIndex(i)}/>);
+        })}
 
-        
-        {clusters.map((cluster, i) => (<CircleMarker key={i} center={[cluster.latitude, cluster.longitude]} radius={getClusterRadius(cluster.count)} pathOptions={{
-                fillColor: getClusterColor(cluster.count),
-                fillOpacity: 0.7,
-                color: "#fff",
-                weight: 1.5,
-            }}>
-            <Popup>
-              <div className="text-sm space-y-1 min-w-[140px]">
-                <p className="font-semibold">
-                  {cluster.count} report{cluster.count !== 1 ? "s" : ""}
-                </p>
-                {Object.entries(cluster.category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs text-gray-600">
-                      {cat}: {count}
-                    </p>))}
-                <p className="text-xs text-gray-400 font-mono">
-                  {cluster.latitude.toFixed(5)}, {cluster.longitude.toFixed(5)}
-                </p>
-              </div>
-            </Popup>
-          </CircleMarker>))}
-      </MapContainer>
+        {popupIndex !== null && clusters[popupIndex] && (<InfoWindow position={{
+                lat: clusters[popupIndex].latitude,
+                lng: clusters[popupIndex].longitude,
+            }} onCloseClick={() => setPopupIndex(null)}>
+            <div className="min-w-[140px] space-y-1 text-sm">
+              <p className="font-semibold">
+                {clusters[popupIndex].count} report{clusters[popupIndex].count !== 1 ? "s" : ""}
+              </p>
+              {Object.entries(clusters[popupIndex].category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs text-gray-600">
+                    {cat}: {count}
+                  </p>))}
+              <p className="font-mono text-xs text-gray-400">
+                {clusters[popupIndex].latitude.toFixed(5)},{" "}
+                {clusters[popupIndex].longitude.toFixed(5)}
+              </p>
+            </div>
+          </InfoWindow>)}
+      </GoogleMap>
     </div>);
+}
+
+export default function MapInner() {
+    if (!getGoogleMapsApiKey()) {
+        return <MapsMissingKey/>;
+    }
+    return <MapInnerLoaded/>;
 }

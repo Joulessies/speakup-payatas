@@ -8,5 +8,7 @@ const MapInner = dynamic(() => import("./map-inner"), {
     </div>),
 });
 export default function MapComponent() {
-    return <MapInner />;
+    return (<div className="flex min-h-0 flex-1 flex-col h-full w-full">
+      <MapInner/>
+    </div>);
 }

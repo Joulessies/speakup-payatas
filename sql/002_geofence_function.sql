@@ -15,8 +15,6 @@ DECLARE
   payatas_boundary GEOMETRY;
   test_point       GEOMETRY;
 BEGIN
-  -- Approximate boundary polygon of Payatas, Quezon City
-  -- GeoJSON coordinates: [longitude, latitude]
   payatas_boundary := ST_SetSRID(
     ST_GeomFromGeoJSON('{
       "type": "Polygon",
@@ -45,7 +43,6 @@ BEGIN
 
   test_point := ST_SetSRID(ST_MakePoint(lng, lat), 4326);
 
-  -- 200m buffer around the boundary to account for GPS drift
   RETURN ST_DWithin(
     test_point::GEOGRAPHY,
     payatas_boundary::GEOGRAPHY,

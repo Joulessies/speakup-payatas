@@ -1,7 +1,8 @@
-export type UserRole = "admin" | "user";
+export type UserRole = "admin" | "staff" | "user";
 export interface AuthPayload {
     role: UserRole;
     username: string;
+    phone?: string;
     exp: number;
 }
 export const AUTH_COOKIE_NAME = "speakup_auth";
@@ -24,7 +25,12 @@ export async function signAuthPayload(payload: AuthPayload) {
 export async function verifyAuthToken(token: string | undefined | null) {
     if (!token)
         return null;
-    const [encoded, signature] = token.split(".");
+    // Payload is URI-encoded JSON and may contain "." (e.g. email domains); signature is last segment after final "."
+    const dot = token.lastIndexOf(".");
+    if (dot <= 0)
+        return null;
+    const encoded = token.slice(0, dot);
+    const signature = token.slice(dot + 1);
     if (!encoded || !signature)
         return null;
     const expected = await digestHex(`${getAuthSecret()}.${encoded}`);
@@ -47,6 +53,10 @@ export function getAllowedCredentials() {
         admin: {
             username: process.env.ADMIN_USERNAME || "admin",
             password: process.env.ADMIN_PASSWORD || "admin123",
+        },
+        staff: {
+            username: process.env.STAFF_USERNAME || "staff",
+            password: process.env.STAFF_PASSWORD || "staff123",
         },
         user: {
             username: process.env.USER_USERNAME || "user",

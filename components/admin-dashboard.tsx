@@ -5,13 +5,16 @@ import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import VerificationPanel from "./verification-panel";
 import type { ClusterResult } from "@/types";
+
 const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     ssr: false,
     loading: () => (<div className="flex items-center justify-center w-full h-full bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/30"/>
     </div>),
 });
+
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
     fire: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
@@ -21,6 +24,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     environmental: <Leaf className="h-3.5 w-3.5 text-emerald-400"/>,
     other: <CircleHelp className="h-3.5 w-3.5 text-gray-400"/>,
 };
+
 const ALL_CATEGORIES = [
     "flooding",
     "fire",
@@ -30,6 +34,7 @@ const ALL_CATEGORIES = [
     "environmental",
     "other",
 ];
+
 type ClusterWithReports = ClusterResult & {
     weighted_score?: number;
     reports?: {
@@ -44,6 +49,7 @@ type ClusterWithReports = ClusterResult & {
         description: string;
     }[];
 };
+
 type PlaybackFrame = {
     key: string;
     label: string;
@@ -56,6 +62,7 @@ type PlaybackFrame = {
         number
     ][];
 };
+
 function getDensityLabel(count: number) {
     if (count >= 15)
         return { text: "Critical", color: "bg-red-500" };
@@ -65,6 +72,7 @@ function getDensityLabel(count: number) {
         return { text: "Medium", color: "bg-amber-500" };
     return { text: "Low", color: "bg-emerald-500" };
 }
+
 export default function AdminDashboard() {
     const { theme } = useTheme();
     const { t } = useLanguage();
@@ -168,7 +176,7 @@ export default function AdminDashboard() {
     const loadWorkflowReports = async () => {
         setWorkflowLoading(true);
         try {
-            const res = await fetch("/api/reports?limit=20");
+            const res = await fetch("/api/reports?limit=500");
             const data = await res.json();
             const reports = data.reports ?? [];
             setWorkflowReports(reports);
@@ -276,7 +284,7 @@ export default function AdminDashboard() {
             setSelectedCluster(null);
         }
     }, [filteredClusters.length, selectedCluster]);
-    return (<div className="relative flex flex-1 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-3rem)] overflow-hidden">
+    return (<div className="relative flex flex-col h-full overflow-hidden">
       
       <div className="absolute inset-0 z-0">
         <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={setSelectedCluster} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} onMapBoundsChange={setMapBounds}/>
@@ -427,6 +435,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
     setNoteDrafts: Dispatch<SetStateAction<Record<string, string>>>;
     handleWorkflowUpdate: (reportId: string) => Promise<void>;
 }) {
+    const isAdmin = true; // Temporary mock, ideally pass from parent
+
     const exportCSV = () => {
         const header = "Cluster,Latitude,Longitude,Report Count,Top Category,Density\n";
         const rows = clusters.map((c, i) => {
@@ -442,7 +452,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         a.click();
         URL.revokeObjectURL(url);
     };
-    return (<div className="flex flex-col gap-4 p-4 md:gap-5 md:p-5">
+    return (<div className="flex flex-col gap-4 p-4 md:gap-5 md:p-5 pb-24 md:pb-24">
       
       <div>
         <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
@@ -626,57 +636,9 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
       
       <div>
         <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-          Status Workflow
+          Verification Queue
         </h2>
-        {workflowLoading ? (<div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin"/>
-            <span className="text-xs opacity-70">Loading workflow queue…</span>
-          </div>) : workflowReports.length === 0 ? (<p className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>No reports available.</p>) : (<div className="space-y-2">
-            {workflowReports.map((report) => {
-                const latestAction = report.action_history?.[report.action_history.length - 1];
-                return (<div key={report.id} className={`rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.01]"}`}>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="min-w-0">
-                      <p className={`text-xs font-semibold capitalize ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                        {report.category}
-                      </p>
-                      <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                        {report.description || "No description"}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className={isDark ? "border-white/10 text-white/55" : ""}>
-                      {report.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2">
-                    <select value={statusDrafts[report.id] ?? report.status} onChange={(e) => setStatusDrafts((prev) => ({
-                        ...prev,
-                        [report.id]: e.target.value as "pending" | "verified" | "in_progress" | "resolved",
-                    }))} className={`h-8 rounded-lg px-2 text-xs border ${isDark
-                        ? "bg-white/[0.05] border-white/10 text-white"
-                        : "bg-white border-gray-200 text-gray-700"}`}>
-                      <option value="pending">Pending</option>
-                      <option value="verified">Verified</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                    </select>
-                    <input value={noteDrafts[report.id] ?? ""} onChange={(e) => setNoteDrafts((prev) => ({ ...prev, [report.id]: e.target.value }))} placeholder="Action note (optional)" className={`h-8 rounded-lg px-2 text-xs border ${isDark
-                        ? "bg-white/[0.05] border-white/10 text-white placeholder:text-white/30"
-                        : "bg-white border-gray-200 text-gray-700 placeholder:text-gray-400"}`}/>
-                    <button type="button" onClick={() => handleWorkflowUpdate(report.id)} disabled={workflowSaving === report.id} className={`h-8 rounded-lg text-xs font-medium transition-colors ${isDark
-                        ? "bg-white/[0.07] text-white/70 hover:bg-white/[0.12]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
-                      {workflowSaving === report.id ? "Saving..." : "Update status"}
-                    </button>
-                  </div>
-
-                  {latestAction && (<p className={`mt-2 text-[10px] ${isDark ? "text-white/30" : "text-gray-500"}`}>
-                      Last action: {latestAction.note}
-                    </p>)}
-                </div>);
-            })}
-          </div>)}
+        <VerificationPanel role={isAdmin ? "admin" : "staff"} />
       </div>
     </div>);
 }

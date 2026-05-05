@@ -1,21 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, useMapEvents, } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { PAYATAS_CENTER, PAYATAS_BOUNDARY } from "@/lib/payatas-boundary";
+
+import { useEffect, useMemo, useState } from "react";
+import { Circle, GoogleMap, HeatmapLayer, InfoWindow, Polygon } from "@react-google-maps/api";
+import { PAYATAS_CENTER } from "@/lib/payatas-boundary";
+import {
+    clusterFillColor,
+    clusterRadiusMeters,
+    getGoogleMapsApiKey,
+    googleMapAdminOptions,
+    payatasBoundaryPath,
+} from "@/lib/payatas-google-maps";
+import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
 import { useTheme } from "./theme-provider";
-import HeatmapLayer from "./heatmap-layer";
+import MapsMissingKey from "./maps-missing-key";
 import type { ClusterResult } from "@/types";
+
 interface AdminMapProps {
     clusters: (ClusterResult & { weighted_score?: number })[];
     selectedCluster: number | null;
-    onClusterClick: (index: number) => void;
+    onClusterClick: (index: number | null) => void;
     showHeatmap?: boolean;
-    heatPoints?: [
-        number,
-        number,
-        number
-    ][];
+    heatPoints?: [number, number, number][];
     onMapBoundsChange?: (bounds: {
         north: number;
         south: number;
@@ -23,110 +28,115 @@ interface AdminMapProps {
         west: number;
     }) => void;
 }
-function getClusterColor(count: number): string {
-    if (count >= 15)
-        return "#ef4444";
-    if (count >= 10)
-        return "#f97316";
-    if (count >= 5)
-        return "#eab308";
-    return "#22c55e";
-}
-function getClusterRadius(count: number): number {
-    return Math.min(8 + count * 2.5, 40);
-}
-function MapBoundsTracker({ onChange }: {
-    onChange?: AdminMapProps["onMapBoundsChange"];
-}) {
-    useMapEvents({
-        moveend: (event) => {
-            if (!onChange)
-                return;
-            const bounds = event.target.getBounds();
-            onChange({
-                north: bounds.getNorth(),
-                south: bounds.getSouth(),
-                east: bounds.getEast(),
-                west: bounds.getWest(),
-            });
-        },
-        zoomend: (event) => {
-            if (!onChange)
-                return;
-            const bounds = event.target.getBounds();
-            onChange({
-                north: bounds.getNorth(),
-                south: bounds.getSouth(),
-                east: bounds.getEast(),
-                west: bounds.getWest(),
-            });
-        },
-    });
-    return null;
-}
-export default function AdminMapInner({ clusters, selectedCluster, onClusterClick, showHeatmap = false, heatPoints, onMapBoundsChange, }: AdminMapProps) {
-    const [mounted, setMounted] = useState(false);
+
+function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHeatmap = false, heatPoints, onMapBoundsChange, }: AdminMapProps) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    useEffect(() => setMounted(true), []);
-    if (!mounted)
-        return null;
-    const boundaryLatLng = PAYATAS_BOUNDARY.map(([lng, lat]) => [lat, lng] as [
-        number,
-        number
-    ]);
-    const fallbackHeatPoints: [
-        number,
-        number,
-        number
-    ][] = clusters.map((c) => [c.latitude, c.longitude, Math.max(1, c.weighted_score ?? c.count)] as [
-        number,
-        number,
-        number
-    ]);
-    return (<MapContainer center={[PAYATAS_CENTER.lat, PAYATAS_CENTER.lng]} zoom={15} className="w-full h-full" zoomControl={true} keyboard={true}>
-      <MapBoundsTracker onChange={onMapBoundsChange}/>
-      <TileLayer key={theme} attribution='&copy; <a href="https://carto.com/">CARTO</a>' url={isDark
-            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"}/>
-
-      <Polygon positions={boundaryLatLng} pathOptions={{
-            color: isDark ? "#6366f1" : "#4f46e5",
-            weight: 2,
+    const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+    const boundaryPath = payatasBoundaryPath();
+    const fallbackHeatPoints: [number, number, number][] = useMemo(() => clusters.map((c) => [
+        c.latitude,
+        c.longitude,
+        Math.max(1, c.weighted_score ?? c.count),
+    ]), [clusters]);
+    const heatmapData = useMemo(() => {
+        const pts = heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints;
+        return pts.map(([lat, lng, weight]) => ({
+            location: { lat, lng },
+            weight,
+        }));
+    }, [heatPoints, fallbackHeatPoints]);
+    useEffect(() => {
+        if (!mapInstance || !onMapBoundsChange)
+            return;
+        const reportBounds = () => {
+            const b = mapInstance.getBounds();
+            if (!b)
+                return;
+            const ne = b.getNorthEast();
+            const sw = b.getSouthWest();
+            onMapBoundsChange({
+                north: ne.lat(),
+                south: sw.lat(),
+                east: ne.lng(),
+                west: sw.lng(),
+            });
+        };
+        reportBounds();
+        const idleListener = mapInstance.addListener("idle", reportBounds);
+        return () => idleListener.remove();
+    }, [mapInstance, onMapBoundsChange]);
+    if (loadError) {
+        return (<div className="flex h-full w-full items-center justify-center bg-muted/40">
+          <p className="text-sm text-destructive">Could not load Google Maps.</p>
+        </div>);
+    }
+    if (!isLoaded) {
+        return <div className="h-full w-full bg-muted/30 animate-pulse"/>;
+    }
+    const selected = selectedCluster !== null ? clusters[selectedCluster] : null;
+    return (<GoogleMap mapContainerClassName="h-full w-full" center={PAYATAS_CENTER} zoom={15} options={googleMapAdminOptions(isDark)} onLoad={setMapInstance} onUnmount={() => setMapInstance(null)}>
+      <Polygon paths={boundaryPath} options={{
+            strokeColor: isDark ? "#6366f1" : "#4f46e5",
+            strokeWeight: 0,
+            strokeOpacity: 0,
             fillColor: isDark ? "#6366f1" : "#4f46e5",
             fillOpacity: isDark ? 0.05 : 0.08,
-            dashArray: "6 4",
         }}/>
 
-      
-      <HeatmapLayer points={heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints} visible={showHeatmap}/>
+      {showHeatmap && heatmapData.length > 0 && (<HeatmapLayer data={heatmapData} options={{
+                radius: 45,
+                opacity: 0.75,
+                maxIntensity: 8,
+                gradient: [
+                    "rgba(34,197,94,0)",
+                    "rgba(34,197,94,0.45)",
+                    "rgba(234,179,8,0.55)",
+                    "rgba(249,115,22,0.65)",
+                    "rgba(239,68,68,0.85)",
+                    "rgba(220,38,38,1)",
+                ],
+            }}/>)}
 
-      
-      {clusters.map((cluster, i) => (<CircleMarker key={i} center={[cluster.latitude, cluster.longitude]} radius={getClusterRadius(cluster.count)} pathOptions={{
-                fillColor: getClusterColor(cluster.count),
-                fillOpacity: showHeatmap
-                    ? 0.3
-                    : selectedCluster === i
-                        ? 1
-                        : 0.65,
-                color: selectedCluster === i ? "#fff" : "rgba(255,255,255,0.5)",
-                weight: selectedCluster === i ? 2.5 : 1.5,
-            }} eventHandlers={{
-                click: () => onClusterClick(i),
-            }}>
-          <Popup>
-            <div className="text-sm space-y-1 min-w-[140px]">
+      {clusters.map((cluster, i) => {
+            const fill = clusterFillColor(cluster.count);
+            const radius = clusterRadiusMeters(cluster.count);
+            const selectedHere = selectedCluster === i;
+            return (<Circle key={i} center={{ lat: cluster.latitude, lng: cluster.longitude }} radius={radius} options={{
+                    fillColor: fill,
+                    fillOpacity: showHeatmap
+                        ? 0.3
+                        : selectedHere
+                            ? 1
+                            : 0.65,
+                    strokeOpacity: 0,
+                    strokeWeight: 0,
+                }} onClick={() => onClusterClick(i)}/>);
+        })}
+
+      {selected && (<InfoWindow position={{
+                lat: selected.latitude,
+                lng: selected.longitude,
+            }} onCloseClick={() => onClusterClick(null)}>
+            <div className="min-w-[140px] space-y-1 text-sm">
               <p className="font-semibold">
-                {cluster.count} report{cluster.count !== 1 ? "s" : ""}
+                {selected.count} report{selected.count !== 1 ? "s" : ""}
               </p>
-              {Object.entries(cluster.category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs text-gray-600 capitalize">
+              {Object.entries(selected.category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs capitalize text-gray-600">
                     {cat}: {count}
                   </p>))}
-              <p className="text-xs text-gray-400 font-mono">
-                {cluster.latitude.toFixed(5)}, {cluster.longitude.toFixed(5)}
+              <p className="font-mono text-xs text-gray-400">
+                {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
               </p>
             </div>
-          </Popup>
-        </CircleMarker>))}
-    </MapContainer>);
+          </InfoWindow>)}
+    </GoogleMap>);
+}
+
+export default function AdminMapInner(props: AdminMapProps) {
+    if (!getGoogleMapsApiKey()) {
+        return <MapsMissingKey label="Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for the admin map."/>;
+    }
+    return <AdminMapInnerLoaded {...props}/>;
 }

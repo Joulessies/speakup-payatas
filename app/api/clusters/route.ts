@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DBSCAN } from "density-clustering";
-import { mockReports, seedIfNeeded } from "../reports/route";
+import { fetchReportsBase } from "@/lib/server-db";
 const REF_LAT = 14.7055;
 const REF_LNG = 121.099;
 const DEG_TO_M_LAT = 111320;
@@ -75,7 +75,7 @@ function clusterReports(reports: ReportSummary[]) {
 }
 export async function POST(request: Request) {
     try {
-        seedIfNeeded();
+        const mockReports = await fetchReportsBase();
         let body: {
             window?: WindowKey;
             includePlayback?: boolean;

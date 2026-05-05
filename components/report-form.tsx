@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,17 @@ import { db } from "@/lib/db";
 import { generateReporterHash, getDeviceId } from "@/lib/crypto";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import type { ReportCategory, OfflineReport } from "@/types";
+import EmergencyReminder from "@/components/emergency-reminder";
+import { type ReportCategory, type OfflineReport, CATEGORY_LABELS } from "@/types";
+import { classifyReport } from "@/lib/classification";
+import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
+import { isWithinPayatas } from "@/lib/payatas-boundary";
+
+const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
+    ssr: false,
+    loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30"/>,
+});
+
 export default function ReportForm() {
     const DRAFT_KEY = "speakup.report.draft.v1";
     const DRAFT_TOAST_KEY = "speakup.report.draft.toast-shown.v1";
@@ -30,6 +41,7 @@ export default function ReportForm() {
     const [error, setError] = useState<string | null>(null);
     const [pendingCount, setPendingCount] = useState(0);
     const [category, setCategory] = useState<ReportCategory | "">("");
+    const [autoCategory, setAutoCategory] = useState(true);
     const [description, setDescription] = useState("");
     const [severity, setSeverity] = useState(3);
     const [latitude, setLatitude] = useState<number | null>(null);
@@ -128,13 +140,14 @@ export default function ReportForm() {
         icon: React.ReactNode;
         color: string;
     }[] = [
-        { key: "flooding", label: t.catFlooding, icon: <Droplets className="h-5 w-5"/>, color: "text-blue-400" },
-        { key: "fire", label: t.catFire, icon: <Flame className="h-5 w-5"/>, color: "text-orange-400" },
-        { key: "crime", label: t.catCrime, icon: <ShieldAlert className="h-5 w-5"/>, color: "text-red-400" },
-        { key: "infrastructure", label: t.catInfrastructure, icon: <Wrench className="h-5 w-5"/>, color: "text-amber-400" },
-        { key: "health", label: t.catHealth, icon: <HeartPulse className="h-5 w-5"/>, color: "text-pink-400" },
-        { key: "environmental", label: t.catEnvironmental, icon: <Leaf className="h-5 w-5"/>, color: "text-emerald-400" },
-        { key: "other", label: t.catOther, icon: <CircleHelp className="h-5 w-5"/>, color: "text-gray-400" },
+        { key: "drainage_flooding", label: CATEGORY_LABELS["drainage_flooding"], icon: <Droplets className="h-5 w-5"/>, color: "text-blue-400" },
+        { key: "fire_hazard", label: CATEGORY_LABELS["fire_hazard"], icon: <Flame className="h-5 w-5"/>, color: "text-orange-400" },
+        { key: "safety_concern", label: CATEGORY_LABELS["safety_concern"], icon: <ShieldAlert className="h-5 w-5"/>, color: "text-red-400" },
+        { key: "infrastructure", label: CATEGORY_LABELS["infrastructure"], icon: <Wrench className="h-5 w-5"/>, color: "text-amber-400" },
+        { key: "sanitation_health", label: CATEGORY_LABELS["sanitation_health"], icon: <HeartPulse className="h-5 w-5"/>, color: "text-pink-400" },
+        { key: "environmental", label: CATEGORY_LABELS["environmental"], icon: <Leaf className="h-5 w-5"/>, color: "text-emerald-400" },
+        { key: "noise_nuisance", label: CATEGORY_LABELS["noise_nuisance"], icon: <CircleHelp className="h-5 w-5"/>, color: "text-indigo-400" },
+        { key: "other", label: CATEGORY_LABELS["other"], icon: <CircleHelp className="h-5 w-5"/>, color: "text-gray-400" },
     ];
     const SEVERITY_CONFIG = [
         { value: 1, label: t.sevLow, color: "bg-emerald-500" },
@@ -143,6 +156,16 @@ export default function ReportForm() {
         { value: 4, label: t.sevHigh, color: "bg-orange-500" },
         { value: 5, label: t.sevCritical, color: "bg-red-500" },
     ];
+
+    useEffect(() => {
+        if (autoCategory && description.length > 5) {
+            const suggested = classifyReport(description);
+            if (suggested !== "other") {
+                setCategory(suggested);
+            }
+        }
+    }, [description, autoCategory]);
+
     useEffect(() => {
         const update = () => setOnline(navigator.onLine);
         window.addEventListener("online", update);
@@ -314,7 +337,11 @@ export default function ReportForm() {
             return;
         }
         if (latitude === null || longitude === null) {
-            setError(t.reportDetectGPS);
+            setError(getGoogleMapsApiKey() ? t.reportLocationRequired : t.reportDetectGPS);
+            return;
+        }
+        if (!isWithinPayatas(latitude, longitude)) {
+            setError(t.reportOutsideBoundary);
             return;
         }
         const duplicateNearby = await checkForDuplicateNearby();
@@ -393,6 +420,7 @@ export default function ReportForm() {
     };
     const resetForm = () => {
         setCategory("");
+        setAutoCategory(true);
         setDescription("");
         setSeverity(3);
         setLatitude(null);
@@ -453,7 +481,7 @@ export default function ReportForm() {
               <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
                 {CATEGORIES.map((cat) => {
                 const isSelected = category === cat.key;
-                return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => setCategory(cat.key)} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
+                return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
                         ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-indigo-50 ring-1 ring-indigo-200"
                         : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
                       <span className={isSelected ? cat.color : isDark ? "text-white/40" : "text-gray-400"}>
@@ -536,6 +564,15 @@ export default function ReportForm() {
                   {t.reportAccuracyLabel(Math.round(locationAccuracy))} · {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? t.reportAccuracyPoor : t.reportAccuracyGood}
                   {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? ` — ${t.reportRetryForBetterAccuracy}` : ""}
                 </p>)}
+              {getGoogleMapsApiKey() && (<>
+                  <ReportLocationPicker latitude={latitude} longitude={longitude} isDark={isDark} outsideBoundaryWarning={t.reportOutsideBoundary} onLocationChange={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                }} onAdjustPin={() => setLocationAccuracy(null)}/>
+                  <p className={`text-[10px] leading-snug ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                    {t.reportMapPickerHint}
+                  </p>
+                </>)}
             </div>
 
             
@@ -543,7 +580,10 @@ export default function ReportForm() {
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>)}
 
-            
+            <div className={`text-[10px] text-center px-2 py-1.5 rounded-lg border ${isDark ? "bg-red-500/10 border-red-500/20 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
+                ⚠️ False reporting or repeated spam may result in your account being blocked.
+            </div>
+
             <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin"/> : online ? <Send className="h-4 w-4"/> : <ShieldCheck className="h-4 w-4"/>}
               {submitting ? t.reportSubmitting : online ? t.reportSubmit : t.reportSaveOffline}
