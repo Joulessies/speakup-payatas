@@ -12,7 +12,7 @@ import { sendSemaphoreTransactionalSms } from "@/lib/semaphore";
 import { verifySmsOtp } from "@/lib/sms-otp";
 
 function getRedirectByRole(role: UserRole) {
-    return role === "admin" ? "/admin" : role === "staff" ? "/staff" : "/";
+    return role === "admin" ? "/admin/dashboard" : role === "staff" ? "/staff/dashboard" : "/dashboard";
 }
 
 function normalizeEmail(value: string) {

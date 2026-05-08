@@ -230,3 +230,24 @@ export async function updateAppUserById(
         throw new Error(error.message);
     return data as AppUserRow;
 }
+
+/**
+ * Update user password by user ID (used for password reset)
+ */
+export async function updateUserPassword(userId: string, newPassword: string): Promise<void> {
+    const supabase = getSupabaseAdmin();
+    if (newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters");
+    }
+    const password_hash = await hashPassword(newPassword);
+    const now = new Date().toISOString();
+    
+    const { error } = await supabase
+        .from("app_users")
+        .update({ password_hash, updated_at: now })
+        .eq("id", userId);
+    
+    if (error) {
+        throw new Error(error.message);
+    }
+}

@@ -3,6 +3,7 @@ import { useTheme } from "@/components/theme-provider";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { ShieldCheck, Database, Brain, AlertTriangle, Globe, Lock, Wifi, MapPin, BarChart3, Zap, } from "lucide-react";
+
 const TECH_STACK = [
     { name: "Next.js 16", desc: "React framework with App Router" },
     { name: "Supabase + PostGIS", desc: "PostgreSQL with spatial geography queries" },
@@ -12,6 +13,7 @@ const TECH_STACK = [
     { name: "density-clustering", desc: "DBSCAN implementation in JavaScript" },
     { name: "Leaflet", desc: "Interactive map visualization" },
 ];
+
 export default function AboutPage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";

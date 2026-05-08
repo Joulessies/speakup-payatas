@@ -510,6 +510,9 @@ export default function ReportForm() {
               <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
                 {t.reportPhoto}
               </Label>
+              <p className={`text-[10px] leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                Accepted formats: JPG, PNG, GIF • Max file size: 5MB • Images are automatically compressed for faster upload
+              </p>
               <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto}/>
               {photoPreview ? (<div className="relative w-full h-32 rounded-xl overflow-hidden">
                   <img src={photoPreview} alt="Evidence" className="w-full h-full object-cover"/>

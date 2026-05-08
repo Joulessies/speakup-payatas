@@ -49,38 +49,38 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #f5f1eb;
+  --foreground: #2d2a26;
+  --card: #faf8f5;
+  --card-foreground: #2d2a26;
+  --popover: #faf8f5;
+  --popover-foreground: #2d2a26;
+  --primary: #5c6b7c;
+  --primary-foreground: #faf8f5;
+  --secondary: #e8e2d9;
+  --secondary-foreground: #4a4640;
+  --muted: #e8e2d9;
+  --muted-foreground: #6b655d;
+  --accent: #d4cbbd;
+  --accent-foreground: #2d2a26;
+  --destructive: #c45c4a;
+  --border: #d4cbbd;
+  --input: #e8e2d9;
+  --ring: #8b9aad;
+  --chart-1: #7d9e7d;
+  --chart-2: #8b9aad;
+  --chart-3: #c49a6c;
+  --chart-4: #9e8b7d;
+  --chart-5: #8f7d9e;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ede8e0;
+  --sidebar-foreground: #2d2a26;
+  --sidebar-primary: #5c6b7c;
+  --sidebar-primary-foreground: #faf8f5;
+  --sidebar-accent: #e8e2d9;
+  --sidebar-accent-foreground: #4a4640;
+  --sidebar-border: #d4cbbd;
+  --sidebar-ring: #8b9aad;
 }
 
 .dark {
@@ -151,13 +151,13 @@
 :root:not(.dark) .backdrop-blur-xl input,
 :root:not(.dark) .backdrop-blur-xl textarea,
 :root:not(.dark) .backdrop-blur-xl [data-slot="select-trigger"] {
-  background: rgba(0, 0, 0, 0.04) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #1a1a1a !important;
+  background: rgba(232, 226, 217, 0.6) !important;
+  border-color: rgba(212, 203, 189, 0.8) !important;
+  color: #2d2a26 !important;
 }
 :root:not(.dark) .backdrop-blur-xl input::placeholder,
 :root:not(.dark) .backdrop-blur-xl textarea::placeholder {
-  color: rgba(0, 0, 0, 0.4) !important;
+  color: rgba(107, 101, 93, 0.6) !important;
 }
 
 main {
@@ -185,8 +185,11 @@ main {
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(107, 101, 93, 0.25);
   border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 101, 93, 0.4);
 }
 
 .no-scrollbar {

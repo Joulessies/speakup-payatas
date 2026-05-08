@@ -14,6 +14,7 @@ interface MyReport {
     verification_status: string;
     created_at: string;
     description: string;
+    receipt_id?: string;
 }
 
 export default function UserDashboard() {
@@ -111,9 +112,16 @@ export default function UserDashboard() {
                                         <p className={`text-xs truncate ${isDark ? "text-white/50" : "text-gray-500"}`}>
                                             {r.description || "No description"}
                                         </p>
-                                        <p className={`text-[10px] mt-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                                            {new Date(r.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
-                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {r.receipt_id && (
+                                                <code className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isDark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600"}`}>
+                                                    {r.receipt_id}
+                                                </code>
+                                            )}
+                                            <span className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                                {new Date(r.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
+                                            </span>
+                                        </div>
                                     </div>
                                     <ChevronRight className={`h-5 w-5 shrink-0 ${isDark ? "text-white/20" : "text-gray-300"}`} />
                                 </Link>

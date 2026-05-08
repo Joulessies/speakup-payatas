@@ -1,16 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Loader2, Mail, Lock, Eye, EyeOff, Smartphone } from "lucide-react";
+import { ShieldCheck, Loader2, Mail, Lock, Eye, EyeOff, Smartphone, KeyRound, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import EmergencyReminder from "@/components/emergency-reminder";
 import { getSupabaseBrowser } from "@/lib/supabase";
+import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
 
 type AuthMode = "login" | "register";
 type AuthMethod = "password" | "email_otp";
+type ForgotPasswordStep = "request" | "verify" | "reset" | "success";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -32,8 +35,32 @@ export default function LoginPage() {
     const [verifyingOtp, setVerifyingOtp] = useState(false);
     const [emailOtpPhone, setEmailOtpPhone] = useState("");
     const [otpEmail, setOtpEmail] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
+    
+    // Forgot password state
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotStep, setForgotStep] = useState<ForgotPasswordStep>("request");
+    const [forgotEmail, setForgotEmail] = useState("");
+    const [resetToken, setResetToken] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmNewPassword, setConfirmNewPassword] = useState("");
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+    const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(null);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
     const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+    
+    // Validate password in real-time during registration and password reset
+    useEffect(() => {
+        if ((mode === "register" && password) || (showForgotPassword && newPassword)) {
+            const pwd = showForgotPassword ? newPassword : password;
+            setPasswordValidation(validatePassword(pwd));
+        } else {
+            setPasswordValidation(null);
+        }
+    }, [password, newPassword, mode, showForgotPassword]);
     const normalizedRegisterPhone = registerPhone.replace(/\D/g, "").slice(-10);
     const normalizedEmailOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
     const mapOtpSendError = (message: string) => {
@@ -158,6 +185,97 @@ export default function LoginPage() {
         }
     };
 
+    const handleForgotPasswordRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setError(null);
+        
+        try {
+            if (!isValidEmail(forgotEmail)) {
+                throw new Error("Please enter a valid email address.");
+            }
+            
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: forgotEmail }),
+            });
+            
+            const data = await res.json();
+            if (!res.ok && data.error) {
+                throw new Error(data.error);
+            }
+            
+            setForgotSuccess(data.message || "Reset code sent to your registered mobile number.");
+            setForgotStep("verify");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to send reset code.");
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+    
+    const handleVerifyResetToken = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!/^\d{6}$/.test(resetToken)) {
+            setError("Please enter the 6-digit code from your SMS.");
+            return;
+        }
+        setForgotStep("reset");
+        setError(null);
+    };
+    
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setError(null);
+        
+        try {
+            if (newPassword !== confirmNewPassword) {
+                throw new Error("Passwords do not match.");
+            }
+            
+            const validation = validatePassword(newPassword);
+            if (!validation.isValid) {
+                throw new Error(validation.errors[0] || "Password does not meet requirements.");
+            }
+            
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: forgotEmail,
+                    token: resetToken,
+                    newPassword,
+                }),
+            });
+            
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to reset password.");
+            }
+            
+            setForgotStep("success");
+            setForgotSuccess(data.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to reset password.");
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+    
+    const resetForgotPassword = () => {
+        setShowForgotPassword(false);
+        setForgotStep("request");
+        setForgotEmail("");
+        setResetToken("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setForgotSuccess(null);
+        setError(null);
+        setPasswordValidation(null);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (method === "email_otp") {
@@ -171,12 +289,23 @@ export default function LoginPage() {
             if (!isValidEmail(email.trim())) {
                 throw new Error("Enter a valid email address.");
             }
+            
+            // Password validation for login (minimum 6 chars)
             if (password.trim().length < 6) {
                 throw new Error("Password must be at least 6 characters.");
             }
-            if (mode === "register" && password !== confirmPassword) {
-                throw new Error("Passwords do not match.");
+            
+            // Enhanced password validation for registration
+            if (mode === "register") {
+                const validation = validatePassword(password);
+                if (!validation.isValid) {
+                    throw new Error(validation.errors[0] || "Password does not meet requirements.");
+                }
+                if (password !== confirmPassword) {
+                    throw new Error("Passwords do not match.");
+                }
             }
+            
             if (mode === "register" && normalizedRegisterPhone.length !== 10) {
                 throw new Error("Enter a valid PH mobile number for your account (e.g., 09171234567).");
             }
@@ -195,14 +324,25 @@ export default function LoginPage() {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(loginBody),
+                body: JSON.stringify({
+                    ...loginBody,
+                    remember_me: rememberMe,
+                }),
             });
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data?.error || (mode === "register" ? "Registration failed" : "Login failed"));
             }
+            
+            // Handle remember me - extend session if checked
+            if (rememberMe && data.token) {
+                localStorage.setItem("speakup_remember_me", "true");
+            } else {
+                localStorage.removeItem("speakup_remember_me");
+            }
+            
             const next = new URLSearchParams(window.location.search).get("next");
-            router.push(next || data.redirect_to || "/");
+            router.push(next || data.redirect_to || "/dashboard");
             router.refresh();
         } catch (e) {
             setError(e instanceof Error ? e.message : mode === "register" ? "Unable to register right now." : "Unable to login right now.");
@@ -341,6 +481,62 @@ export default function LoginPage() {
                                         </>
                                     )}
 
+                                    {mode === "register" && passwordValidation && password && (
+                                        <div className={`space-y-2 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-medium ${isDark ? "text-white/70" : "text-gray-600"}`}>Password strength:</span>
+                                                <span className={`text-xs font-semibold capitalize ${getPasswordStrengthColor(passwordValidation.strength, isDark)}`}>
+                                                    {passwordValidation.strength}
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4].map((i) => (
+                                                    <div
+                                                        key={i}
+                                                        className={`h-1 flex-1 rounded-full ${
+                                                            i <= passwordValidation.score
+                                                                ? getPasswordStrengthBg(passwordValidation.strength)
+                                                                : isDark ? "bg-white/10" : "bg-gray-200"
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            {passwordValidation.errors.length > 0 && (
+                                                <ul className="space-y-1">
+                                                    {passwordValidation.errors.slice(0, 2).map((err, i) => (
+                                                        <li key={i} className={`text-[11px] flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                                            <AlertCircle className="h-3 w-3 text-amber-500" />
+                                                            {err}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {mode === "login" && method === "password" && (
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    id="remember"
+                                                    checked={rememberMe}
+                                                    onCheckedChange={(checked: boolean | "indeterminate") => setRememberMe(checked === true)}
+                                                    className={isDark ? "border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500" : ""}
+                                                />
+                                                <label htmlFor="remember" className={`text-xs cursor-pointer ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                                    Remember me
+                                                </label>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowForgotPassword(true)}
+                                                className={`text-xs underline underline-offset-2 transition-colors ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                            >
+                                                Forgot password?
+                                            </button>
+                                        </div>
+                                    )}
+
                                     {error && (
                                         <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
                                             {error}
@@ -409,6 +605,217 @@ export default function LoginPage() {
                 </Card>
                 <EmergencyReminder compact />
             </div>
+
+            {/* Forgot Password Modal */}
+            {showForgotPassword && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <Card className={`w-full max-w-md overflow-hidden ${isDark ? "bg-[#121318] border-white/10" : "bg-white border-gray-200"}`}>
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <button
+                                    type="button"
+                                    onClick={resetForgotPassword}
+                                    className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+                                >
+                                    <ArrowLeft className={`h-4 w-4 ${isDark ? "text-white/60" : "text-gray-600"}`} />
+                                </button>
+                                <CardTitle className={`text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {forgotStep === "success" ? "Password Reset Complete" : "Reset Password"}
+                                </CardTitle>
+                            </div>
+                            <CardDescription className={isDark ? "text-white/60" : "text-gray-500"}>
+                                {forgotStep === "request" && "Enter your email to receive a reset code on your registered mobile number."}
+                                {forgotStep === "verify" && "Enter the 6-digit code sent to your mobile number."}
+                                {forgotStep === "reset" && "Create a new strong password for your account."}
+                                {forgotStep === "success" && forgotSuccess}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {forgotStep === "request" && (
+                                <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Email address</label>
+                                        <div className="relative">
+                                            <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
+                                            <Input
+                                                value={forgotEmail}
+                                                onChange={(e) => setForgotEmail(e.target.value)}
+                                                placeholder="you@example.com"
+                                                type="email"
+                                                className={`h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {error && (
+                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            {error}
+                                        </div>
+                                    )}
+                                    <Button
+                                        type="submit"
+                                        disabled={forgotLoading || !forgotEmail.trim()}
+                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                    >
+                                        {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Code"}
+                                    </Button>
+                                </form>
+                            )}
+
+                            {forgotStep === "verify" && (
+                                <form onSubmit={handleVerifyResetToken} className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Reset Code (6 digits)</label>
+                                        <div className="relative">
+                                            <KeyRound className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
+                                            <Input
+                                                value={resetToken}
+                                                onChange={(e) => setResetToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                                placeholder="000000"
+                                                inputMode="numeric"
+                                                className={`h-12 rounded-full pl-11 pr-4 text-center font-mono tracking-[0.3em] ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {forgotSuccess && (
+                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-emerald-300 border-emerald-500/25 bg-emerald-500/10" : "text-emerald-700 border-emerald-200 bg-emerald-50"}`}>
+                                            {forgotSuccess}
+                                        </div>
+                                    )}
+                                    {error && (
+                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            {error}
+                                        </div>
+                                    )}
+                                    <Button
+                                        type="submit"
+                                        disabled={resetToken.length !== 6}
+                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                    >
+                                        Verify Code
+                                    </Button>
+                                </form>
+                            )}
+
+                            {forgotStep === "reset" && (
+                                <form onSubmit={handleResetPassword} className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>New Password</label>
+                                        <div className="relative">
+                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
+                                            <Input
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                type={showNewPassword ? "text" : "password"}
+                                                placeholder="Enter new password"
+                                                className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}
+                                            >
+                                                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {passwordValidation && newPassword && (
+                                        <div className={`space-y-2 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-medium ${isDark ? "text-white/70" : "text-gray-600"}`}>Password strength:</span>
+                                                <span className={`text-xs font-semibold capitalize ${getPasswordStrengthColor(passwordValidation.strength, isDark)}`}>
+                                                    {passwordValidation.strength}
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4].map((i) => (
+                                                    <div
+                                                        key={i}
+                                                        className={`h-1 flex-1 rounded-full ${
+                                                            i <= passwordValidation.score
+                                                                ? getPasswordStrengthBg(passwordValidation.strength)
+                                                                : isDark ? "bg-white/10" : "bg-gray-200"
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            {passwordValidation.errors.length > 0 && (
+                                                <ul className="space-y-1">
+                                                    {passwordValidation.errors.slice(0, 2).map((err, i) => (
+                                                        <li key={i} className={`text-[11px] flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                                            <AlertCircle className="h-3 w-3 text-amber-500" />
+                                                            {err}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-1.5">
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Confirm New Password</label>
+                                        <div className="relative">
+                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
+                                            <Input
+                                                value={confirmNewPassword}
+                                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                                type={showConfirmNewPassword ? "text" : "password"}
+                                                placeholder="Confirm new password"
+                                                className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                                                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}
+                                            >
+                                                {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {newPassword && confirmNewPassword && newPassword !== confirmNewPassword && (
+                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            Passwords do not match
+                                        </div>
+                                    )}
+
+                                    {error && (
+                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <Button
+                                        type="submit"
+                                        disabled={forgotLoading || !passwordValidation?.isValid || newPassword !== confirmNewPassword}
+                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                    >
+                                        {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
+                                    </Button>
+                                </form>
+                            )}
+
+                            {forgotStep === "success" && (
+                                <div className="space-y-4 text-center">
+                                    <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                                        <CheckCircle className={`h-8 w-8 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+                                    </div>
+                                    <p className={`text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                        Your password has been reset successfully. You can now sign in with your new password.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        onClick={resetForgotPassword}
+                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                    >
+                                        Back to Sign In
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
