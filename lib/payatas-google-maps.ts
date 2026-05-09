@@ -112,7 +112,6 @@ export function googleMapAdminOptions(isDark: boolean): google.maps.MapOptions {
 /** Compact map for report form: cooperative gestures play nicer with page scroll on mobile. */
 export function googleMapPickerOptions(isDark: boolean): google.maps.MapOptions {
     return {
-        mapId: getGoogleMapsMapId(),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: false,

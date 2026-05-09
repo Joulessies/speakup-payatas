@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import NavBar from "@/components/nav-bar";
 import SidebarNav from "@/components/sidebar-nav";
+import BottomNav from "@/components/bottom-nav";
 import { Toaster } from "sonner";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, verifyAuthToken, type UserRole } from "@/lib/auth";
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }: Readonly<{
                         <main className={`flex-1 min-h-0 overflow-hidden ${isLoggedIn ? "pb-14 md:pb-0" : "pb-0"}`}>
                             {children}
                         </main>
+                        {isLoggedIn && useSidebar && <BottomNav />}
                         <Toaster richColors position="top-center" />
                     </LanguageProvider>
                 </ThemeProvider>

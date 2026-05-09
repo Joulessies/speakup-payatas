@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, Search, Trash2, Edit } from "lucide-react";
+import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { CATEGORY_LABELS } from "@/types";
 import { toast } from "sonner";
@@ -25,6 +25,9 @@ export default function AdminReportsPage() {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [viewTarget, setViewTarget] = useState<Report | null>(null);
+    const [editTarget, setEditTarget] = useState<Report | null>(null);
+    const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
     const pageSize = 10;
 
     const totalPages = Math.ceil(reports.length / pageSize);
@@ -60,6 +63,58 @@ export default function AdminReportsPage() {
             toast.error("Network error");
         } finally {
             setDeleteTarget(null);
+        }
+    };
+
+    const handleStatusUpdate = async (id: string, status: string, verificationStatus: string) => {
+        try {
+            const res = await fetch(`/api/reports`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    report_id: id, 
+                    status, 
+                    verification_status: verificationStatus
+                })
+            });
+            if (res.ok) {
+                toast.success(`Report ${status === 'resolved' ? 'approved' : 'marked as spam'} successfully`);
+                setReports(reports.map(r => 
+                    r.id === id ? { ...r, status, verification_status: verificationStatus } : r
+                ));
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to update report status");
+            }
+        } catch {
+            toast.error("Network error");
+        } finally {
+            setStatusTarget(null);
+        }
+    };
+
+    const handleEdit = async (id: string, updates: Partial<Report>) => {
+        try {
+            const res = await fetch(`/api/reports`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    report_id: id,
+                    ...updates
+                })
+            });
+            if (res.ok) {
+                toast.success("Report updated successfully");
+                setReports(reports.map(r => 
+                    r.id === id ? { ...r, ...updates } : r
+                ));
+                setEditTarget(null);
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to update report");
+            }
+        } catch {
+            toast.error("Network error");
         }
     };
 
@@ -125,14 +180,48 @@ export default function AdminReportsPage() {
                                             <td className={`p-4 font-mono text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>
                                                 {r.reporter_hash.slice(0, 8)}...
                                             </td>
-                                            <td className="p-4 text-right">
-                                                <button
-                                                    onClick={() => setDeleteTarget(r.id)}
-                                                    className="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/10"
-                                                    title="Delete Report"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                            <td className="p-4">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => setViewTarget(r)}
+                                                        className="p-2 rounded-lg transition-colors text-blue-500 hover:bg-blue-500/10"
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditTarget(r)}
+                                                        className="p-2 rounded-lg transition-colors text-amber-500 hover:bg-amber-500/10"
+                                                        title="Edit Report"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    {r.status !== 'resolved' && (
+                                                        <button
+                                                            onClick={() => setStatusTarget({ id: r.id, action: 'approve' })}
+                                                            className="p-2 rounded-lg transition-colors text-emerald-500 hover:bg-emerald-500/10"
+                                                            title="Approve Report"
+                                                        >
+                                                            <CheckCircle className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    {r.status !== 'rejected' && (
+                                                        <button
+                                                            onClick={() => setStatusTarget({ id: r.id, action: 'reject' })}
+                                                            className="p-2 rounded-lg transition-colors text-orange-500 hover:bg-orange-500/10"
+                                                            title="Reject Report"
+                                                        >
+                                                            <XCircle className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setDeleteTarget(r.id)}
+                                                        className="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/10"
+                                                        title="Delete Report"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -221,6 +310,226 @@ export default function AdminReportsPage() {
                                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Details Modal */}
+            {viewTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className={`w-full max-w-2xl p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <Eye className="h-5 w-5 text-blue-500" />
+                            </div>
+                            <div>
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    Report Details
+                                </h2>
+                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    ID: {viewTarget.id}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</label>
+                                <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {CATEGORY_LABELS[viewTarget.category as keyof typeof CATEGORY_LABELS] || viewTarget.category}
+                                </p>
+                            </div>
+                            <div>
+                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</label>
+                                <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {viewTarget.description}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Status</label>
+                                    <p className="mt-1">
+                                        <Badge variant="outline" className={`text-[10px] capitalize ${viewTarget.status === "resolved" ? "text-emerald-500 border-emerald-500/20" : "text-amber-500 border-amber-500/20"}`}>
+                                            {viewTarget.status.replace("_", " ")}
+                                        </Badge>
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Verification</label>
+                                    <p className="mt-1">
+                                        <Badge variant="outline" className={`text-[10px] capitalize ${viewTarget.verification_status === "spam" ? "text-red-500 border-red-500/20" : viewTarget.verification_status === "valid" ? "text-emerald-500 border-emerald-500/20" : "text-gray-500 border-gray-500/20"}`}>
+                                            {viewTarget.verification_status}
+                                        </Badge>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter</label>
+                                    <p className={`mt-1 font-mono text-xs break-all ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                        {viewTarget.reporter_hash}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Created</label>
+                                    <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                                        {new Date(viewTarget.created_at).toLocaleDateString()} at {new Date(viewTarget.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</label>
+                                <p className={`mt-1 font-mono text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {viewTarget.latitude.toFixed(6)}, {viewTarget.longitude.toFixed(6)}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setViewTarget(null)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className={`w-full max-w-lg p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <Edit className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    Edit Report
+                                </h2>
+                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    Make changes to the report details.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</label>
+                                <select
+                                    value={editTarget.category}
+                                    onChange={(e) => setEditTarget({ ...editTarget, category: e.target.value })}
+                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                >
+                                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</label>
+                                <textarea
+                                    value={editTarget.description}
+                                    onChange={(e) => setEditTarget({ ...editTarget, description: e.target.value })}
+                                    rows={3}
+                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border resize-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Status</label>
+                                    <select
+                                        value={editTarget.status}
+                                        onChange={(e) => setEditTarget({ ...editTarget, status: e.target.value })}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="resolved">Resolved</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Verification</label>
+                                    <select
+                                        value={editTarget.verification_status}
+                                        onChange={(e) => setEditTarget({ ...editTarget, verification_status: e.target.value })}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                    >
+                                        <option value="unreviewed">Unreviewed</option>
+                                        <option value="valid">Valid</option>
+                                        <option value="spam">Spam</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setEditTarget(null)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleEdit(editTarget.id, {
+                                    category: editTarget.category,
+                                    description: editTarget.description,
+                                    status: editTarget.status,
+                                    verification_status: editTarget.verification_status
+                                })}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Update Modal */}
+            {statusTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                                statusTarget.action === 'approve' ? 'bg-emerald-500/10' : 'bg-orange-500/10'
+                            }`}>
+                                {statusTarget.action === 'approve' ? (
+                                    <CheckCircle className="h-5 w-5 text-emerald-500" />
+                                ) : (
+                                    <XCircle className="h-5 w-5 text-orange-500" />
+                                )}
+                            </div>
+                            <div>
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {statusTarget.action === 'approve' ? 'Approve Report' : 'Reject Report'}
+                                </h2>
+                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    Are you sure you want to {statusTarget.action} this report?
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setStatusTarget(null)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleStatusUpdate(
+                                    statusTarget.id,
+                                    statusTarget.action === 'approve' ? 'resolved' : 'pending',
+                                    statusTarget.action === 'approve' ? 'valid' : 'spam'
+                                )}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors ${
+                                    statusTarget.action === 'approve' 
+                                        ? 'bg-emerald-500 hover:bg-emerald-600' 
+                                        : 'bg-orange-500 hover:bg-orange-600'
+                                }`}
+                            >
+                                {statusTarget.action === 'approve' ? 'Approve' : 'Reject'}
                             </button>
                         </div>
                     </div>

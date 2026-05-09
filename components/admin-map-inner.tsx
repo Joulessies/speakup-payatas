@@ -43,7 +43,7 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
     const heatmapData = useMemo(() => {
         const pts = heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints;
         return pts.map(([lat, lng, weight]) => ({
-            location: { lat, lng },
+            location: new google.maps.LatLng(lat, lng),
             weight,
         }));
     }, [heatPoints, fallbackHeatPoints]);
@@ -119,16 +119,102 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
                 lat: selected.latitude,
                 lng: selected.longitude,
             }} onCloseClick={() => onClusterClick(null)}>
-            <div className="min-w-[140px] space-y-1 text-sm">
-              <p className="font-semibold">
-                {selected.count} report{selected.count !== 1 ? "s" : ""}
-              </p>
-              {Object.entries(selected.category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs capitalize text-gray-600">
-                    {cat}: {count}
-                  </p>))}
-              <p className="font-mono text-xs text-gray-400">
-                {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
-              </p>
+            <div className="min-w-[200px] p-2 space-y-3">
+              {/* Header with count and density */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">
+                    {selected.count} Report{selected.count !== 1 ? "s" : ""}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      selected.count >= 15 ? "bg-red-500" :
+                      selected.count >= 10 ? "bg-orange-500" :
+                      selected.count >= 5 ? "bg-amber-500" : "bg-emerald-500"
+                    }`}></div>
+                    <span className="text-xs font-medium text-gray-600">
+                      {selected.count >= 15 ? "Critical Density" :
+                       selected.count >= 10 ? "High Density" :
+                       selected.count >= 5 ? "Medium Density" : "Low Density"}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-medium text-gray-500">Score</div>
+                  <div className="text-sm font-bold text-indigo-600">
+                    {Math.round(selected.weighted_score ?? selected.count)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Category breakdown */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Categories</h4>
+                <div className="space-y-1.5">
+                  {Object.entries(selected.category_breakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 4)
+                    .map(([cat, count]) => {
+                      const percentage = Math.round((count / selected.count) * 100);
+                      return (
+                        <div key={cat} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              cat === 'flooding' ? 'bg-blue-400' :
+                              cat === 'fire' ? 'bg-orange-400' :
+                              cat === 'crime' ? 'bg-red-400' :
+                              cat === 'infrastructure' ? 'bg-amber-400' :
+                              cat === 'health' ? 'bg-pink-400' :
+                              cat === 'environmental' ? 'bg-emerald-400' : 'bg-gray-400'
+                            }`}></div>
+                            <span className="text-sm font-medium capitalize text-gray-700">
+                              {cat === 'infrastructure' ? 'Infra' : cat}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900">{count}</span>
+                            <span className="text-xs text-gray-500">({percentage}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</h4>
+                <p className="font-mono text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                  {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2 border-t border-gray-200">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${selected.latitude},${selected.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Maps
+                </a>
+                <a
+                  href={`https://waze.com/ul?ll=${selected.latitude}%2C${selected.longitude}&navigate=yes`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-indigo-500 text-white text-xs font-medium rounded hover:bg-indigo-600 transition-colors"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Navigate
+                </a>
+              </div>
             </div>
           </InfoWindow>)}
     </GoogleMap>);

@@ -225,7 +225,12 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: "Invalid verification_status" }, { status: 400 });
       }
       updates.verification_status = verification_status;
-      updates.verified_by = actor?.trim() || "Admin";
+      // Only set verified_by if it's a valid UUID, otherwise set to null
+      if (actor && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actor)) {
+        updates.verified_by = actor;
+      } else {
+        updates.verified_by = null;
+      }
       updates.verified_at = now;
 
       if (verification_status === "spam") {

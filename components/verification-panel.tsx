@@ -72,13 +72,11 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     const loadReports = async () => {
         setLoading(true);
         try {
-            // Fetch all reports for counts, then filter client-side for display
             const res = await fetch(`/api/reports?limit=500`);
             const data = await res.json();
             const allReports = data.reports ?? [];
             setReports(allReports);
 
-            // Filter for display based on selected filter
             const filtered = allReports.filter(r => r.verification_status === filter);
             applyFilters(filtered, searchQuery, categoryFilter, sortBy);
         } catch {
@@ -169,11 +167,6 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
 
             const data = await res.json().catch(() => ({ error: "Server error" }));
 
-            if (!res.ok) {
-                throw new Error(data.error || `Server error: ${res.status}`);
-            }
-
-            // Show success toast
             const statusLabels: Record<string, string> = {
                 valid: "Valid",
                 spam: "Spam",

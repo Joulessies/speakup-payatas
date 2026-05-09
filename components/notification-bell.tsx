@@ -40,14 +40,27 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const markAllRead = async () => {
         try {
-            await fetch("/api/notifications", {
+            const requestBody = { mark_all_read: true, role, reporter_hash: reporterHash };
+            console.log("Sending request:", requestBody);
+            
+            const res = await fetch("/api/notifications", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mark_all_read: true, role, reporter_hash: reporterHash }),
+                body: JSON.stringify(requestBody),
             });
-            setUnreadCount(0);
-            setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-        } catch { /* ignore */ }
+            
+            const responseText = await res.text();
+            console.log("API response:", res.status, responseText);
+            
+            if (res.ok) {
+                setUnreadCount(0);
+                setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+            } else {
+                console.error("Failed to mark all as read:", responseText);
+            }
+        } catch (error) {
+            console.error("Error marking all as read:", error);
+        }
     };
 
     const getIcon = (type: string) => {
@@ -66,7 +79,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-500 rounded-full">
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-500 rounded-full">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 )}
@@ -74,12 +87,12 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
             {open && (
                 <>
-                    <div className="fixed inset-0 z-[998]" onClick={() => setOpen(false)} />
-                    <div className={`fixed left-4 right-4 bottom-24 md:absolute md:left-auto md:right-0 md:bottom-auto md:top-11 z-[999] md:w-80 max-h-[70vh] overflow-hidden rounded-2xl border shadow-xl ${
+                    <div className="fixed inset-0 z-[998] backdrop-blur-sm bg-black/20" onClick={() => setOpen(false)} />
+                    <div className={`fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-[999] w-[90vw] max-w-md max-h-[70vh] overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl ${
                         isDark ? "bg-black/95 border-white/10 backdrop-blur-xl" : "bg-white border-gray-200"
                     }`}>
-                        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
-                            <h3 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}>
+                            <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                                 Notifications
                             </h3>
                             <div className="flex items-center gap-1">
@@ -102,20 +115,20 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                 </div>
                             ) : (
                                 items.map((n) => (
-                                    <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b transition-colors ${
+                                    <div key={n.id} className={`flex items-start gap-4 px-5 py-4 border-b transition-colors ${
                                         !n.read
                                             ? isDark ? "bg-indigo-500/[0.06] border-white/[0.04]" : "bg-indigo-50/50 border-gray-50"
                                             : isDark ? "border-white/[0.04]" : "border-gray-50"
                                     }`}>
                                         <div className="mt-0.5">{getIcon(n.type)}</div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`text-xs font-medium truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>
+                                            <p className={`text-sm font-medium truncate ${isDark ? "text-white/90" : "text-gray-800"}`}>
                                                 {n.title}
                                             </p>
-                                            <p className={`text-[11px] mt-0.5 line-clamp-2 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                            <p className={`text-sm mt-1 line-clamp-2 ${isDark ? "text-white/50" : "text-gray-600"}`}>
                                                 {n.message}
                                             </p>
-                                            <p className={`text-[10px] mt-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                                            <p className={`text-xs mt-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>
                                                 {new Date(n.created_at).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                                             </p>
                                         </div>

@@ -4,6 +4,7 @@ import BackgroundMapWrapper from "@/components/background-map-wrapper";
 import { useTheme } from "@/components/theme-provider";
 import { ShieldCheck } from "lucide-react";
 import EmergencyReminder from "@/components/emergency-reminder";
+
 export default function HomePage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";

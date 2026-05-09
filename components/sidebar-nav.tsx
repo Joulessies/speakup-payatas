@@ -38,8 +38,7 @@ export default function SidebarNav() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const [collapsed, setCollapsed] = useState(false);
+        const [collapsed, setCollapsed] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -112,49 +111,6 @@ export default function SidebarNav() {
             : session?.role === "staff"
             ? "bg-blue-500/20 text-blue-300"
             : "bg-emerald-500/20 text-emerald-300";
-
-    const MobileSidebar = () => (
-        <div className="fixed inset-0 z-50 md:hidden">
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={() => setMobileOpen(false)}
-            />
-            <div className={`absolute left-0 top-0 bottom-0 w-[280px] ${isDark ? "bg-[#0a0a0f]" : "bg-white"} border-r ${isDark ? "border-white/10" : "border-gray-200"}`}>
-                <div className="flex items-center justify-between p-4 border-b border-dashed border-gray-700">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/20" : "bg-indigo-100"}`}>
-                            <ShieldCheck className={`h-4 w-4 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                        </div>
-                        <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>SpeakUp</span>
-                    </Link>
-                    <button onClick={() => setMobileOpen(false)} className={`p-2 rounded-lg ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}>
-                        <X className={`h-5 w-5 ${isDark ? "text-white/60" : "text-gray-600"}`} />
-                    </button>
-                </div>
-                <nav className="p-3 space-y-1">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMobileOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
-                                isActive(item.href)
-                                    ? isDark
-                                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                                        : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                    : isDark
-                                    ? "text-white/70 hover:bg-white/[0.05] hover:text-white"
-                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            }`}
-                        >
-                            <item.icon className="h-5 w-5" />
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
-            </div>
-        </div>
-    );
 
     return (
         <>
@@ -238,6 +194,14 @@ export default function SidebarNav() {
                                 )}
                                 {!collapsed && <NotificationBell role={session.role} />}
                             </div>
+                            <Link
+                                href="/admin/settings"
+                                title={collapsed ? "Account Settings" : undefined}
+                                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"} ${collapsed ? "w-full px-2" : "w-full"}`}
+                            >
+                                <UserRound className="h-3.5 w-3.5" />
+                                {!collapsed && "Account Settings"}
+                            </Link>
                             <button
                                 onClick={handleLogout}
                                 title={collapsed ? "Logout" : undefined}
@@ -252,22 +216,6 @@ export default function SidebarNav() {
             </aside>
             {/* Desktop Collapsed Spacer */}
             <div className={`hidden md:block ${collapsed ? "w-[72px]" : "w-[260px]"} shrink-0 transition-all duration-300`} />
-
-            {/* Mobile Header */}
-            <header className={`md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 border-b ${isDark ? "bg-[#0a0a0f]/95 border-white/[0.08] backdrop-blur-xl" : "bg-white/95 border-gray-200 backdrop-blur-xl"}`}>
-                <div className="flex items-center justify-between">
-                    <button onClick={() => setMobileOpen(true)} className={`p-2 rounded-lg ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}>
-                        <Menu className={`h-5 w-5 ${isDark ? "text-white" : "text-gray-900"}`} />
-                    </button>
-                    <Link href="/" className="flex items-center gap-2">
-                        <ShieldCheck className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                        <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>SpeakUp</span>
-                    </Link>
-                    <div className="w-9" />
-                </div>
-            </header>
-            {mobileOpen && <MobileSidebar />}
-            <div className="md:hidden h-14" />
         </>
     );
 }

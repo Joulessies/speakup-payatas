@@ -52,7 +52,7 @@ export async function PATCH(request: Request) {
         };
 
         if (mark_all_read) {
-            let markQuery = getSupabaseAdmin().from("notifications").update({ read: true }).neq("id", "");
+            let markQuery = getSupabaseAdmin().from("notifications").update({ read: true });
             if (role === "admin") markQuery = markQuery.or("recipient_role.eq.admin,recipient_role.is.null");
             else if (role) markQuery = markQuery.eq("recipient_role", role);
             if (reporter_hash) markQuery = markQuery.ilike("recipient_hash", `${reporter_hash}%`);

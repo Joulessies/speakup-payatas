@@ -121,7 +121,7 @@ export default function AdminUsersPage() {
                             Manage Users
                         </h1>
                         <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                            Users are loaded from Supabase (<code className="text-[11px]">app_users</code>). Email accounts need a password; PH mobile uses SMS-style signup (10 digits).
+                            Manage user accounts and permissions. Email accounts require passwords, while Philippine mobile numbers use SMS-based authentication (10 digits).
                         </p>
                     </div>
                     <button
@@ -140,19 +140,20 @@ export default function AdminUsersPage() {
                                     <th className="p-4 font-semibold uppercase tracking-wider text-[11px]">ID</th>
                                     <th className="p-4 font-semibold uppercase tracking-wider text-[11px]">Username</th>
                                     <th className="p-4 font-semibold uppercase tracking-wider text-[11px]">Role</th>
+                                    <th className="p-4 font-semibold uppercase tracking-wider text-[11px]">Created</th>
                                     <th className="p-4 font-semibold uppercase tracking-wider text-[11px] text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={4} className="p-8 text-center">
+                                        <td colSpan={5} className="p-8 text-center">
                                             <Loader2 className="h-6 w-6 animate-spin mx-auto opacity-50" />
                                         </td>
                                     </tr>
                                 ) : users.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className={`p-8 text-center border-dashed border ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
+                                        <td colSpan={5} className={`p-8 text-center border-dashed border ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
                                             No users found.
                                         </td>
                                     </tr>
@@ -163,13 +164,18 @@ export default function AdminUsersPage() {
                                                 {u.id.slice(0, 8)}...
                                             </td>
                                             <td className={`p-4 font-medium ${isDark ? "text-white/90" : "text-gray-800"}`}>
-                                                {u.username}
-                                                {u.phone && <span className="block text-[10px] opacity-50 font-normal">{u.phone}</span>}
+                                                <div>
+                                                    <div className="font-medium">{u.username}</div>
+                                                    {u.phone && <div className="text-[10px] opacity-60 font-normal mt-1">📱 {u.phone}</div>}
+                                                </div>
                                             </td>
                                             <td className="p-4">
                                                 <Badge variant="outline" className={`text-[10px] capitalize ${u.role === "admin" ? "text-red-500 border-red-500/20" : u.role === "staff" ? "text-blue-500 border-blue-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
                                                     {u.role}
                                                 </Badge>
+                                            </td>
+                                            <td className={`p-4 text-sm ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                                {new Date(u.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="p-4 text-right">
                                                 <button
@@ -248,34 +254,42 @@ export default function AdminUsersPage() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                {editingUser ? "Edit User" : "Add User"}
-                            </h2>
-                            <button onClick={() => setIsModalOpen(false)} className={`p-1 rounded-md ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}>
+                    <div className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                        <div className="flex items-start gap-4 mb-8">
+                            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                {editingUser ? <Edit className="h-5 w-5 text-indigo-500" /> : <Plus className="h-5 w-5 text-indigo-500" />}
+                            </div>
+                            <div className="flex-1">
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    {editingUser ? "Edit User" : "Add New User"}
+                                </h2>
+                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    {editingUser ? "Update user role and password settings." : "Create a new user account with email or mobile number."}
+                                </p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/60" : "hover:bg-gray-100 text-gray-500"}`}>
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                    {editingUser ? "Sign-in (email or +63)" : "Email or PH mobile"}
+                                <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                    {editingUser ? "Sign-in Identifier" : "Email Address or Mobile Number"}
                                 </label>
                                 <input
                                     type="text"
                                     readOnly={!!editingUser}
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className={`w-full px-3 py-2 text-sm rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all ${
-                                        isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"
-                                    } ${editingUser ? "opacity-70 cursor-not-allowed" : ""}`}
+                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                        isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
+                                    } ${editingUser ? "opacity-60 cursor-not-allowed" : ""}`}
                                 />
                             </div>
                             {!editingUser && (
                                 <div>
-                                    <label className={`block text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                        Password <span className="font-normal opacity-70">(required for email)</span>
+                                    <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                        Password <span className="font-normal opacity-70">(required for email accounts)</span>
                                     </label>
                                     <input
                                         type="password"
@@ -283,16 +297,16 @@ export default function AdminUsersPage() {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder="Min 6 characters"
-                                        className={`w-full px-3 py-2 text-sm rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all ${
-                                            isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"
+                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                            isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
                                         }`}
                                     />
                                 </div>
                             )}
                             {editingUser && (
                                 <div>
-                                    <label className={`block text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                        New password <span className="font-normal opacity-70">(optional; email accounts only)</span>
+                                    <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                        New Password <span className="font-normal opacity-70">(leave blank to keep current)</span>
                                     </label>
                                     <input
                                         type="password"
@@ -300,19 +314,19 @@ export default function AdminUsersPage() {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder="Leave blank to keep current"
-                                        className={`w-full px-3 py-2 text-sm rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all ${
-                                            isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"
+                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                            isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
                                         }`}
                                     />
                                 </div>
                             )}
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>Role</label>
+                                <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>User Role</label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "staff" | "user" })}
-                                    className={`w-full px-3 py-2 text-sm rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all ${
-                                        isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"
+                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                        isDark ? "bg-white/5 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"
                                     }`}
                                 >
                                     <option value="user">User</option>
@@ -320,12 +334,14 @@ export default function AdminUsersPage() {
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
-                            <button
-                                onClick={handleSave}
-                                className="w-full py-2.5 mt-2 rounded-xl text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors"
-                            >
-                                Save Changes
-                            </button>
+                            <div className="pt-4">
+                                <button
+                                    onClick={handleSave}
+                                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    {editingUser ? "Update User" : "Create User"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
