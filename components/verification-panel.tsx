@@ -122,7 +122,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
 
         setFilteredReports(filtered);
         if (resetPage) {
-            setCurrentPage(1); // Reset to first page when filters change
+            setCurrentPage(1); 
         }
     };
 
