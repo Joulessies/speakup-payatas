@@ -11,6 +11,7 @@ import {
     payatasBoundaryPath,
 } from "@/lib/payatas-google-maps";
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
+import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import type { ClusterResult } from "@/types";
 import { useTheme } from "./theme-provider";
 import MapsMissingKey from "./maps-missing-key";
@@ -19,6 +20,7 @@ function MapInnerLoaded() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
+    const { failed: authFailed, errorCode } = useGoogleMapsAuthState();
     const [clusters, setClusters] = useState<ClusterResult[]>([]);
     const [totalReports, setTotalReports] = useState(0);
     const [noiseCount, setNoiseCount] = useState(0);
@@ -42,10 +44,11 @@ function MapInnerLoaded() {
             }
         })();
     }, []);
+    if (authFailed) {
+        return <MapsMissingKey reason="auth-failed" errorCode={errorCode}/>;
+    }
     if (loadError) {
-        return (<div className="flex h-full w-full items-center justify-center bg-muted/40">
-          <p className="text-sm text-destructive">Could not load Google Maps.</p>
-        </div>);
+        return <MapsMissingKey reason="load-error" errorCode={errorCode}/>;
     }
     if (!isLoaded) {
         return <div className="h-full w-full bg-muted/30 animate-pulse"/>;

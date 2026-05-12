@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, FileWarning, Shield, ThumbsUp, Send, Eye, Wrench, } from "lucide-react";
+import { Search, Loader2, FileWarning, Shield, ThumbsUp, Send, Eye, Wrench, Copy, Check, } from "lucide-react";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
+import { toast } from "sonner";
+import ReportFeedback from "@/components/report-feedback";
 interface TrackedReport {
     id: string;
     receipt_id?: string;
@@ -22,6 +24,7 @@ interface TrackedReport {
         note: string;
         actor: string;
         created_at: string;
+        photo_url?: string;
     }[];
 }
 const STATUS_STEPS = [
@@ -59,6 +62,17 @@ export default function TrackPage() {
     const [confirming, setConfirming] = useState<string | null>(null);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [lastQuery, setLastQuery] = useState("");
+    const [copiedReceipt, setCopiedReceipt] = useState<string | null>(null);
+    const copyReceipt = async (receiptId: string) => {
+        try {
+            await navigator.clipboard.writeText(receiptId);
+            setCopiedReceipt(receiptId);
+            toast.success("Receipt code copied");
+            window.setTimeout(() => setCopiedReceipt((prev) => (prev === receiptId ? null : prev)), 1500);
+        } catch {
+            toast.error("Could not copy. Please copy manually.");
+        }
+    };
     const normalizeInput = (value: string) => value
         .trim()
         .replaceAll("`", "")
@@ -214,9 +228,27 @@ export default function TrackPage() {
                             hour: "2-digit", minute: "2-digit",
                         })}
                           </CardDescription>
-                          {report.receipt_id && (<p className={`mt-1 text-[10px] font-mono ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                              Receipt: {report.receipt_id}
-                            </p>)}
+                          {report.receipt_id && (<div className="mt-1 flex items-center gap-1.5">
+                              <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>Receipt:</span>
+                              <button
+                                type="button"
+                                onClick={() => copyReceipt(report.receipt_id!)}
+                                title="Copy receipt code"
+                                aria-label={`Copy receipt code ${report.receipt_id}`}
+                                className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors ${
+                                    isDark
+                                        ? "bg-white/[0.06] text-white/65 hover:bg-white/[0.12] hover:text-white"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                                }`}
+                              >
+                                <span>{report.receipt_id}</span>
+                                {copiedReceipt === report.receipt_id ? (
+                                  <Check className="h-3 w-3 text-emerald-500" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>)}
                         </CardHeader>
 
                         <CardContent className="px-4 pb-4 space-y-3">
@@ -266,27 +298,41 @@ export default function TrackPage() {
                                 .slice()
                                 .sort((a, b) => new Date(b.created_at).getTime() -
                                 new Date(a.created_at).getTime())
-                                .map((entry) => (<div key={entry.id} className="flex items-start justify-between gap-2">
-                                      <div className="min-w-0">
-                                        <p className={`text-xs ${isDark ? "text-white/75" : "text-gray-700"}`}>
-                                          {entry.note}
-                                        </p>
-                                        <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                                          {entry.actor}
+                                .map((entry) => (<div key={entry.id} className="flex flex-col gap-1.5">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className={`text-xs ${isDark ? "text-white/75" : "text-gray-700"}`}>
+                                            {entry.note}
+                                          </p>
+                                          <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                                            {entry.actor}
+                                          </p>
+                                        </div>
+                                        <p className={`text-[10px] whitespace-nowrap ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                          {new Date(entry.created_at).toLocaleDateString("en-PH", {
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
                                         </p>
                                       </div>
-                                      <p className={`text-[10px] whitespace-nowrap ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                                        {new Date(entry.created_at).toLocaleDateString("en-PH", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                                      </p>
+                                      {entry.photo_url && (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img
+                                          src={entry.photo_url}
+                                          alt={`Photo attached when status changed to ${entry.status}`}
+                                          className="w-full max-h-48 object-cover rounded-lg border border-dashed"
+                                        />
+                                      )}
                                     </div>))}
                               </div>
                             </div>)}
 
+                          
+                          {report.status === "resolved" && (
+                            <ReportFeedback reportId={report.id} />
+                          )}
                           
                           <button onClick={() => handleUpvote(report.id)} disabled={confirming === report.id} className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-colors ${isDark
                             ? "bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white"

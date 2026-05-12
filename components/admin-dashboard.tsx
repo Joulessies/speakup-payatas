@@ -122,6 +122,7 @@ export default function AdminDashboard() {
     const [workflowSaving, setWorkflowSaving] = useState<string | null>(null);
     const [statusDrafts, setStatusDrafts] = useState<Record<string, "pending" | "verified" | "in_progress" | "resolved">>({});
     const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+    const [clusterError, setClusterError] = useState<string | null>(null);
     const loadClusters = useCallback(async (withPlayback: boolean) => {
         try {
             const res = await fetch("/api/clusters", {
@@ -132,7 +133,16 @@ export default function AdminDashboard() {
                     includePlayback: withPlayback,
                 }),
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({} as Record<string, unknown>));
+            if (!res.ok) {
+                const msg = (data && typeof (data as { error?: unknown }).error === "string")
+                    ? (data as { error: string }).error
+                    : `Request failed (${res.status})`;
+                setClusterError(msg);
+                console.error("Failed to fetch clusters:", msg);
+                return;
+            }
+            setClusterError(null);
             setClusters(data.clusters ?? []);
             setTotalReports(data.total_reports ?? 0);
             setNoiseCount(data.noise_count ?? 0);
@@ -148,6 +158,7 @@ export default function AdminDashboard() {
         }
         catch (err) {
             console.error("Failed to fetch clusters:", err);
+            setClusterError(err instanceof Error ? err.message : "Network error loading clusters.");
         }
         finally {
             setLoading(false);
@@ -289,6 +300,23 @@ export default function AdminDashboard() {
       <div className="absolute inset-0 z-0">
         <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={setSelectedCluster} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} onMapBoundsChange={setMapBounds}/>
       </div>
+
+      {clusterError && (
+        <div className="absolute top-3 left-3 right-3 md:left-[21rem] md:right-3 z-[1100] flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200 backdrop-blur-md">
+          <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="font-semibold">Map data couldn't load</p>
+            <p className="opacity-90 truncate">{clusterError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setClusterError(null); void loadClusters(playbackEnabled); }}
+            className="ml-auto shrink-0 px-2 py-1 rounded-md bg-red-500/20 hover:bg-red-500/30 text-[11px] font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       
       <aside className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark

@@ -4,6 +4,7 @@ import { GoogleMap, Polygon } from "@react-google-maps/api";
 import { PAYATAS_CENTER } from "@/lib/payatas-boundary";
 import { getGoogleMapsApiKey, mapStylesForTheme, payatasBoundaryPath } from "@/lib/payatas-google-maps";
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
+import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import { useTheme } from "./theme-provider";
 import MapsMissingKey from "./maps-missing-key";
 
@@ -11,11 +12,13 @@ function BackgroundMapLoaded() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
+    const { failed: authFailed, errorCode } = useGoogleMapsAuthState();
     const boundaryPath = payatasBoundaryPath();
+    if (authFailed) {
+        return <MapsMissingKey reason="auth-failed" errorCode={errorCode}/>;
+    }
     if (loadError) {
-        return (<div className="flex h-full w-full items-center justify-center bg-muted/40 px-4 text-center">
-          <p className="text-sm text-destructive">Could not load Google Maps.</p>
-        </div>);
+        return <MapsMissingKey reason="load-error" errorCode={errorCode}/>;
     }
     if (!isLoaded) {
         return <div className="h-full w-full bg-muted/30 animate-pulse"/>;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "./theme-provider";
+import LogoutConfirmDialog from "./logout-confirm-dialog";
 import {
     LayoutDashboard,
     FileWarning,
@@ -29,10 +30,18 @@ export default function BottomNav() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const handleLogout = async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/login";
+        setLoggingOut(true);
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+        } finally {
+            setLoggingOut(false);
+            setShowLogoutConfirm(false);
+        }
     };
 
     useEffect(() => {
@@ -119,9 +128,9 @@ export default function BottomNav() {
                 
                 {/* Account Settings Button */}
                 <Link
-                    href="/admin/settings"
+                    href={session.role === "admin" ? "/admin/settings" : "/account"}
                     className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                        isActive("/admin/settings")
+                        isActive(session.role === "admin" ? "/admin/settings" : "/account")
                             ? isDark
                                 ? "text-indigo-400"
                                 : "text-indigo-600"
@@ -138,7 +147,7 @@ export default function BottomNav() {
                 
                 {/* Logout Button */}
                 <button
-                    onClick={handleLogout}
+                    onClick={() => setShowLogoutConfirm(true)}
                     className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
                         isDark
                             ? "text-white/50 hover:text-white/70"
@@ -151,6 +160,12 @@ export default function BottomNav() {
                     </span>
                 </button>
             </div>
+            <LogoutConfirmDialog
+                open={showLogoutConfirm}
+                loading={loggingOut}
+                onCancel={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+            />
         </div>
     );
 }

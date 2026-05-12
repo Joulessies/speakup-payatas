@@ -7,6 +7,7 @@ import { useLanguage } from "./language-provider";
 import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
 import NotificationBell from "./notification-bell";
+import LogoutConfirmDialog from "./logout-confirm-dialog";
 import { ShieldCheck, FileWarning, Map, Search, TrendingUp, Brain, QrCode, LogOut, UserRound, Menu, X, LayoutDashboard, Eye, MessageSquare, Shield, } from "lucide-react";
 
 export default function NavBar() {
@@ -17,6 +18,8 @@ export default function NavBar() {
     const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
     const [sessionLoaded, setSessionLoaded] = useState(false);
     const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -31,7 +34,16 @@ export default function NavBar() {
         })();
     }, [pathname]);
 
-    const handleLogout = async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; };
+    const handleLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+        } finally {
+            setLoggingOut(false);
+            setShowLogoutConfirm(false);
+        }
+    };
     const handleLogin = async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; };
 
     const isAdmin = session?.role === "admin";
@@ -112,7 +124,7 @@ export default function NavBar() {
                         </span>
                         <span className={`max-w-[100px] truncate text-[11px] ${isDark ? "text-white/65" : "text-gray-600"}`}>{session.username}</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? roleBadgeColor : "bg-black/[0.06] text-gray-600"}`}>{session.role}</span>
-                        <button type="button" onClick={handleLogout} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
+                        <button type="button" onClick={() => setShowLogoutConfirm(true)} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
                     </div>
                 )}
                 {!session && (
@@ -150,7 +162,7 @@ export default function NavBar() {
                 <div className="flex items-center gap-1">
                     {session && <NotificationBell role={session.role} />}
                     {session ? (
-                        <button type="button" onClick={handleLogout} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
+                        <button type="button" onClick={() => setShowLogoutConfirm(true)} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
                     ) : (
                         <button type="button" onClick={handleLogin} className={`text-[11px] px-2 py-1 rounded-md ${isDark ? "text-white/65 hover:bg-white/[0.08]" : "text-gray-600 hover:bg-gray-100"}`}>Login</button>
                     )}
@@ -172,5 +184,11 @@ export default function NavBar() {
                 </button>
             </div>
         </nav>
+        <LogoutConfirmDialog
+            open={showLogoutConfirm}
+            loading={loggingOut}
+            onCancel={() => setShowLogoutConfirm(false)}
+            onConfirm={handleLogout}
+        />
     </>);
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Loader2, Mail, Lock, Eye, EyeOff, Smartphone, KeyRound, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ShieldCheck, Loader2, Mail, Lock, Eye, EyeOff, Smartphone, KeyRound, ArrowLeft, CheckCircle, AlertCircle, Check, X as XIcon } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import EmergencyReminder from "@/components/emergency-reminder";
 import ThemeToggle from "@/components/theme-toggle";
+import TermsAndConditions from "@/components/terms-and-conditions";
 import { getSupabaseBrowser } from "@/lib/supabase";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
 
@@ -47,15 +48,58 @@ export default function LoginPage() {
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+    const [forgotHint, setForgotHint] = useState<string | null>(null);
     const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(null);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+    // Field-level error flags so the user can see exactly which input is invalid.
+    const [fieldErrors, setFieldErrors] = useState<{
+        email?: boolean;
+        password?: boolean;
+        confirmPassword?: boolean;
+        phone?: boolean;
+        emailOtpPhone?: boolean;
+        otp?: boolean;
+    }>({});
+    const [submitAttempted, setSubmitAttempted] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
 
     const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
-    
-    // Validate password in real-time during registration and password reset
+    // Tailwind classes for invalid input fields (red border + soft ring).
+    const errorRing = "border-red-500 ring-1 ring-red-500/30 focus-visible:ring-red-500/40";
+    const inputClass = (hasError: boolean) => {
+        const base = `h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`;
+        return hasError ? `${base} ${errorRing}` : base;
+    };
+    const inputClassPwd = (hasError: boolean) => {
+        const base = `h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`;
+        return hasError ? `${base} ${errorRing}` : base;
+    };
+    // Live re-validation: as the user types, clear the corresponding error flag so the red highlight goes away.
     useEffect(() => {
-        if ((mode === "register" && password) || (showForgotPassword && newPassword)) {
+        if (!submitAttempted) return;
+        const normPhone = registerPhone.replace(/\D/g, "").slice(-10);
+        const normOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
+        setFieldErrors((prev) => {
+            const next = { ...prev };
+            if (next.email && isValidEmail(email.trim())) delete next.email;
+            if (next.password) {
+                const ok = mode === "register" ? validatePassword(password).isValid : password.trim().length >= 6;
+                if (ok) delete next.password;
+            }
+            if (next.confirmPassword && confirmPassword && password === confirmPassword) delete next.confirmPassword;
+            if (next.phone && normPhone.length === 10) delete next.phone;
+            if (next.emailOtpPhone && normOtpPhone.length === 10) delete next.emailOtpPhone;
+            if (next.otp && /^\d{6,8}$/.test(otp.trim().replace(/\s/g, ""))) delete next.otp;
+            return next;
+        });
+    }, [email, password, confirmPassword, registerPhone, emailOtpPhone, otp, mode, submitAttempted]);
+    
+    // Validate password in real-time during registration and password reset.
+    // We always run it (even on empty strings) so the requirement checklist is visible up-front.
+    useEffect(() => {
+        if (mode === "register" || showForgotPassword) {
             const pwd = showForgotPassword ? newPassword : password;
             setPasswordValidation(validatePassword(pwd));
         } else {
@@ -208,6 +252,11 @@ export default function LoginPage() {
             }
             
             setForgotSuccess(data.message || "Reset code sent to your registered mobile number.");
+            if (data?.delivery?.mock) {
+                setForgotHint(data.delivery.hint || "SMS provider isn't configured — the code was only logged to the server console.");
+            } else {
+                setForgotHint(null);
+            }
             setForgotStep("verify");
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to send reset code.");
@@ -273,12 +322,14 @@ export default function LoginPage() {
         setNewPassword("");
         setConfirmNewPassword("");
         setForgotSuccess(null);
+        setForgotHint(null);
         setError(null);
         setPasswordValidation(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitAttempted(true);
         if (method === "email_otp") {
             await submitEmailOtpLogin();
             return;
@@ -286,28 +337,33 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
 
+        // Collect every invalid field first so the form can highlight all of them at once.
+        const nextErrors: typeof fieldErrors = {};
+        if (!isValidEmail(email.trim())) nextErrors.email = true;
+        if (password.trim().length < 6) nextErrors.password = true;
+        if (mode === "register") {
+            const validation = validatePassword(password);
+            if (!validation.isValid) nextErrors.password = true;
+            if (!confirmPassword || password !== confirmPassword) nextErrors.confirmPassword = true;
+            if (normalizedRegisterPhone.length !== 10) nextErrors.phone = true;
+        }
+        setFieldErrors(nextErrors);
+
         try {
-            if (!isValidEmail(email.trim())) {
+            if (nextErrors.email) {
                 throw new Error("Enter a valid email address.");
             }
-            
-            // Password validation for login (minimum 6 chars)
-            if (password.trim().length < 6) {
-                throw new Error("Password must be at least 6 characters.");
-            }
-            
-            // Enhanced password validation for registration
-            if (mode === "register") {
-                const validation = validatePassword(password);
-                if (!validation.isValid) {
+            if (nextErrors.password) {
+                if (mode === "register") {
+                    const validation = validatePassword(password);
                     throw new Error(validation.errors[0] || "Password does not meet requirements.");
                 }
-                if (password !== confirmPassword) {
-                    throw new Error("Passwords do not match.");
-                }
+                throw new Error("Password must be at least 6 characters.");
             }
-            
-            if (mode === "register" && normalizedRegisterPhone.length !== 10) {
+            if (mode === "register" && nextErrors.confirmPassword) {
+                throw new Error("Passwords do not match.");
+            }
+            if (mode === "register" && nextErrors.phone) {
                 throw new Error("Enter a valid PH mobile number for your account (e.g., 09171234567).");
             }
 
@@ -332,6 +388,10 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (!res.ok) {
+                // On invalid credentials, flag both email and password so the user knows where to fix.
+                if (res.status === 401 || /invalid|incorrect|wrong|credential|password|email/i.test(String(data?.error ?? ""))) {
+                    setFieldErrors({ email: true, password: true });
+                }
                 throw new Error(data?.error || (mode === "register" ? "Registration failed" : "Login failed"));
             }
             
@@ -412,53 +472,71 @@ export default function LoginPage() {
                                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                                     {method === "password" && (
                                         <div className="space-y-1.5">
-                                            <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Email</label>
+                                            <label className={`text-xs font-semibold ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Email</label>
                                             <div className="relative">
-                                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" className={`h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} type="email" />
+                                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" aria-invalid={fieldErrors.email ? true : undefined} className={inputClass(Boolean(fieldErrors.email))} type="email" />
                                             </div>
+                                            {fieldErrors.email && (
+                                                <p className="text-[11px] text-red-500">Enter a valid email address.</p>
+                                            )}
                                         </div>
                                     )}
                                     {method === "email_otp" && (
                                         <div className="space-y-1.5">
-                                            <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
+                                            <label className={`text-xs font-semibold ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
                                             <div className="relative">
-                                                <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                <Input value={emailOtpPhone} onChange={(e) => setEmailOtpPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" className={`h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                <Input value={emailOtpPhone} onChange={(e) => setEmailOtpPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" aria-invalid={fieldErrors.emailOtpPhone ? true : undefined} className={inputClass(Boolean(fieldErrors.emailOtpPhone))} />
                                             </div>
+                                            {fieldErrors.emailOtpPhone && (
+                                                <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number.</p>
+                                            )}
                                         </div>
                                     )}
                                     {method === "password" && (
                                         <>
                                             <div className="space-y-1.5">
-                                                <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Password</label>
+                                                <label className={`text-xs font-semibold ${fieldErrors.password ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Password</label>
                                                 <div className="relative">
-                                                    <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                    <Input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="Enter password" autoComplete={mode === "register" ? "new-password" : "current-password"} className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                    <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.password ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                    <Input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="Enter password" autoComplete={mode === "register" ? "new-password" : "current-password"} aria-invalid={fieldErrors.password ? true : undefined} className={inputClassPwd(Boolean(fieldErrors.password))} />
                                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-[#7a756a] hover:text-[#4d4941] hover:bg-[#f3efdf]"}`}>
                                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                     </button>
                                                 </div>
+                                                {fieldErrors.password && (
+                                                    <p className="text-[11px] text-red-500">
+                                                        {mode === "register" ? "Password doesn't meet requirements." : "Password must be at least 6 characters."}
+                                                    </p>
+                                                )}
                                             </div>
                                             {mode === "register" && (
                                                 <>
                                                     <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Confirm Password</label>
+                                                        <label className={`text-xs font-semibold ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Confirm Password</label>
                                                         <div className="relative">
-                                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                            <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" autoComplete="new-password" className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                            <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" autoComplete="new-password" aria-invalid={fieldErrors.confirmPassword ? true : undefined} className={inputClassPwd(Boolean(fieldErrors.confirmPassword))} />
                                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-[#7a756a] hover:text-[#4d4941] hover:bg-[#f3efdf]"}`}>
                                                                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                             </button>
                                                         </div>
+                                                        {fieldErrors.confirmPassword && (
+                                                            <p className="text-[11px] text-red-500">Passwords do not match.</p>
+                                                        )}
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
+                                                        <label className={`text-xs font-semibold ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
                                                         <div className="relative">
-                                                            <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                            <Input value={registerPhone} onChange={(e) => setRegisterPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" className={`h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                            <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                            <Input value={registerPhone} onChange={(e) => setRegisterPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" aria-invalid={fieldErrors.phone ? true : undefined} className={inputClass(Boolean(fieldErrors.phone))} />
                                                         </div>
-                                                        <p className={`text-[11px] ${isDark ? "text-white/40" : "text-[#8a8377]"}`}>Saved to your profile for SMS and contact. Must be unique.</p>
+                                                        {fieldErrors.phone ? (
+                                                            <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number (e.g., 09171234567).</p>
+                                                        ) : (
+                                                            <p className={`text-[11px] ${isDark ? "text-white/40" : "text-[#8a8377]"}`}>Saved to your profile for SMS and contact. Must be unique.</p>
+                                                        )}
                                                     </div>
                                                 </>
                                             )}
@@ -485,10 +563,10 @@ export default function LoginPage() {
                                         </>
                                     )}
 
-                                    {mode === "register" && passwordValidation && password && (
-                                        <div className={`space-y-2 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-medium ${isDark ? "text-white/70" : "text-gray-600"}`}>Password strength:</span>
+                                    {mode === "register" && passwordValidation && (
+                                        <div className={`space-y-2.5 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>Password requirements</span>
                                                 <span className={`text-xs font-semibold capitalize ${getPasswordStrengthColor(passwordValidation.strength, isDark)}`}>
                                                     {passwordValidation.strength}
                                                 </span>
@@ -505,16 +583,52 @@ export default function LoginPage() {
                                                     />
                                                 ))}
                                             </div>
-                                            {passwordValidation.errors.length > 0 && (
-                                                <ul className="space-y-1">
-                                                    {passwordValidation.errors.slice(0, 2).map((err, i) => (
-                                                        <li key={i} className={`text-[11px] flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                                                            <AlertCircle className="h-3 w-3 text-amber-500" />
-                                                            {err}
-                                                        </li>
-                                                    ))}
-                                                </ul>
+                                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+                                                {passwordValidation.rules.map((rule) => (
+                                                    <li
+                                                        key={rule.id}
+                                                        className={`text-[11px] flex items-center gap-1.5 transition-colors ${
+                                                            rule.met
+                                                                ? "text-emerald-500"
+                                                                : isDark ? "text-white/45" : "text-gray-500"
+                                                        }`}
+                                                    >
+                                                        {rule.met ? (
+                                                            <Check className="h-3.5 w-3.5" />
+                                                        ) : (
+                                                            <XIcon className={`h-3.5 w-3.5 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+                                                        )}
+                                                        <span>{rule.label}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            {passwordValidation.errors.some((e) => /common|weak|sequential|repeating/i.test(e)) && (
+                                                <p className={`text-[11px] flex items-center gap-1.5 mt-1 ${isDark ? "text-amber-300" : "text-amber-600"}`}>
+                                                    <AlertCircle className="h-3 w-3" />
+                                                    {passwordValidation.errors.find((e) => /common|weak|sequential|repeating/i.test(e))}
+                                                </p>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {mode === "register" && (
+                                        <div className="flex items-start gap-2">
+                                            <Checkbox
+                                                id="agree-terms"
+                                                checked={agreedToTerms}
+                                                onCheckedChange={(checked: boolean | "indeterminate") => setAgreedToTerms(checked === true)}
+                                                className={`mt-0.5 ${isDark ? "border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500" : ""}`}
+                                            />
+                                            <label htmlFor="agree-terms" className={`text-xs leading-relaxed cursor-pointer ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                                I agree to the{" "}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowTerms(true)}
+                                                    className={`underline underline-offset-2 font-medium ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                                >
+                                                    Terms & Conditions
+                                                </button>
+                                            </label>
                                         </div>
                                     )}
 
@@ -552,8 +666,8 @@ export default function LoginPage() {
                                         className={`w-full h-12 rounded-full font-semibold text-base ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
                                         disabled={
                                             method === "password"
-                                                ? (loading || !email.trim() || !password.trim() || (mode === "register" && (!confirmPassword.trim() || normalizedRegisterPhone.length !== 10)))
-                                                : (verifyingOtp || !otpSent || normalizedEmailOtpPhone.length !== 10 || !/^\d{6,8}$/.test(otp.trim().replace(/\s/g, "")))
+                                                ? (loading || !email.trim() || !password.trim() || (mode === "register" && (!confirmPassword.trim() || normalizedRegisterPhone.length !== 10 || !agreedToTerms)))
+                                                : (verifyingOtp || !otpSent || normalizedEmailOtpPhone.length !== 10 || !/^\d{6,8}$/.test(otp.trim().replace(/\s/g, "")) || (mode === "register" && !agreedToTerms))
                                         }
                                     >
                                         {method === "password"
@@ -578,7 +692,7 @@ export default function LoginPage() {
                                                 {mode === "register" ? "Sign in" : "Register"}
                                             </button>
                                         </p>
-                                        <span className={`sm:shrink-0 ${isDark ? "text-white/35" : "text-[#8a8377]"}`}>Terms & Conditions</span>
+                                        <button type="button" onClick={() => setShowTerms(true)} className={`sm:shrink-0 underline underline-offset-2 transition-colors ${isDark ? "text-white/35 hover:text-white/55" : "text-[#8a8377] hover:text-[#5e5649]"}`}>Terms & Conditions</button>
                                     </div>
                                 </form>
                             </CardContent>
@@ -609,6 +723,8 @@ export default function LoginPage() {
                 </Card>
                 <EmergencyReminder compact />
             </div>
+
+            <TermsAndConditions open={showTerms} onClose={() => setShowTerms(false)} />
 
             {/* Forgot Password Modal */}
             {showForgotPassword && (
@@ -685,6 +801,11 @@ export default function LoginPage() {
                                             {forgotSuccess}
                                         </div>
                                     )}
+                                    {forgotHint && (
+                                        <div className={`text-[11px] px-3 py-2 rounded-xl border ${isDark ? "text-amber-300 border-amber-500/30 bg-amber-500/10" : "text-amber-800 border-amber-200 bg-amber-50"}`}>
+                                            <span className="font-semibold">Dev note:</span> {forgotHint}
+                                        </div>
+                                    )}
                                     {error && (
                                         <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
                                             {error}
@@ -723,10 +844,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
 
-                                    {passwordValidation && newPassword && (
-                                        <div className={`space-y-2 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-medium ${isDark ? "text-white/70" : "text-gray-600"}`}>Password strength:</span>
+                                    {passwordValidation && (
+                                        <div className={`space-y-2.5 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>Password requirements</span>
                                                 <span className={`text-xs font-semibold capitalize ${getPasswordStrengthColor(passwordValidation.strength, isDark)}`}>
                                                     {passwordValidation.strength}
                                                 </span>
@@ -743,16 +864,25 @@ export default function LoginPage() {
                                                     />
                                                 ))}
                                             </div>
-                                            {passwordValidation.errors.length > 0 && (
-                                                <ul className="space-y-1">
-                                                    {passwordValidation.errors.slice(0, 2).map((err, i) => (
-                                                        <li key={i} className={`text-[11px] flex items-center gap-1.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                                                            <AlertCircle className="h-3 w-3 text-amber-500" />
-                                                            {err}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
+                                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+                                                {passwordValidation.rules.map((rule) => (
+                                                    <li
+                                                        key={rule.id}
+                                                        className={`text-[11px] flex items-center gap-1.5 ${
+                                                            rule.met
+                                                                ? "text-emerald-500"
+                                                                : isDark ? "text-white/45" : "text-gray-500"
+                                                        }`}
+                                                    >
+                                                        {rule.met ? (
+                                                            <Check className="h-3.5 w-3.5" />
+                                                        ) : (
+                                                            <XIcon className={`h-3.5 w-3.5 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+                                                        )}
+                                                        <span>{rule.label}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     )}
 

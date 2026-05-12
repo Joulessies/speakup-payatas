@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CATEGORY_LABELS, type ReportCategory } from "@/types";
 import Link from "next/link";
 import { toast } from "sonner";
+import StatusUpdateDialog, { type StaffStatus } from "@/components/status-update-dialog";
 
 const STATUS_OPTIONS = [
     { value: "pending", label: "Pending", color: "text-amber-500" },
@@ -68,6 +69,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [statusUpdateTarget, setStatusUpdateTarget] = useState<{ reportId: string; status: StaffStatus } | null>(null);
 
     const loadReports = async () => {
         setLoading(true);
@@ -77,8 +79,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             const allReports = data.reports ?? [];
             setReports(allReports);
 
-            const filtered = allReports.filter(r => r.verification_status === filter);
-            applyFilters(filtered, searchQuery, categoryFilter, sortBy);
+            applyFilters(allReports, searchQuery, categoryFilter, sortBy);
         } catch {
             setReports([]);
             setFilteredReports([]);
@@ -88,7 +89,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     };
 
     const applyFilters = (reportsToFilter: Report[], query: string, catFilter: string, sort: string, resetPage: boolean = true) => {
-        let filtered = [...reportsToFilter];
+        // Always honor the active verification_status tab so reports correctly leave the list after being marked.
+        let filtered = reportsToFilter.filter((r) => r.verification_status === filter);
 
         // Search filter
         if (query.trim()) {
@@ -131,11 +133,11 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
 
     useEffect(() => {
         loadReports();
-    }, [filter]);
+    }, []);
 
     useEffect(() => {
         applyFilters(reports, searchQuery, categoryFilter, sortBy);
-    }, [searchQuery, categoryFilter, sortBy, reports]);
+    }, [filter, searchQuery, categoryFilter, sortBy, reports]);
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
@@ -240,19 +242,37 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     };
 
     const handleStatusUpdate = async (reportId: string, newStatus: string) => {
+        // Open the status update dialog so the staff/admin can attach a photo + note.
+        setStatusUpdateTarget({ reportId, status: newStatus as StaffStatus });
+    };
+
+    const submitStatusUpdate = async ({ reportId, status, note, photoDataUrl }: { reportId: string; status: StaffStatus; note: string; photoDataUrl: string | null }) => {
         setSaving(`status_${reportId}`);
         try {
-            await fetch("/api/reports", {
+            const res = await fetch("/api/reports", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     report_id: reportId,
-                    status: newStatus,
+                    status,
                     actor: role === "admin" ? "Admin" : "Staff",
+                    note,
+                    photo_url: photoDataUrl ?? undefined,
                 }),
             });
+            const data = await res.json().catch(() => ({ error: "Server error" }));
+            if (!res.ok) {
+                throw new Error(typeof data?.error === "string" ? data.error : "Status update failed.");
+            }
+            toast.success(`Report marked as ${status.replace("_", " ")}`, {
+                description: photoDataUrl ? "Photo attached to the action history." : undefined,
+            });
+            setStatusUpdateTarget(null);
             await loadReports();
-        } catch { }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : "Status update failed.";
+            toast.error("Couldn't update status", { description: msg });
+        }
         finally {
             setSaving(null);
         }
@@ -922,6 +942,14 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                 {action.note && (
                                                     <p className={`text-xs mt-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>{action.note}</p>
                                                 )}
+                                                {action.photo_url && (
+                                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                                    <img
+                                                        src={action.photo_url}
+                                                        alt={`Update attachment for ${action.status}`}
+                                                        className="mt-2 w-full max-h-48 object-cover rounded-lg border"
+                                                    />
+                                                )}
                                                 <span className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>
                                                     {new Date(action.created_at).toLocaleString()}
                                                 </span>
@@ -966,7 +994,6 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                     key={option.value}
                                                     onClick={() => {
                                                         handleStatusUpdate(detailModal.id, option.value);
-                                                        setDetailModal({ ...detailModal, status: option.value });
                                                     }}
                                                     disabled={saving === `status_${detailModal.id}` || isCurrentStatus}
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
@@ -991,6 +1018,14 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                     </div>
                 </div>
             )}
+
+            <StatusUpdateDialog
+                open={Boolean(statusUpdateTarget)}
+                reportId={statusUpdateTarget?.reportId ?? ""}
+                targetStatus={statusUpdateTarget?.status ?? null}
+                onCancel={() => setStatusUpdateTarget(null)}
+                onSubmit={submitStatusUpdate}
+            />
         </div>
     );
 }

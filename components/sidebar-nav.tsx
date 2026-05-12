@@ -7,6 +7,7 @@ import { useTheme } from "./theme-provider";
 import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
 import NotificationBell from "./notification-bell";
+import LogoutConfirmDialog from "./logout-confirm-dialog";
 import {
     ShieldCheck,
     FileWarning,
@@ -39,6 +40,8 @@ export default function SidebarNav() {
     const isDark = theme === "dark";
     const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
         const [collapsed, setCollapsed] = useState(false);
+        const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+        const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -61,8 +64,14 @@ export default function SidebarNav() {
     }, [pathname]);
 
     const handleLogout = async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/login";
+        setLoggingOut(true);
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+        } finally {
+            setLoggingOut(false);
+            setShowLogoutConfirm(false);
+        }
     };
 
     const isActive = (href: string) => {
@@ -195,7 +204,7 @@ export default function SidebarNav() {
                                 {!collapsed && <NotificationBell role={session.role} />}
                             </div>
                             <Link
-                                href="/admin/settings"
+                                href={session.role === "admin" ? "/admin/settings" : "/account"}
                                 title={collapsed ? "Account Settings" : undefined}
                                 className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"} ${collapsed ? "w-full px-2" : "w-full"}`}
                             >
@@ -203,7 +212,7 @@ export default function SidebarNav() {
                                 {!collapsed && "Account Settings"}
                             </Link>
                             <button
-                                onClick={handleLogout}
+                                onClick={() => setShowLogoutConfirm(true)}
                                 title={collapsed ? "Logout" : undefined}
                                 className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"} ${collapsed ? "w-full px-2" : "w-full"}`}
                             >
@@ -216,6 +225,12 @@ export default function SidebarNav() {
             </aside>
             {/* Desktop Collapsed Spacer */}
             <div className={`hidden md:block ${collapsed ? "w-[72px]" : "w-[260px]"} shrink-0 transition-all duration-300`} />
+            <LogoutConfirmDialog
+                open={showLogoutConfirm}
+                loading={loggingOut}
+                onCancel={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+            />
         </>
     );
 }

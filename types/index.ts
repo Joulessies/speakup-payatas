@@ -38,6 +38,7 @@ export interface ReportAction {
     note: string;
     actor: string;
     created_at: string;
+    photo_url?: string;
 }
 
 export type ReportStatus = "pending" | "verified" | "in_progress" | "resolved";

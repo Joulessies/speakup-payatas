@@ -1,8 +1,15 @@
+export interface PasswordRuleCheck {
+    id: "length" | "uppercase" | "lowercase" | "number" | "special";
+    label: string;
+    met: boolean;
+}
+
 export interface PasswordValidationResult {
     isValid: boolean;
     errors: string[];
     strength: "weak" | "fair" | "good" | "strong";
-    score: number; 
+    score: number;
+    rules: PasswordRuleCheck[];
 }
 
 export function validatePassword(password: string): PasswordValidationResult {
@@ -95,11 +102,20 @@ export function validatePassword(password: string): PasswordValidationResult {
         /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) &&
         !commonPatterns.some(p => p.test(password));
 
+    const rules: PasswordRuleCheck[] = [
+        { id: "length", label: "At least 8 characters", met: password.length >= 8 },
+        { id: "uppercase", label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(password) },
+        { id: "lowercase", label: "One lowercase letter (a–z)", met: /[a-z]/.test(password) },
+        { id: "number", label: "One number (0–9)", met: /\d/.test(password) },
+        { id: "special", label: "One special character (!@#$…)", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+    ];
+
     return {
         isValid,
         errors,
         strength,
         score,
+        rules,
     };
 }
 

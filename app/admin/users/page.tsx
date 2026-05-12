@@ -325,9 +325,12 @@ export default function AdminUsersPage() {
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "staff" | "user" })}
-                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
-                                        isDark ? "bg-white/5 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"
+                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat ${
+                                        isDark
+                                            ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#1a1a24] [&>option]:text-white"
+                                            : "bg-gray-50 border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"
                                     }`}
+                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='${isDark ? '%23ffffff60' : '%236b7280'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
                                 >
                                     <option value="user">User</option>
                                     <option value="staff">Staff</option>

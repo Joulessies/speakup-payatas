@@ -174,17 +174,23 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { report_id, status, verification_status, admin_category, note, actor } = body as {
+    const { report_id, status, verification_status, admin_category, note, actor, photo_url } = body as {
       report_id?: string;
       status?: WorkflowStatus;
       verification_status?: VerificationStatus;
       admin_category?: string;
       note?: string;
       actor?: string;
+      photo_url?: string;
     };
     if (!report_id) {
       return NextResponse.json({ error: "Missing report_id" }, { status: 400 });
     }
+
+    // Inline data URLs can grow unbounded; cap the size so a misuse can't bloat the row.
+    const cleanedPhotoUrl = typeof photo_url === "string" && photo_url.trim().length > 0
+      ? (photo_url.length > 2_000_000 ? null : photo_url.trim())
+      : null;
 
     const reports = await fetchReportsBase();
     const report = reports.find((r) => r.id === report_id);
@@ -208,6 +214,7 @@ export async function PATCH(request: Request) {
         note: note?.trim() || `Status changed to ${status.replace("_", " ")}.`,
         actor: actor?.trim() || "Admin",
         created_at: now,
+        ...(cleanedPhotoUrl ? { photo_url: cleanedPhotoUrl } : {}),
       });
       await addNotification({
         recipient_hash: report.reporter_hash,

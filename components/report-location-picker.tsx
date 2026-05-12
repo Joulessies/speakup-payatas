@@ -5,6 +5,7 @@ import { GoogleMap, Polygon } from "@react-google-maps/api";
 import { PAYATAS_CENTER, isWithinPayatas } from "@/lib/payatas-boundary";
 import { getGoogleMapsApiKey, googleMapPickerOptions, payatasBoundaryPath } from "@/lib/payatas-google-maps";
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
+import { useGoogleMapsAuthFailed } from "@/hooks/use-google-maps-auth";
 
 interface ReportLocationPickerProps {
     latitude: number | null;
@@ -96,6 +97,7 @@ function DraggableAdvancedMarker({
 
 function ReportLocationPickerLoaded({ latitude, longitude, isDark, outsideBoundaryWarning, onLocationChange, onAdjustPin, }: ReportLocationPickerProps) {
     const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
+    const authFailed = useGoogleMapsAuthFailed();
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const boundaryPath = payatasBoundaryPath();
 
@@ -110,7 +112,7 @@ function ReportLocationPickerLoaded({ latitude, longitude, isDark, outsideBounda
         onLocationChange(lat, lng);
     }, [onLocationChange, onAdjustPin]);
 
-    if (loadError)
+    if (loadError || authFailed)
         return null;
     if (!isLoaded) {
         return <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/40"/>;

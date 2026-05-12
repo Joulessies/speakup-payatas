@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Search, ChevronRight, FileWarning, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Loader2, LayoutDashboard, Search, ChevronRight, FileWarning, CheckCircle2, ShieldAlert, Copy, Check } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 import { CATEGORY_LABELS } from "@/types";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface MyReport {
     id: string;
@@ -22,6 +23,22 @@ export default function UserDashboard() {
     const isDark = theme === "dark";
     const [reports, setReports] = useState<MyReport[]>([]);
     const [loading, setLoading] = useState(true);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const copyReceipt = async (e: React.MouseEvent, receiptId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            await navigator.clipboard.writeText(receiptId);
+            setCopiedId(receiptId);
+            toast.success("Receipt code copied", {
+                description: "Paste it into the Track field to view this report.",
+            });
+            window.setTimeout(() => setCopiedId((prev) => (prev === receiptId ? null : prev)), 1500);
+        } catch {
+            toast.error("Could not copy. Please copy manually.");
+        }
+    };
 
     useEffect(() => {
         (async () => {
@@ -114,9 +131,24 @@ export default function UserDashboard() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1">
                                             {r.receipt_id && (
-                                                <code className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isDark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600"}`}>
-                                                    {r.receipt_id}
-                                                </code>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => copyReceipt(e, r.receipt_id!)}
+                                                    title="Copy receipt code"
+                                                    aria-label={`Copy receipt code ${r.receipt_id}`}
+                                                    className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors ${
+                                                        isDark
+                                                            ? "bg-white/10 text-white/60 hover:bg-white/15 hover:text-white"
+                                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                                                    }`}
+                                                >
+                                                    <span>{r.receipt_id}</span>
+                                                    {copiedId === r.receipt_id ? (
+                                                        <Check className="h-3 w-3 text-emerald-500" />
+                                                    ) : (
+                                                        <Copy className="h-3 w-3" />
+                                                    )}
+                                                </button>
                                             )}
                                             <span className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                                                 {new Date(r.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
