@@ -30,7 +30,6 @@ function readDragPosition(
     return null;
 }
 
-/** Draggable pin using AdvancedMarkerElement (replaces deprecated google.maps.Marker). */
 function DraggableAdvancedMarker({
     map,
     latitude,

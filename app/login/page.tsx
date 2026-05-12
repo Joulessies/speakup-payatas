@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import EmergencyReminder from "@/components/emergency-reminder";
+import ThemeToggle from "@/components/theme-toggle";
 import { getSupabaseBrowser } from "@/lib/supabase";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
 
@@ -354,6 +355,9 @@ export default function LoginPage() {
     return (
         <div className={`flex min-h-0 flex-1 items-stretch justify-center overflow-y-auto px-3 py-4 sm:items-center sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
             <div className="w-full max-w-5xl space-y-4">
+                <div className="flex justify-end">
+                    <ThemeToggle className={isDark ? "bg-white/[0.04] hover:bg-white/10" : "bg-black/[0.04] hover:bg-black/10"} />
+                </div>
                 <Card className={`overflow-hidden rounded-[1.25rem] shadow-2xl sm:rounded-[1.75rem] lg:rounded-[2rem] ${isDark ? "bg-[#121318] border-white/10" : "bg-[#fffbea] border-[#e8e1cf]"}`}>
                     <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1.35fr] lg:items-stretch">
                         <div className={`order-1 w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-7 lg:p-8 ${isDark ? "bg-[#13141a]" : "bg-[#fffdf4]"}`}>

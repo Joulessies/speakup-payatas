@@ -7,17 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, LocateFixed, Camera, X, } from "lucide-react";
+import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, LocateFixed, Camera, X, HelpCircle, ExternalLink, AlertCircle, } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "@/lib/db";
 import { generateReporterHash, getDeviceId } from "@/lib/crypto";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import EmergencyReminder from "@/components/emergency-reminder";
+import GpsHelpDialog from "@/components/gps-help-dialog";
 import { type ReportCategory, type OfflineReport, CATEGORY_LABELS } from "@/types";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
 import { isWithinPayatas } from "@/lib/payatas-boundary";
+import { detectPlatform, type PlatformInfo } from "@/lib/geolocation-help";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
     ssr: false,
@@ -51,6 +53,10 @@ export default function ReportForm() {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [receiptId, setReceiptId] = useState<string | null>(null);
     const [draftHydrated, setDraftHydrated] = useState(false);
+    const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+    const [gpsPermission, setGpsPermission] = useState<PermissionState | "unsupported" | "unknown">("unknown");
+    const [showGpsHelp, setShowGpsHelp] = useState(false);
+    const hasMapPicker = Boolean(getGoogleMapsApiKey());
     const playSubmitSound = useCallback(() => {
         if (typeof window === "undefined")
             return;
@@ -183,6 +189,37 @@ export default function ReportForm() {
         })();
     }, []);
     useEffect(() => {
+        setPlatform(detectPlatform());
+    }, []);
+    useEffect(() => {
+        if (typeof navigator === "undefined" || !("permissions" in navigator)) {
+            setGpsPermission("unsupported");
+            return;
+        }
+        let status: PermissionStatus | null = null;
+        let handler: (() => void) | null = null;
+        let cancelled = false;
+        (async () => {
+            try {
+                const result = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+                if (cancelled)
+                    return;
+                status = result;
+                setGpsPermission(result.state);
+                handler = () => setGpsPermission(result.state);
+                result.addEventListener("change", handler);
+            }
+            catch {
+                setGpsPermission("unsupported");
+            }
+        })();
+        return () => {
+            cancelled = true;
+            if (status && handler)
+                status.removeEventListener("change", handler);
+        };
+    }, []);
+    useEffect(() => {
         try {
             const raw = localStorage.getItem(DRAFT_KEY);
             if (!raw)
@@ -301,6 +338,7 @@ export default function ReportForm() {
     const detectGPS = useCallback(() => {
         if (!navigator.geolocation) {
             setError(t.reportGPSNotSupported);
+            setShowGpsHelp(true);
             return;
         }
         setGpsLoading(true);
@@ -311,8 +349,22 @@ export default function ReportForm() {
             setLocationAccuracy(pos.coords.accuracy ?? null);
             setGpsLoading(false);
         }, (err) => {
-            setError(`GPS error: ${err.message}`);
             setGpsLoading(false);
+            if (err.code === err.PERMISSION_DENIED) {
+                setError(t.locationGpsErrorDenied);
+                setGpsPermission("denied");
+                setShowGpsHelp(true);
+                return;
+            }
+            if (err.code === err.POSITION_UNAVAILABLE) {
+                setError(t.locationGpsErrorUnavailable);
+                return;
+            }
+            if (err.code === err.TIMEOUT) {
+                setError(t.locationGpsErrorTimeout);
+                return;
+            }
+            setError(t.locationGpsErrorUnavailable);
         }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }, [t]);
     const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -550,9 +602,45 @@ export default function ReportForm() {
 
             
             <div className="space-y-2">
-              <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                {t.reportLocation}
-              </Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                  {t.reportLocation}
+                </Label>
+                <button
+                    type="button"
+                    onClick={() => setShowGpsHelp(true)}
+                    className={`flex items-center gap-1 text-[11px] font-medium underline-offset-2 hover:underline ${isDark ? "text-indigo-300" : "text-indigo-600"}`}
+                >
+                    <HelpCircle className="h-3 w-3"/>
+                    {t.locationHelpButtonLabel}
+                </button>
+              </div>
+
+              {platform?.isSecureContext === false && (
+                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-red-500/10 border-red-500/30 text-red-200" : "bg-red-50 border-red-200 text-red-800"}`}>
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
+                    <p className="text-[11px] leading-snug">{t.locationInsecureBanner}</p>
+                </div>
+              )}
+
+              {platform?.isInAppWebView && (
+                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                    <ExternalLink className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
+                    <p className="text-[11px] leading-snug">{t.locationInAppBrowserBanner(platform.inAppName ?? "this app")}</p>
+                </div>
+              )}
+
+              {gpsPermission === "denied" && !platform?.isInAppWebView && platform?.isSecureContext !== false && (
+                <button
+                    type="button"
+                    onClick={() => setShowGpsHelp(true)}
+                    className={`w-full flex items-start gap-2 px-3 py-2 rounded-xl border text-left ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200 hover:bg-amber-500/15" : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"}`}
+                >
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
+                    <p className="text-[11px] leading-snug">{t.locationPermissionBlockedBanner}</p>
+                </button>
+              )}
+
               {latitude !== null && longitude !== null ? (<button type="button" onClick={detectGPS} className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
                   <LocateFixed className="h-4 w-4 shrink-0"/>
                   <span className="min-w-0 truncate text-xs sm:text-sm font-mono">{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
@@ -567,7 +655,13 @@ export default function ReportForm() {
                   {t.reportAccuracyLabel(Math.round(locationAccuracy))} · {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? t.reportAccuracyPoor : t.reportAccuracyGood}
                   {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? ` — ${t.reportRetryForBetterAccuracy}` : ""}
                 </p>)}
-              {getGoogleMapsApiKey() && (<>
+              {hasMapPicker && (gpsPermission === "denied" || platform?.isInAppWebView || platform?.isSecureContext === false) && latitude === null && longitude === null && (
+                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-800"}`}>
+                    <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
+                    <p className="text-[11px] leading-snug font-medium">{t.locationMapFallbackCallout}</p>
+                </div>
+              )}
+              {hasMapPicker && (<>
                   <ReportLocationPicker latitude={latitude} longitude={longitude} isDark={isDark} outsideBoundaryWarning={t.reportOutsideBoundary} onLocationChange={(lat, lng) => {
                     setLatitude(lat);
                     setLongitude(lng);
@@ -593,5 +687,6 @@ export default function ReportForm() {
             </Button>
           </form>)}
       </CardContent>
+      <GpsHelpDialog open={showGpsHelp} onClose={() => setShowGpsHelp(false)} platform={platform}/>
     </Card>);
 }
