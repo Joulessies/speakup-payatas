@@ -48,12 +48,10 @@ export function classifyReport(description: string): ReportCategory {
         let matchCount = 0;
         
         for (const keyword of keywords) {
-            // Use regex to match whole words or boundaries
             const regex = new RegExp(`\\b${keyword}\\b`, 'i');
             if (regex.test(text)) {
                 matchCount++;
             } else if (text.includes(keyword) && keyword.length > 4) {
-                // Fallback for partial matches on longer words
                 matchCount += 0.5;
             }
         }
@@ -64,7 +62,6 @@ export function classifyReport(description: string): ReportCategory {
         }
     }
 
-    // If confidence is too low, default to 'other'
     if (maxMatches < 1) {
         return "other";
     }
