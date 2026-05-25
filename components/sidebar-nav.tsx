@@ -27,6 +27,7 @@ import {
     ChevronRight,
     History,
     QrCode,
+    Info,
 } from "lucide-react";
 
 interface NavItem {
@@ -41,9 +42,9 @@ export default function SidebarNav() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
-        const [collapsed, setCollapsed] = useState(false);
-        const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-        const [loggingOut, setLoggingOut] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -69,10 +70,11 @@ export default function SidebarNav() {
         setLoggingOut(true);
         try {
             await fetch("/api/auth/logout", { method: "POST" });
-            window.location.href = "/login";
+        } catch {
         } finally {
             setLoggingOut(false);
             setShowLogoutConfirm(false);
+            window.location.href = "/login";
         }
     };
 
@@ -95,6 +97,7 @@ export default function SidebarNav() {
                     { href: "/transparency", label: "Transparency", icon: Eye },
                     { href: "/feedback", label: "Feedback", icon: MessageSquare },
                     { href: "/qr", label: "QR Code", icon: QrCode },
+                    { href: "/about", label: "About Us", icon: Info },
                 ];
             case "staff":
                 return [
@@ -121,8 +124,8 @@ export default function SidebarNav() {
         session?.role === "admin"
             ? "bg-red-500/20 text-red-300"
             : session?.role === "staff"
-            ? "bg-blue-500/20 text-blue-300"
-            : "bg-emerald-500/20 text-emerald-300";
+                ? "bg-blue-500/20 text-blue-300"
+                : "bg-emerald-500/20 text-emerald-300";
 
     return (
         <>
@@ -156,17 +159,15 @@ export default function SidebarNav() {
                             key={item.href}
                             href={item.href}
                             title={collapsed ? item.label : undefined}
-                            className={`flex items-center rounded-xl text-sm font-medium transition-all ${
-                                collapsed ? "justify-center p-3" : "gap-3 px-3 py-3"
-                            } ${
-                                isActive(item.href)
+                            className={`flex items-center rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-3"
+                                } ${isActive(item.href)
                                     ? isDark
                                         ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
                                         : "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                     : isDark
-                                    ? "text-white/70 hover:bg-white/[0.05] hover:text-white"
-                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            }`}
+                                        ? "text-white/70 hover:bg-white/[0.05] hover:text-white"
+                                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                }`}
                         >
                             <item.icon className="h-5 w-5 shrink-0" />
                             {!collapsed && (

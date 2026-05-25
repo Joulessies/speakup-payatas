@@ -37,10 +37,12 @@ export default function BottomNav() {
         setLoggingOut(true);
         try {
             await fetch("/api/auth/logout", { method: "POST" });
-            window.location.href = "/login";
+        } catch {
+            // Best effort logout on network/server error
         } finally {
             setLoggingOut(false);
             setShowLogoutConfirm(false);
+            window.location.href = "/login";
         }
     };
 

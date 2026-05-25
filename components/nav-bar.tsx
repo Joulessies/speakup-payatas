@@ -44,13 +44,23 @@ export default function NavBar() {
         setLoggingOut(true);
         try {
             await fetch("/api/auth/logout", { method: "POST" });
-            window.location.href = "/login";
+        } catch {
+            // Best effort logout on network/server error
         } finally {
             setLoggingOut(false);
             setShowLogoutConfirm(false);
+            window.location.href = "/login";
         }
     };
-    const handleLogin = async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; };
+    const handleLogin = async () => {
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+        } catch {
+            // best effort
+        } finally {
+            window.location.href = "/login";
+        }
+    };
 
     const isAdmin = session?.role === "admin";
     const isStaff = session?.role === "staff";

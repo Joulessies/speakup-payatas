@@ -93,11 +93,11 @@ export default function AccountSettingsPage() {
         try {
             await fetch("/api/auth/logout", { method: "POST" });
             toast.success("Logged out successfully");
-            window.location.href = "/login";
         } catch (error) {
-            toast.error("Failed to logout");
+            console.error("Logout error", error);
         } finally {
             setLoading(false);
+            window.location.href = "/login";
         }
     };
 
