@@ -64,6 +64,9 @@ export default function LoginPage() {
     const [submitAttempted, setSubmitAttempted] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
+    // Resend timers (in seconds; 0 = ready to resend)
+    const [otpResendTimer, setOtpResendTimer] = useState(0);
+    const [forgotResendTimer, setForgotResendTimer] = useState(0);
 
     const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
     // Tailwind classes for invalid input fields (red border + soft ring).
@@ -106,6 +109,20 @@ export default function LoginPage() {
             setPasswordValidation(null);
         }
     }, [password, newPassword, mode, showForgotPassword]);
+
+    // Countdown timer for OTP resend
+    useEffect(() => {
+        if (otpResendTimer <= 0) return;
+        const id = window.setInterval(() => setOtpResendTimer((t) => Math.max(0, t - 1)), 1000);
+        return () => window.clearInterval(id);
+    }, [otpResendTimer]);
+
+    // Countdown timer for Forgot Password resend
+    useEffect(() => {
+        if (forgotResendTimer <= 0) return;
+        const id = window.setInterval(() => setForgotResendTimer((t) => Math.max(0, t - 1)), 1000);
+        return () => window.clearInterval(id);
+    }, [forgotResendTimer]);
     const normalizedRegisterPhone = registerPhone.replace(/\D/g, "").slice(-10);
     const normalizedEmailOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
     const mapOtpSendError = (message: string) => {
@@ -153,8 +170,6 @@ export default function LoginPage() {
             const { error: otpErr } = await supabase.auth.signInWithOtp({
                 email: addr,
                 options: {
-                    // For phone-linked existing app accounts, this avoids "signups not allowed for otp"
-                    // when the email exists in app_users but not yet in Supabase auth.users.
                     shouldCreateUser: true,
                 },
             });
@@ -163,6 +178,7 @@ export default function LoginPage() {
                 return;
             }
             setOtpSent(true);
+            setOtpResendTimer(60); // 60-second cooldown
         }
         catch (e) {
             setError(e instanceof Error ? e.message : "Unable to send email OTP.");
@@ -219,7 +235,7 @@ export default function LoginPage() {
             }
             await supabase.auth.signOut().catch(() => { });
             const next = new URLSearchParams(window.location.search).get("next");
-            router.push(next || json.redirect_to || "/");
+            router.push(next || json.redirect_to || "/dashboard");
             router.refresh();
         }
         catch (e) {
@@ -258,6 +274,7 @@ export default function LoginPage() {
                 setForgotHint(null);
             }
             setForgotStep("verify");
+            setForgotResendTimer(60); // 60-second cooldown
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to send reset code.");
         } finally {
@@ -413,7 +430,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className={`flex min-h-0 flex-1 items-stretch justify-center overflow-y-auto px-3 py-4 sm:items-center sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
+        <div className={`flex flex-col items-center justify-start h-full w-full overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
             <div className="w-full max-w-5xl space-y-4">
                 <div className="flex justify-end">
                     <ThemeToggle className={isDark ? "bg-white/[0.04] hover:bg-white/10" : "bg-black/[0.04] hover:bg-black/10"} />
@@ -555,9 +572,24 @@ export default function LoginPage() {
                                                     {sendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send code"}
                                                 </Button>
                                             ) : (
-                                                <div className="space-y-1.5">
-                                                    <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
-                                                    <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1.5">
+                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
+                                                        <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                                            {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={sendEmailOtp}
+                                                            disabled={otpResendTimer > 0 || sendingOtp}
+                                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                                        >
+                                                            {sendingOtp ? "Sending…" : "Resend code"}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </>
@@ -795,6 +827,38 @@ export default function LoginPage() {
                                                 className={`h-12 rounded-full pl-11 pr-4 text-center font-mono tracking-[0.3em] ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
                                             />
                                         </div>
+                                    </div>
+                                    {/* Resend option with timer */}
+                                    <div className="flex items-center justify-between">
+                                        <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                            {forgotResendTimer > 0 ? `Resend available in ${forgotResendTimer}s` : "Didn't receive the SMS?"}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            disabled={forgotResendTimer > 0 || forgotLoading}
+                                            onClick={async () => {
+                                                setError(null);
+                                                setForgotLoading(true);
+                                                try {
+                                                    const res = await fetch("/api/auth/forgot-password", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ email: forgotEmail }),
+                                                    });
+                                                    const data = await res.json();
+                                                    if (!res.ok) throw new Error(data.error || "Failed to resend.");
+                                                    setForgotSuccess(data.message || "Code resent.");
+                                                    setForgotResendTimer(60);
+                                                } catch (e) {
+                                                    setError(e instanceof Error ? e.message : "Failed to resend.");
+                                                } finally {
+                                                    setForgotLoading(false);
+                                                }
+                                            }}
+                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                        >
+                                            {forgotLoading ? "Sending…" : "Resend code"}
+                                        </button>
                                     </div>
                                     {forgotSuccess && (
                                         <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-emerald-300 border-emerald-500/25 bg-emerald-500/10" : "text-emerald-700 border-emerald-200 bg-emerald-50"}`}>

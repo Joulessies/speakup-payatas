@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, Trash2, Edit, Plus, X } from "lucide-react";
+import { Loader2, Trash2, Plus, X, UserX, ShieldOff } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +20,10 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [formData, setFormData] = useState({ username: "", role: "user", phone: "", password: "" });
+    const [formData, setFormData] = useState({ username: "", role: "staff", phone: "", password: "" });
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [suspendTarget, setSuspendTarget] = useState<{ id: string; offense: 1 | 2 | 3 } | null>(null);
     const pageSize = 10;
 
     const totalPages = Math.ceil(users.length / pageSize);
@@ -101,15 +102,31 @@ export default function AdminUsersPage() {
         }
     };
 
-    const openModal = (user?: User) => {
-        if (user) {
-            setEditingUser(user);
-            setFormData({ username: user.username, role: user.role, phone: user.phone || "", password: "" });
-        } else {
-            setEditingUser(null);
-            setFormData({ username: "", role: "user", phone: "", password: "" });
-        }
+    const openModal = () => {
+        setEditingUser(null);
+        setFormData({ username: "", role: "staff", phone: "", password: "" });
         setIsModalOpen(true);
+    };
+
+    const handleSuspend = async (userId: string, offenseNumber: 1 | 2 | 3) => {
+        try {
+            const res = await fetch("/api/users/suspend", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: userId, offense_number: offenseNumber }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const labels = { 1: "24-hour suspension", 2: "3-day suspension", 3: "permanent block" };
+                toast.success(`User given ${labels[offenseNumber]}`);
+                setSuspendTarget(null);
+                loadUsers();
+            } else {
+                toast.error(data?.error || "Failed to suspend user");
+            }
+        } catch {
+            toast.error("Network error");
+        }
     };
 
     return (
@@ -128,7 +145,7 @@ export default function AdminUsersPage() {
                         onClick={() => openModal()}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 transition-colors"
                     >
-                        <Plus className="h-4 w-4" /> Add User
+                        <Plus className="h-4 w-4" /> Add Staff
                     </button>
                 </div>
 
@@ -164,10 +181,17 @@ export default function AdminUsersPage() {
                                                 {u.id.slice(0, 8)}...
                                             </td>
                                             <td className={`p-4 font-medium ${isDark ? "text-white/90" : "text-gray-800"}`}>
-                                                <div>
-                                                    <div className="font-medium">{u.username}</div>
-                                                    {u.phone && <div className="text-[10px] opacity-60 font-normal mt-1">📱 {u.phone}</div>}
-                                                </div>
+                                                {/* Privacy: show full info only for staff/admin */}
+                                                {u.role === "user" ? (
+                                                    <div className={`text-[10px] font-mono px-2 py-1 rounded ${isDark ? "bg-white/[0.05] text-white/50" : "bg-gray-100 text-gray-500"}`}>
+                                                        ID: {u.id.slice(0, 12)}… <span className={`ml-1 text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>(hidden for privacy)</span>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <div className="font-medium">{u.username}</div>
+                                                        {u.phone && <div className="text-[10px] opacity-60 font-normal mt-1">📱 {u.phone}</div>}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="p-4">
                                                 <Badge variant="outline" className={`text-[10px] capitalize ${u.role === "admin" ? "text-red-500 border-red-500/20" : u.role === "staff" ? "text-blue-500 border-blue-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
@@ -178,20 +202,25 @@ export default function AdminUsersPage() {
                                                 {new Date(u.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="p-4 text-right">
-                                                <button
-                                                    onClick={() => openModal(u)}
-                                                    className={`p-2 rounded-lg transition-colors mr-1 ${isDark ? "text-white/50 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"}`}
-                                                    title="Edit User"
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteTarget(u.id)}
-                                                    className="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/10"
-                                                    title="Delete User"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {/* Suspension controls — only for regular users */}
+                                                    {u.role === "user" && (
+                                                        <button
+                                                            onClick={() => setSuspendTarget({ id: u.id, offense: 1 })}
+                                                            className={`p-2 rounded-lg transition-colors ${isDark ? "text-amber-400/70 hover:bg-amber-500/10 hover:text-amber-300" : "text-amber-600 hover:bg-amber-50"}`}
+                                                            title="Suspend / Block User"
+                                                        >
+                                                            <ShieldOff className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setDeleteTarget(u.id)}
+                                                        className="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/10"
+                                                        title="Delete User"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -257,14 +286,14 @@ export default function AdminUsersPage() {
                     <div className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-8">
                             <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                {editingUser ? <Edit className="h-5 w-5 text-indigo-500" /> : <Plus className="h-5 w-5 text-indigo-500" />}
+                                <Plus className="h-5 w-5 text-indigo-500" />
                             </div>
                             <div className="flex-1">
                                 <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {editingUser ? "Edit User" : "Add New User"}
+                                    Add Staff
                                 </h2>
                                 <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                    {editingUser ? "Update user role and password settings." : "Create a new user account with email or mobile number."}
+                                    Create a new staff account. Staff accounts can log in and manage reports.
                                 </p>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/60" : "hover:bg-gray-100 text-gray-500"}`}>
@@ -321,7 +350,7 @@ export default function AdminUsersPage() {
                                 </div>
                             )}
                             <div>
-                                <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>User Role</label>
+                                <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? "text-white/40" : "text-gray-400"}`}>Role</label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "staff" | "user" })}
@@ -332,7 +361,6 @@ export default function AdminUsersPage() {
                                     }`}
                                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='${isDark ? '%23ffffff60' : '%236b7280'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
                                 >
-                                    <option value="user">User</option>
                                     <option value="staff">Staff</option>
                                     <option value="admin">Admin</option>
                                 </select>
@@ -342,9 +370,61 @@ export default function AdminUsersPage() {
                                     onClick={handleSave}
                                     className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    {editingUser ? "Update User" : "Create User"}
+                                    Add Staff
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Suspend/Block Modal */}
+            {suspendTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                        <div className="flex items-start gap-4 mb-5">
+                            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                                <ShieldOff className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Account Suspension</h2>
+                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    Choose the offense level. A warning notification will be sent to the user.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-2 mb-5">
+                            {([
+                                { offense: 1 as const, label: "1st Offense — 24-hour suspension", color: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
+                                { offense: 2 as const, label: "2nd Offense — 3-day suspension", color: "border-orange-500/30 bg-orange-500/10 text-orange-400" },
+                                { offense: 3 as const, label: "3rd Offense — Permanent block", color: "border-red-500/30 bg-red-500/10 text-red-400" },
+                            ]).map((o) => (
+                                <button
+                                    key={o.offense}
+                                    onClick={() => setSuspendTarget({ ...suspendTarget, offense: o.offense })}
+                                    className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                                        suspendTarget.offense === o.offense
+                                            ? o.color + " ring-1 ring-current"
+                                            : isDark ? "border-white/10 text-white/60 hover:bg-white/[0.04]" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {o.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setSuspendTarget(null)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleSuspend(suspendTarget.id, suspendTarget.offense)}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors"
+                            >
+                                Apply Suspension
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -359,9 +439,7 @@ export default function AdminUsersPage() {
                                 <Trash2 className="h-5 w-5 text-red-500" />
                             </div>
                             <div>
-                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    Delete User
-                                </h2>
+                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Delete User</h2>
                                 <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
                                     Are you sure you want to delete this user? This action cannot be undone.
                                 </p>

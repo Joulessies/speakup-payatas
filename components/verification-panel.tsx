@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download } from "lucide-react";
+import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,6 +70,33 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [statusUpdateTarget, setStatusUpdateTarget] = useState<{ reportId: string; status: StaffStatus } | null>(null);
+    const [activeReportNotes, setActiveReportNotes] = useState<{
+        id: string;
+        author_id: string;
+        author_role: "admin" | "staff";
+        content: string;
+        created_at: string;
+    }[]>([]);
+    const [newDetailNote, setNewDetailNote] = useState("");
+    const [savingDetailNote, setSavingDetailNote] = useState(false);
+
+    const loadReportNotes = async (reportId: string) => {
+        try {
+            const res = await fetch(`/api/reports/notes?report_id=${reportId}`);
+            const data = await res.json();
+            setActiveReportNotes(data.notes ?? []);
+        } catch {
+            setActiveReportNotes([]);
+        }
+    };
+
+    useEffect(() => {
+        if (detailModal?.id) {
+            loadReportNotes(detailModal.id);
+        } else {
+            setActiveReportNotes([]);
+        }
+    }, [detailModal]);
 
     const loadReports = async () => {
         setLoading(true);
@@ -80,6 +107,16 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             setReports(allReports);
 
             applyFilters(allReports, searchQuery, categoryFilter, sortBy);
+
+            // Auto-open report from URL search param if present
+            const params = new URLSearchParams(window.location.search);
+            const targetId = params.get("id");
+            if (targetId) {
+                const found = allReports.find((r: Report) => r.id === targetId);
+                if (found) {
+                    setDetailModal(found);
+                }
+            }
         } catch {
             setReports([]);
             setFilteredReports([]);
@@ -154,7 +191,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     const goToPrevious = () => goToPage(currentPage - 1);
     const goToNext = () => goToPage(currentPage + 1);
 
-    const handleVerify = async (reportId: string, status: "valid" | "spam" | "duplicate") => {
+    const handleVerify = async (reportId: string, status: "unreviewed" | "valid" | "spam" | "duplicate") => {
         setSaving(reportId);
         try {
             const res = await fetch("/api/reports", {
@@ -170,6 +207,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             const data = await res.json().catch(() => ({ error: "Server error" }));
 
             const statusLabels: Record<string, string> = {
+                unreviewed: "Unreviewed",
                 valid: "Valid",
                 spam: "Spam",
                 duplicate: "Duplicate"
@@ -613,6 +651,18 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                             Reason: {report.flag_reason}
                                         </p>
                                     )}
+                                    {report.photo_url && (
+                                        <div className="mt-3 relative rounded-lg overflow-hidden border max-w-xs h-32 bg-muted flex items-center justify-center">
+                                            <img
+                                                src={report.photo_url}
+                                                alt="Report attachment"
+                                                className="h-full w-full object-cover"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop";
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -674,6 +724,26 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                             })}
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {filter !== "unreviewed" && (
+                                <div className="mt-3 pt-3 border-t border-dashed border-border/50 flex items-center justify-between gap-4">
+                                    <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                        Currently marked as <strong className="capitalize text-indigo-400">{report.verification_status}</strong>
+                                    </span>
+                                    <button
+                                        onClick={() => handleVerify(report.id, "unreviewed")}
+                                        disabled={saving === report.id}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border ${
+                                            isDark
+                                                ? "border-white/10 hover:bg-white/5 text-white/80"
+                                                : "border-gray-200 hover:bg-gray-50 text-gray-700"
+                                        }`}
+                                    >
+                                        <Undo className="h-3.5 w-3.5" />
+                                        {saving === report.id ? "Reverting…" : "Undo / Revert to Unreviewed"}
+                                    </button>
                                 </div>
                             )}
 
@@ -958,6 +1028,92 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                     </div>
                                 </div>
                             )}
+
+                            {/* Internal Notes Timeline and Form */}
+                            <div className="pt-2 border-t border-dashed border-border/50">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                        Internal Notes ({activeReportNotes.length})
+                                    </h3>
+                                    <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                        Staff & Admin Only
+                                    </span>
+                                </div>
+
+                                {activeReportNotes.length === 0 ? (
+                                    <p className={`text-xs italic mb-4 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                        No internal notes have been added yet.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                                        {activeReportNotes.map((note) => (
+                                            <div
+                                                key={note.id}
+                                                className={`p-2.5 rounded-xl border text-xs ${
+                                                    note.author_role === "admin"
+                                                        ? isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-indigo-50/50 border-indigo-100"
+                                                        : isDark ? "bg-white/[0.02] border-white/5" : "bg-gray-50 border-gray-100"
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`font-semibold capitalize flex items-center gap-1.5 ${
+                                                        note.author_role === "admin" ? "text-indigo-400" : "text-gray-400"
+                                                    }`}>
+                                                        {note.author_id}
+                                                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 capitalize">
+                                                            {note.author_role}
+                                                        </Badge>
+                                                    </span>
+                                                    <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                                        {new Date(note.created_at).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <p className={isDark ? "text-white/80" : "text-gray-700"}>{note.content}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <textarea
+                                        value={newDetailNote}
+                                        onChange={(e) => setNewDetailNote(e.target.value)}
+                                        placeholder={`Add a note to ${role === "admin" ? "staff" : "admin"}...`}
+                                        className={`flex-1 min-h-[44px] max-h-[120px] text-xs p-2 rounded-xl resize-none outline-none focus:ring-1 focus:ring-indigo-500/30 ${
+                                            isDark ? "bg-white/[0.03] border-white/10 text-white placeholder-white/30" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+                                        }`}
+                                    />
+                                    <button
+                                        disabled={savingDetailNote || !newDetailNote.trim()}
+                                        onClick={async () => {
+                                            if (!newDetailNote.trim()) return;
+                                            setSavingDetailNote(true);
+                                            try {
+                                                await fetch("/api/reports/notes", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({
+                                                        report_id: detailModal.id,
+                                                        author: role === "admin" ? "Admin" : "Staff",
+                                                        author_role: role,
+                                                        content: newDetailNote.trim(),
+                                                    }),
+                                                });
+                                                setNewDetailNote("");
+                                                await loadReportNotes(detailModal.id);
+                                                toast.success("Note saved successfully.");
+                                            } catch {
+                                                toast.error("Failed to save note.");
+                                            } finally {
+                                                setSavingDetailNote(false);
+                                            }
+                                        }}
+                                        className="self-end h-9 px-4 rounded-xl text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 transition-all shrink-0"
+                                    >
+                                        {savingDetailNote ? "Saving" : "Send Note"}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Modal Footer */}

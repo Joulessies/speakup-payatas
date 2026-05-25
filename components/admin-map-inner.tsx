@@ -43,12 +43,15 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
         Math.max(1, c.weighted_score ?? c.count),
     ]), [clusters]);
     const heatmapData = useMemo(() => {
+        if (!isLoaded || typeof google === "undefined") {
+            return [];
+        }
         const pts = heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints;
         return pts.map(([lat, lng, weight]) => ({
             location: new google.maps.LatLng(lat, lng),
             weight,
         }));
-    }, [heatPoints, fallbackHeatPoints]);
+    }, [isLoaded, heatPoints, fallbackHeatPoints]);
     useEffect(() => {
         if (!mapInstance || !onMapBoundsChange)
             return;

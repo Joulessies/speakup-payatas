@@ -1,63 +1,122 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Search, ChevronRight, FileWarning, CheckCircle2, ShieldAlert, Copy, Check } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, ChevronDown, ChevronUp, TrendingUp, Eye } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { Badge } from "@/components/ui/badge";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
-import { CATEGORY_LABELS } from "@/types";
 import Link from "next/link";
-import { toast } from "sonner";
+import TransparencyBoard from "@/components/transparency-board";
 
-interface MyReport {
-    id: string;
-    category: string;
-    status: string;
-    verification_status: string;
-    created_at: string;
-    description: string;
-    receipt_id?: string;
+interface TrendPoint {
+    date: string;
+    count: number;
+    categories: Record<string, number>;
+}
+interface AnalyticsData {
+    trend_data: TrendPoint[];
+    total_reports: number;
+    category_distribution: Record<string, number>;
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+    flooding: "#60a5fa", fire: "#fb923c", crime: "#f87171",
+    infrastructure: "#fbbf24", health: "#f472b6",
+    environmental: "#34d399", other: "#9ca3af",
+};
+
+function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
+    if (!data || data.length < 2) return (
+        <div className={`h-32 flex items-center justify-center text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Not enough data to display trend
+        </div>
+    );
+    const maxCount = Math.max(...data.map((d) => d.count), 1);
+    const width = 100;
+    const height = 60;
+    const points = data.map((d, i) => ({
+        x: (i / (data.length - 1)) * width,
+        y: height - (d.count / maxCount) * height * 0.85,
+        count: d.count,
+        date: d.date,
+    }));
+    const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    const fillD = `${pathD} L ${points[points.length - 1].x} ${height} L 0 ${height} Z`;
+
+    return (
+        <div className="w-full">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-32" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+                <path d={fillD} fill="url(#lineGrad)" />
+                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" />
+                {points.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="1" fill="#6366f1" />
+                ))}
+            </svg>
+            <div className="flex justify-between mt-1 px-1">
+                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    {new Date(data[0].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
+                </span>
+                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    {new Date(data[data.length - 1].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
+                </span>
+            </div>
+        </div>
+    );
 }
 
 export default function UserDashboard() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const [reports, setReports] = useState<MyReport[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [reporterHash, setReporterHash] = useState<string | null>(null);
+    const [reportCount, setReportCount] = useState<{ total: number; pending: number; resolved: number } | null>(null);
+    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(true);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [showAnalytics, setShowAnalytics] = useState(false);
 
-    const copyReceipt = async (e: React.MouseEvent, receiptId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-            await navigator.clipboard.writeText(receiptId);
-            setCopiedId(receiptId);
-            toast.success("Receipt code copied", {
-                description: "Paste it into the Track field to view this report.",
-            });
-            window.setTimeout(() => setCopiedId((prev) => (prev === receiptId ? null : prev)), 1500);
-        } catch {
-            toast.error("Could not copy. Please copy manually.");
-        }
-    };
+    useEffect(() => {
+        (async () => {
+            const hash = await generateReporterHash(getDeviceId());
+            setReporterHash(hash);
+            try {
+                const res = await fetch(`/api/reports/my?reporter_hash=${hash}`);
+                const data = await res.json();
+                const reports = data.reports ?? [];
+                setReportCount({
+                    total: reports.length,
+                    pending: reports.filter((r: { status: string }) => r.status !== "resolved").length,
+                    resolved: reports.filter((r: { status: string }) => r.status === "resolved").length,
+                });
+            } catch { /* ignore */ }
+            finally { setStatsLoading(false); }
+        })();
+    }, []);
 
     useEffect(() => {
         (async () => {
             try {
-                const hash = await generateReporterHash(getDeviceId());
-                const res = await fetch(`/api/reports/my?reporter_hash=${hash}`);
-                const data = await res.json();
-                setReports(data.reports ?? []);
-            } catch { }
-            finally { setLoading(false); }
+                const res = await fetch("/api/analytics", { method: "POST" });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (Array.isArray(json?.trend_data)) setAnalytics(json as AnalyticsData);
+                }
+            } catch { /* ignore */ }
+            finally { setAnalyticsLoading(false); }
         })();
     }, []);
 
-    const pending = reports.filter(r => r.status === "pending" || r.status === "in_progress").length;
-    const resolved = reports.filter(r => r.status === "resolved").length;
+    const topCategory = analytics?.category_distribution
+        ? Object.entries(analytics.category_distribution).sort((a, b) => b[1] - a[1])[0]
+        : null;
 
     return (
         <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
             <div className="max-w-4xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
+                {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
@@ -67,97 +126,111 @@ export default function UserDashboard() {
                             <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
                                 My Dashboard
                             </h1>
-                            <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                                Track your reports and see community updates.
+                            <p className={`text-sm mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                Community updates and your report overview
                             </p>
                         </div>
                     </div>
-                    <Link href="/" className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600`}>
+                    <Link href="/" className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 transition-colors">
                         <FileWarning className="h-4 w-4" /> New Report
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Total</span>
-                        <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}>{reports.length}</p>
-                    </div>
-                    <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Pending</span>
-                        <p className={`text-2xl font-bold mt-1 text-amber-500`}>{pending}</p>
-                    </div>
-                    <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Resolved</span>
-                        <p className={`text-2xl font-bold mt-1 text-emerald-500`}>{resolved}</p>
-                    </div>
-                    <Link href="/transparency" className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-colors ${isDark ? "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20" : "bg-indigo-50 border-indigo-100 hover:bg-indigo-100"}`}>
-                        <Search className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                        <span className={`text-xs font-medium ${isDark ? "text-indigo-300" : "text-indigo-700"}`}>Transparency Board</span>
-                    </Link>
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3">
+                    {[
+                        { label: "My Reports", value: statsLoading ? "…" : reportCount?.total ?? 0, color: isDark ? "text-white" : "text-gray-900" },
+                        { label: "In Progress", value: statsLoading ? "…" : reportCount?.pending ?? 0, color: "text-amber-500" },
+                        { label: "Resolved", value: statsLoading ? "…" : reportCount?.resolved ?? 0, color: "text-emerald-500" },
+                    ].map((s) => (
+                        <div key={s.label} className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>{s.label}</span>
+                            <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+                        </div>
+                    ))}
                 </div>
 
-                <div className={`p-4 md:p-6 rounded-2xl border shadow-xl ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                    <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                        Report History
-                    </h2>
-                    {loading ? (
-                        <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin opacity-50" /></div>
-                    ) : reports.length === 0 ? (
-                        <div className={`p-8 text-center text-sm rounded-xl border border-dashed ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
-                            You haven't submitted any reports yet.
+                {/* Transparency Board */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className="flex items-center gap-3 px-5 pt-5 pb-4">
+                        <Eye className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div>
+                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                Transparency Board
+                            </h2>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                Resolved community reports — click any card to view details
+                            </p>
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {reports.map((r) => (
-                                <Link href={`/track?id=${r.id}`} key={r.id} className={`flex items-center justify-between gap-4 p-4 rounded-xl border transition-colors ${isDark ? "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]" : "bg-white border-gray-100 hover:bg-gray-50"}`}>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>
-                                                {CATEGORY_LABELS[r.category as keyof typeof CATEGORY_LABELS] || r.category}
-                                            </span>
-                                            <Badge variant="outline" className={`text-[10px] ${
-                                                r.status === "resolved" ? "text-emerald-500 border-emerald-500/20" :
-                                                r.status === "in_progress" ? "text-blue-500 border-blue-500/20" :
-                                                "text-amber-500 border-amber-500/20"
-                                            }`}>
-                                                {r.status.replace("_", " ")}
-                                            </Badge>
-                                            {r.verification_status === "spam" && (
-                                                <Badge variant="destructive" className="bg-red-500/10 text-red-500"><ShieldAlert className="w-3 h-3 mr-1"/> Spam</Badge>
-                                            )}
-                                        </div>
-                                        <p className={`text-xs truncate ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                                            {r.description || "No description"}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            {r.receipt_id && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => copyReceipt(e, r.receipt_id!)}
-                                                    title="Copy receipt code"
-                                                    aria-label={`Copy receipt code ${r.receipt_id}`}
-                                                    className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors ${
-                                                        isDark
-                                                            ? "bg-white/10 text-white/60 hover:bg-white/15 hover:text-white"
-                                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-                                                    }`}
-                                                >
-                                                    <span>{r.receipt_id}</span>
-                                                    {copiedId === r.receipt_id ? (
-                                                        <Check className="h-3 w-3 text-emerald-500" />
-                                                    ) : (
-                                                        <Copy className="h-3 w-3" />
-                                                    )}
-                                                </button>
-                                            )}
-                                            <span className={`text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                                                {new Date(r.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
-                                            </span>
-                                        </div>
+                        <Link href="/transparency" className={`ml-auto text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isDark ? "text-indigo-400 hover:bg-indigo-500/10" : "text-indigo-600 hover:bg-indigo-50"}`}>
+                            View all
+                        </Link>
+                    </div>
+                    <div className="px-5 pb-5">
+                        <TransparencyBoard embedded reporterHash={reporterHash ?? undefined} />
+                    </div>
+                </div>
+
+                {/* Analytics (collapsible) */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <button
+                        onClick={() => setShowAnalytics((p) => !p)}
+                        className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <TrendingUp className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+                            <div>
+                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    Community Analytics
+                                </h2>
+                                {topCategory && (
+                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                        Top issue: <span className="font-medium capitalize">{topCategory[0]}</span> ({topCategory[1]} reports)
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {showAnalytics ? (
+                            <ChevronUp className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-400"}`} />
+                        ) : (
+                            <ChevronDown className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-400"}`} />
+                        )}
+                    </button>
+                    {showAnalytics && (
+                        <div className="px-5 pb-5 space-y-4 border-t border-dashed border-border/50">
+                            <div className="pt-4">
+                                <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                    Report trend — last 14 days
+                                </p>
+                                {analyticsLoading ? (
+                                    <div className="h-32 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin opacity-40" /></div>
+                                ) : (
+                                    <LineChart data={analytics?.trend_data ?? []} isDark={isDark} />
+                                )}
+                            </div>
+                            {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 && (
+                                <div>
+                                    <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>Category breakdown</p>
+                                    <div className="space-y-2">
+                                        {Object.entries(analytics.category_distribution)
+                                            .sort((a, b) => b[1] - a[1])
+                                            .slice(0, 5)
+                                            .map(([cat, count]) => {
+                                                const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
+                                                return (
+                                                    <div key={cat} className="flex items-center gap-3">
+                                                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
+                                                        <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{cat}</span>
+                                                        <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                                                            <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <span className={`text-[10px] font-mono w-10 text-right ${isDark ? "text-white/40" : "text-gray-500"}`}>{pct}%</span>
+                                                    </div>
+                                                );
+                                            })}
                                     </div>
-                                    <ChevronRight className={`h-5 w-5 shrink-0 ${isDark ? "text-white/20" : "text-gray-300"}`} />
-                                </Link>
-                            ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

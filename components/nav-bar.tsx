@@ -8,7 +8,7 @@ import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
 import NotificationBell from "./notification-bell";
 import LogoutConfirmDialog from "./logout-confirm-dialog";
-import { ShieldCheck, FileWarning, Map, Search, TrendingUp, Brain, QrCode, LogOut, UserRound, Menu, X, LayoutDashboard, Eye, MessageSquare, Shield, } from "lucide-react";
+import { ShieldCheck, FileWarning, Map, Search, TrendingUp, Brain, QrCode, LogOut, UserRound, Menu, X, LayoutDashboard, Eye, MessageSquare, Shield, History } from "lucide-react";
 
 export default function NavBar() {
     const pathname = usePathname();
@@ -20,6 +20,7 @@ export default function NavBar() {
     const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
+    const [reporterHash, setReporterHash] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         (async () => {
@@ -27,7 +28,12 @@ export default function NavBar() {
                 const res = await fetch("/api/auth/me", { cache: "no-store" });
                 if (!res.ok) { setSession(null); setSessionLoaded(true); return; }
                 const data = await res.json();
-                if (data?.authenticated) setSession({ role: data.role, username: data.username });
+                if (data?.authenticated) {
+                    setSession({ role: data.role, username: data.username });
+                    if (data.role === "user" && data.reporter_hash) {
+                        setReporterHash(data.reporter_hash);
+                    }
+                }
                 else setSession(null);
                 setSessionLoaded(true);
             } catch { setSession(null); setSessionLoaded(true); }
@@ -51,15 +57,15 @@ export default function NavBar() {
     const isUser = session?.role === "user";
 
     const MAIN_NAV = [
-        { href: "/", label: t.navReport, icon: FileWarning, roles: ["user"] },
+        { href: "/", label: "Report", icon: FileWarning, roles: ["user"] },
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["user"] },
+        { href: "/track", label: "Report History", icon: History, roles: ["user"] },
         { href: "/map", label: t.navCommunityMap, icon: Map, roles: ["user", "staff"] },
         { href: "/staff", label: "Staff", icon: Shield, roles: ["staff"] },
         { href: "/admin", label: t.navMap, icon: Map, roles: ["admin"] },
         { href: "/admin/reports", label: "Manage Reports", icon: Search, roles: ["admin"] },
         { href: "/admin/users", label: "Manage Users", icon: UserRound, roles: ["admin"] },
         { href: "/analytics", label: t.navAnalytics, icon: TrendingUp, roles: ["admin"] },
-        { href: "/track", label: t.navTrack, icon: Search, roles: ["user"] },
     ];
 
     const visibleMainNav = MAIN_NAV.filter((item) => {
@@ -116,7 +122,7 @@ export default function NavBar() {
                     ))}
                     <div className={`w-px h-5 mx-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
                 </div>
-                {session && <NotificationBell role={session.role} />}
+                {session && <NotificationBell role={session.role} reporterHash={reporterHash} />}
                 {session && (
                     <div className={`inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg border ${isDark ? "bg-white/[0.04] border-white/[0.08]" : "bg-black/[0.02] border-black/[0.06]"}`}>
                         <span className={`w-5 h-5 rounded-full inline-flex items-center justify-center ${isDark ? "bg-white/[0.08] text-white/70" : "bg-black/[0.06] text-gray-700"}`}>
@@ -160,7 +166,7 @@ export default function NavBar() {
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
-                    {session && <NotificationBell role={session.role} />}
+                    {session && <NotificationBell role={session.role} reporterHash={reporterHash} />}
                     {session ? (
                         <button type="button" onClick={() => setShowLogoutConfirm(true)} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
                     ) : (

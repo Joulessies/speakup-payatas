@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { classifyReport } from "@/lib/classification";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { fetchReportsBase } from "@/lib/server-db";
 import { getReportsListLimitCap } from "@/lib/api-session";
+import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
+import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
 import type { Notification, ReportAction, ReportStatus, VerificationStatus } from "@/types";
 
 type WorkflowStatus = ReportStatus;
@@ -58,6 +61,29 @@ export async function POST(request: Request) {
         { error: "Your account has been blocked due to repeated spam. Please contact the barangay office." },
         { status: 403 },
       );
+    }
+
+    // Check if the user's logged-in account is suspended
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+      const session = await verifyAuthToken(token);
+      if (session) {
+        const user = session.username.includes("@")
+          ? await getUserByEmail(session.username)
+          : await getUserByPhoneLast10(session.username.replace(/\D/g, "").slice(-10));
+
+        if (user?.suspended_until) {
+          const suspendedUntil = new Date(user.suspended_until);
+          if (suspendedUntil.getTime() > Date.now()) {
+            return NextResponse.json({
+              error: `Your account is suspended until ${suspendedUntil.toLocaleString()} due to community guidelines violation.`
+            }, { status: 403 });
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore session errors and proceed with anonymous submit
     }
 
     const { allowed, remaining } = rateLimit(reporter_hash, 5);

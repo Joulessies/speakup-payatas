@@ -678,7 +678,7 @@ export default function ReportForm() {
               </Alert>)}
 
             <div className={`text-[10px] text-center px-2 py-1.5 rounded-lg border ${isDark ? "bg-red-500/10 border-red-500/20 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
-                ⚠️ False reporting or repeated spam may result in your account being blocked.
+                ⚠️ False reporting or repeated spam may result in your account being blocked or suspended.
             </div>
 
             <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>

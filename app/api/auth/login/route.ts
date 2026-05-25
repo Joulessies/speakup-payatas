@@ -70,6 +70,14 @@ export async function POST(request: Request) {
             }
 
             const existingSms = await getUserByPhoneLast10(phone);
+            if (existingSms?.suspended_until) {
+                const suspendedUntil = new Date(existingSms.suspended_until);
+                if (suspendedUntil.getTime() > Date.now()) {
+                    return NextResponse.json({
+                        error: `Your account is suspended until ${suspendedUntil.toLocaleString()} due to a guidelines violation.`
+                    }, { status: 403 });
+                }
+            }
             if (action === "register") {
                 if (existingSms) {
                     return NextResponse.json({ error: "Phone number already registered." }, { status: 409 });
@@ -95,7 +103,7 @@ export async function POST(request: Request) {
                 phone: `+63${phone}`,
                 exp: Date.now() + 1000 * 60 * 60 * 8,
             });
-            const res = NextResponse.json({ success: true, role: "user", redirect_to: "/" });
+            const res = NextResponse.json({ success: true, role: "user", redirect_to: "/dashboard" });
             res.cookies.set({
                 name: AUTH_COOKIE_NAME,
                 value: token,
@@ -115,6 +123,14 @@ export async function POST(request: Request) {
             }
 
             const row = await getUserByEmail(email);
+            if (row?.suspended_until) {
+                const suspendedUntil = new Date(row.suspended_until);
+                if (suspendedUntil.getTime() > Date.now()) {
+                    return NextResponse.json({
+                        error: `Your account is suspended until ${suspendedUntil.toLocaleString()} due to a guidelines violation.`
+                    }, { status: 403 });
+                }
+            }
 
             if (action === "register") {
                 if (email === adminEmail || email === staffEmail) {
@@ -209,7 +225,7 @@ export async function POST(request: Request) {
                 phone: legacyPhone,
                 exp: Date.now() + 1000 * 60 * 60 * 8,
             });
-            const res = NextResponse.json({ success: true, role: "user", redirect_to: "/" });
+            const res = NextResponse.json({ success: true, role: "user", redirect_to: "/dashboard" });
             res.cookies.set({
                 name: AUTH_COOKIE_NAME,
                 value: token,

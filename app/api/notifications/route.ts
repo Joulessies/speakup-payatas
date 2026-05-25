@@ -15,9 +15,22 @@ export async function GET(request: Request) {
         const limit = Number(searchParams.get("limit") ?? "20");
 
         let query = getSupabaseAdmin().from("notifications").select("*").order("created_at", { ascending: false });
-        if (role === "admin") query = query.or("recipient_role.eq.admin,recipient_role.is.null");
-        else if (role) query = query.eq("recipient_role", role);
-        if (reporter_hash) query = query.ilike("recipient_hash", `${reporter_hash}%`);
+        if (role === "user") {
+            if (!reporter_hash?.trim()) {
+                return NextResponse.json({ notifications: [], unread_count: 0 });
+            }
+            query = query.eq("recipient_role", "user").eq("recipient_hash", reporter_hash.trim());
+        } else if (role === "admin") {
+            query = query.or("recipient_role.eq.admin,recipient_role.is.null");
+        } else if (role === "staff") {
+            query = query.eq("recipient_role", "staff");
+        } else if (role) {
+            query = query.eq("recipient_role", role);
+        }
+
+        if (role !== "user" && reporter_hash) {
+            query = query.ilike("recipient_hash", `${reporter_hash}%`);
+        }
         if (unread_only) query = query.eq("read", false);
 
         const boundedLimit = Math.max(1, Math.min(limit, 50));
@@ -27,9 +40,19 @@ export async function GET(request: Request) {
         }
 
         let unreadQuery = getSupabaseAdmin().from("notifications").select("id", { count: "exact", head: true }).eq("read", false);
-        if (role === "admin") unreadQuery = unreadQuery.or("recipient_role.eq.admin,recipient_role.is.null");
-        else if (role) unreadQuery = unreadQuery.eq("recipient_role", role);
-        if (reporter_hash) unreadQuery = unreadQuery.ilike("recipient_hash", `${reporter_hash}%`);
+        if (role === "user") {
+            unreadQuery = unreadQuery.eq("recipient_role", "user").eq("recipient_hash", reporter_hash || "");
+        } else if (role === "admin") {
+            unreadQuery = unreadQuery.or("recipient_role.eq.admin,recipient_role.is.null");
+        } else if (role === "staff") {
+            unreadQuery = unreadQuery.eq("recipient_role", "staff");
+        } else if (role) {
+            unreadQuery = unreadQuery.eq("recipient_role", role);
+        }
+
+        if (role !== "user" && reporter_hash) {
+            unreadQuery = unreadQuery.ilike("recipient_hash", `${reporter_hash}%`);
+        }
         const { count, error: countError } = await unreadQuery;
         if (countError) {
             return NextResponse.json({ error: countError.message }, { status: 500 });

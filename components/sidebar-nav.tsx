@@ -25,6 +25,8 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
+    History,
+    QrCode,
 } from "lucide-react";
 
 interface NavItem {
@@ -88,10 +90,11 @@ export default function SidebarNav() {
             case "user":
                 return [
                     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-                    { href: "/", label: "Reports", icon: FileWarning },
-                    { href: "/track", label: "Track", icon: Search },
+                    { href: "/", label: "Report", icon: FileWarning },
+                    { href: "/track", label: "Report History", icon: History },
                     { href: "/transparency", label: "Transparency", icon: Eye },
                     { href: "/feedback", label: "Feedback", icon: MessageSquare },
+                    { href: "/qr", label: "QR Code", icon: QrCode },
                 ];
             case "staff":
                 return [

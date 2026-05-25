@@ -10,6 +10,8 @@ export type AppUserRow = {
     role: UserRole;
     created_at: string;
     updated_at: string;
+    suspended_until?: string | null;
+    suspension_offense?: number;
 };
 
 function normalizeEmail(value: string) {
@@ -42,7 +44,7 @@ export async function getUserByEmail(email: string): Promise<AppUserRow | null> 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
         .from("app_users")
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .eq("email", normalizeEmail(email))
         .maybeSingle();
     if (error)
@@ -54,7 +56,7 @@ export async function getUserByPhoneLast10(phone: string): Promise<AppUserRow | 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
         .from("app_users")
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .eq("phone_e164", phone)
         .maybeSingle();
     if (error)
@@ -80,7 +82,7 @@ export async function insertEmailUser(
     const { data, error } = await supabase
         .from("app_users")
         .insert(row)
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .single();
     if (error)
         throw new Error(error.message);
@@ -101,7 +103,7 @@ export async function insertEmailOtpUser(email: string, phoneLast10: string) {
             password_hash: null,
             role: "user",
         })
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .single();
     if (error)
         throw new Error(error.message);
@@ -122,7 +124,7 @@ export async function updateAppUserPhoneLast10ById(userId: string, phoneLast10: 
         .from("app_users")
         .update({ phone_e164: phoneLast10, updated_at: now })
         .eq("id", userId)
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .single();
     if (error)
         throw new Error(error.message);
@@ -137,7 +139,7 @@ export async function insertPhoneUser(phoneLast10: string) {
             phone_e164: phoneLast10,
             role: "user",
         })
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .single();
     if (error)
         throw new Error(error.message);
@@ -148,7 +150,7 @@ export async function listAllAppUsers(): Promise<AppUserRow[]> {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
         .from("app_users")
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .order("created_at", { ascending: false });
     if (error)
         throw new Error(error.message);
@@ -224,7 +226,7 @@ export async function updateAppUserById(
         .from("app_users")
         .update(payload)
         .eq("id", id)
-        .select("id, email, phone_e164, password_hash, role, created_at, updated_at")
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
         .single();
     if (error)
         throw new Error(error.message);

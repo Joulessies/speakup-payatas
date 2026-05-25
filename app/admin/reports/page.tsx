@@ -38,7 +38,18 @@ export default function AdminReportsPage() {
         try {
             const res = await fetch("/api/reports?limit=20000");
             const data = await res.json();
-            setReports(data.reports ?? []);
+            const allReports = data.reports ?? [];
+            setReports(allReports);
+
+            // Auto-open report from URL search param if present
+            const params = new URLSearchParams(window.location.search);
+            const targetId = params.get("id");
+            if (targetId) {
+                const found = allReports.find((r: Report) => r.id === targetId);
+                if (found) {
+                    setViewTarget(found);
+                }
+            }
         } catch {
             toast.error("Failed to load reports");
         } finally {
