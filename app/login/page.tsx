@@ -38,7 +38,7 @@ export default function LoginPage() {
     const [emailOtpPhone, setEmailOtpPhone] = useState("");
     const [otpEmail, setOtpEmail] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
-    
+
     // Forgot password state
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotStep, setForgotStep] = useState<ForgotPasswordStep>("request");
@@ -98,7 +98,7 @@ export default function LoginPage() {
             return next;
         });
     }, [email, password, confirmPassword, registerPhone, emailOtpPhone, otp, mode, submitAttempted]);
-    
+
     // Validate password in real-time during registration and password reset.
     // We always run it (even on empty strings) so the requirement checklist is visible up-front.
     useEffect(() => {
@@ -250,23 +250,23 @@ export default function LoginPage() {
         e.preventDefault();
         setForgotLoading(true);
         setError(null);
-        
+
         try {
             if (!isValidEmail(forgotEmail)) {
                 throw new Error("Please enter a valid email address.");
             }
-            
+
             const res = await fetch("/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: forgotEmail }),
             });
-            
+
             const data = await res.json();
             if (!res.ok && data.error) {
                 throw new Error(data.error);
             }
-            
+
             setForgotSuccess(data.message || "Reset code sent to your registered mobile number.");
             if (data?.delivery?.mock) {
                 setForgotHint(data.delivery.hint || "SMS provider isn't configured — the code was only logged to the server console.");
@@ -281,7 +281,7 @@ export default function LoginPage() {
             setForgotLoading(false);
         }
     };
-    
+
     const handleVerifyResetToken = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!/^\d{6}$/.test(resetToken)) {
@@ -291,22 +291,22 @@ export default function LoginPage() {
         setForgotStep("reset");
         setError(null);
     };
-    
+
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         setForgotLoading(true);
         setError(null);
-        
+
         try {
             if (newPassword !== confirmNewPassword) {
                 throw new Error("Passwords do not match.");
             }
-            
+
             const validation = validatePassword(newPassword);
             if (!validation.isValid) {
                 throw new Error(validation.errors[0] || "Password does not meet requirements.");
             }
-            
+
             const res = await fetch("/api/auth/forgot-password", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -316,12 +316,12 @@ export default function LoginPage() {
                     newPassword,
                 }),
             });
-            
+
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || "Failed to reset password.");
             }
-            
+
             setForgotStep("success");
             setForgotSuccess(data.message);
         } catch (e) {
@@ -330,7 +330,7 @@ export default function LoginPage() {
             setForgotLoading(false);
         }
     };
-    
+
     const resetForgotPassword = () => {
         setShowForgotPassword(false);
         setForgotStep("request");
@@ -411,14 +411,14 @@ export default function LoginPage() {
                 }
                 throw new Error(data?.error || (mode === "register" ? "Registration failed" : "Login failed"));
             }
-            
+
             // Handle remember me - extend session if checked
             if (rememberMe && data.token) {
                 localStorage.setItem("speakup_remember_me", "true");
             } else {
                 localStorage.removeItem("speakup_remember_me");
             }
-            
+
             const next = new URLSearchParams(window.location.search).get("next");
             router.push(next || data.redirect_to || "/dashboard");
             router.refresh();
@@ -607,11 +607,10 @@ export default function LoginPage() {
                                                 {[1, 2, 3, 4].map((i) => (
                                                     <div
                                                         key={i}
-                                                        className={`h-1 flex-1 rounded-full ${
-                                                            i <= passwordValidation.score
+                                                        className={`h-1 flex-1 rounded-full ${i <= passwordValidation.score
                                                                 ? getPasswordStrengthBg(passwordValidation.strength)
                                                                 : isDark ? "bg-white/10" : "bg-gray-200"
-                                                        }`}
+                                                            }`}
                                                     />
                                                 ))}
                                             </div>
@@ -619,11 +618,10 @@ export default function LoginPage() {
                                                 {passwordValidation.rules.map((rule) => (
                                                     <li
                                                         key={rule.id}
-                                                        className={`text-[11px] flex items-center gap-1.5 transition-colors ${
-                                                            rule.met
+                                                        className={`text-[11px] flex items-center gap-1.5 transition-colors ${rule.met
                                                                 ? "text-emerald-500"
                                                                 : isDark ? "text-white/45" : "text-gray-500"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {rule.met ? (
                                                             <Check className="h-3.5 w-3.5" />
@@ -920,11 +918,10 @@ export default function LoginPage() {
                                                 {[1, 2, 3, 4].map((i) => (
                                                     <div
                                                         key={i}
-                                                        className={`h-1 flex-1 rounded-full ${
-                                                            i <= passwordValidation.score
+                                                        className={`h-1 flex-1 rounded-full ${i <= passwordValidation.score
                                                                 ? getPasswordStrengthBg(passwordValidation.strength)
                                                                 : isDark ? "bg-white/10" : "bg-gray-200"
-                                                        }`}
+                                                            }`}
                                                     />
                                                 ))}
                                             </div>
@@ -932,11 +929,10 @@ export default function LoginPage() {
                                                 {passwordValidation.rules.map((rule) => (
                                                     <li
                                                         key={rule.id}
-                                                        className={`text-[11px] flex items-center gap-1.5 ${
-                                                            rule.met
+                                                        className={`text-[11px] flex items-center gap-1.5 ${rule.met
                                                                 ? "text-emerald-500"
                                                                 : isDark ? "text-white/45" : "text-gray-500"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {rule.met ? (
                                                             <Check className="h-3.5 w-3.5" />

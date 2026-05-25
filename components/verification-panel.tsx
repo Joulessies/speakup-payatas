@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
@@ -630,7 +631,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                             {new Date(report.submitted_at || report.created_at).toLocaleString()}
                                         </span>
                                     </div>
-                                    <p className={`text-sm mt-2 font-medium ${isDark ? "text-white/90" : "text-gray-800"}`}>
+                                    <p className={`text-sm mt-2 font-medium break-all ${isDark ? "text-white/90" : "text-gray-800"}`}>
                                         {report.description || <span className="italic opacity-50">No description provided</span>}
                                     </p>
                                     <div className="flex items-center gap-3 mt-2">
@@ -875,9 +876,9 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                 </div>
             )}
 
-            {/* Detail Modal */}
-            {detailModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            {/* Detail Modal — portalled to body to escape sidebar's backdrop-blur containing block */}
+            {detailModal && typeof document !== "undefined" && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border ${isDark ? "bg-[#121318] border-white/10" : "bg-white border-gray-200"}`}>
                         <div className={`flex items-center justify-between p-4 border-b ${isDark ? "border-white/10" : "border-gray-200"}`}>
                             <div className="flex items-center gap-3">
@@ -1173,15 +1174,17 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
 
-            <StatusUpdateDialog
-                open={Boolean(statusUpdateTarget)}
-                reportId={statusUpdateTarget?.reportId ?? ""}
-                targetStatus={statusUpdateTarget?.status ?? null}
-                onCancel={() => setStatusUpdateTarget(null)}
-                onSubmit={submitStatusUpdate}
-            />
+            {typeof document !== "undefined" && createPortal(
+                <StatusUpdateDialog
+                    open={Boolean(statusUpdateTarget)}
+                    reportId={statusUpdateTarget?.reportId ?? ""}
+                    targetStatus={statusUpdateTarget?.status ?? null}
+                    onCancel={() => setStatusUpdateTarget(null)}
+                    onSubmit={submitStatusUpdate}
+                />,
+            document.body)}
         </div>
     );
 }

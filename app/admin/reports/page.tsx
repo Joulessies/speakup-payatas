@@ -41,7 +41,6 @@ export default function AdminReportsPage() {
             const allReports = data.reports ?? [];
             setReports(allReports);
 
-            // Auto-open report from URL search param if present
             const params = new URLSearchParams(window.location.search);
             const targetId = params.get("id");
             if (targetId) {

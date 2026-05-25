@@ -498,19 +498,76 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         {loading ? (<div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin"/>
             <span className="text-sm">Loading data…</span>
-          </div>) : (<div className="grid grid-cols-3 gap-2">
+          </div>) : (<div className="flex flex-col gap-2">
             {[
-                { label: t.adminReports, value: totalReports, icon: BarChart3 },
-                { label: t.adminHotspots, value: clusters.length, icon: MapPin },
-                { label: t.adminScattered, value: noiseCount, icon: MapPin },
-            ].map((stat) => (<div key={stat.label} className={`flex flex-col items-center gap-1 py-3 rounded-xl border ${isDark ? "bg-white/[0.04] border-white/[0.06]" : "bg-black/[0.03] border-black/[0.05]"}`}>
-                <span className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                  {stat.value}
-                </span>
-                <span className={`text-[10px] font-medium ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                  {stat.label}
-                </span>
-              </div>))}
+                {
+                  label: t.adminReports,
+                  value: totalReports,
+                  icon: BarChart3,
+                  gradient: isDark
+                    ? "from-indigo-500/15 via-indigo-500/5 to-transparent"
+                    : "from-indigo-50 via-indigo-50/50 to-transparent",
+                  iconBg: isDark ? "bg-indigo-500/15" : "bg-indigo-100",
+                  iconColor: isDark ? "text-indigo-400" : "text-indigo-600",
+                  accentDot: "bg-indigo-400",
+                  borderColor: isDark ? "border-indigo-500/20" : "border-indigo-200",
+                  valueSuffix: "total",
+                },
+                {
+                  label: t.adminHotspots,
+                  value: clusters.length,
+                  icon: Flame,
+                  gradient: isDark
+                    ? "from-amber-500/15 via-amber-500/5 to-transparent"
+                    : "from-amber-50 via-amber-50/50 to-transparent",
+                  iconBg: isDark ? "bg-amber-500/15" : "bg-amber-100",
+                  iconColor: isDark ? "text-amber-400" : "text-amber-600",
+                  accentDot: "bg-amber-400",
+                  borderColor: isDark ? "border-amber-500/20" : "border-amber-200",
+                  valueSuffix: "clusters",
+                },
+                {
+                  label: t.adminScattered,
+                  value: noiseCount,
+                  icon: Radio,
+                  gradient: isDark
+                    ? "from-emerald-500/15 via-emerald-500/5 to-transparent"
+                    : "from-emerald-50 via-emerald-50/50 to-transparent",
+                  iconBg: isDark ? "bg-emerald-500/15" : "bg-emerald-100",
+                  iconColor: isDark ? "text-emerald-400" : "text-emerald-600",
+                  accentDot: "bg-emerald-400",
+                  borderColor: isDark ? "border-emerald-500/20" : "border-emerald-200",
+                  valueSuffix: "isolated",
+                },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${stat.borderColor} ${isDark ? "bg-white/[0.02]" : "bg-white/60"}`}
+              >
+                {/* gradient accent background */}
+                <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-80 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none`} />
+                {/* glowing accent dot */}
+                <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${stat.accentDot} opacity-60 group-hover:opacity-100 transition-opacity`} />
+                {/* icon container */}
+                <div className={`relative z-[1] flex items-center justify-center w-9 h-9 rounded-lg ${stat.iconBg} shrink-0 transition-transform duration-200 group-hover:scale-105`}>
+                  <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
+                </div>
+                {/* text content */}
+                <div className="relative z-[1] flex flex-col min-w-0">
+                  <span className={`text-xl font-extrabold tracking-tight leading-none ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {stat.value}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[11px] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                      {stat.label}
+                    </span>
+                    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.06] text-white/35" : "bg-black/[0.04] text-gray-400"}`}>
+                      {stat.valueSuffix}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>)}
       </div>
 
