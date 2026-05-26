@@ -63,6 +63,14 @@ const translations = {
         catHealth: "Health",
         catEnvironmental: "Environ",
         catOther: "Other",
+        cat_drainage_flooding: "Drainage / Flooding",
+        cat_fire_hazard: "Fire Hazard",
+        cat_safety_concern: "Safety Concern",
+        cat_infrastructure: "Infrastructure",
+        cat_sanitation_health: "Sanitation / Health",
+        cat_noise_nuisance: "Noise Nuisance",
+        cat_environmental: "Environmental",
+        cat_other: "Other",
         sevLow: "Low",
         sevMinor: "Minor",
         sevModerate: "Moderate",
@@ -107,6 +115,23 @@ const translations = {
         toastReportSubmitted: "Report submitted successfully",
         toastSavedOffline: "Report saved offline",
         toastSyncFailed: "Some reports failed to sync",
+        mapScore: "Score",
+        mapCategories: "Categories",
+        mapLocation: "Location",
+        mapNavigate: "Navigate",
+        mapMaps: "Maps",
+        mapHeatmap: "Heatmap",
+        mapHeatmapActive: "Heatmap Active",
+        mapHeatmapHint: "Showing density patterns across the selected time window",
+        mapClusterDrilldown: "Cluster Drill-down",
+        mapTopCategory: "Top Category",
+        mapDensity: "Density",
+        mapReportsCount: (n: number) => `${n} report${n !== 1 ? "s" : ""}`,
+        mapLowDensity: "Low Density",
+        mapMediumDensity: "Medium Density",
+        mapHighDensity: "High Density",
+        mapCriticalDensity: "Critical Density",
+        mapLoadingHotspots: "Loading hotspots...",
     },
     fil: {
         navReport: "Ulat",
@@ -171,6 +196,14 @@ const translations = {
         catHealth: "Kalusugan",
         catEnvironmental: "Kalikasan",
         catOther: "Iba pa",
+        cat_drainage_flooding: "Kanal / Pagbaha",
+        cat_fire_hazard: "Peligro sa Sunog",
+        cat_safety_concern: "Isyu sa Seguridad",
+        cat_infrastructure: "Imprastraktura",
+        cat_sanitation_health: "Kalinisan / Kalusugan",
+        cat_noise_nuisance: "Istorbo sa Ingay",
+        cat_environmental: "Kalikasan",
+        cat_other: "Iba pa",
         sevLow: "Mababa",
         sevMinor: "Bahagya",
         sevModerate: "Katamtaman",
@@ -215,6 +248,23 @@ const translations = {
         toastReportSubmitted: "Matagumpay na naipadala ang ulat",
         toastSavedOffline: "Na-save ang ulat offline",
         toastSyncFailed: "May mga ulat na hindi na-sync",
+        mapScore: "Puntos",
+        mapCategories: "Mga Kategorya",
+        mapLocation: "Lokasyon",
+        mapNavigate: "I-navigate",
+        mapMaps: "Mapa",
+        mapHeatmap: "Heatmap",
+        mapHeatmapActive: "Aktibong Heatmap",
+        mapHeatmapHint: "Ipinapakita ang mga pattern ng density sa napiling window ng oras",
+        mapClusterDrilldown: "Detalyadong Cluster",
+        mapTopCategory: "Pangunahing Kategorya",
+        mapDensity: "Density",
+        mapReportsCount: (n: number) => `${n} ulat`,
+        mapLowDensity: "Mababang Density",
+        mapMediumDensity: "Katamtamang Density",
+        mapHighDensity: "Mataas na Density",
+        mapCriticalDensity: "Kritikal na Density",
+        mapLoadingHotspots: "Kinakarga ang mga hotspot...",
     },
 } as const;
 export type TranslationKey = keyof (typeof translations)["en"];
@@ -222,3 +272,32 @@ export function getTranslations(locale: Locale) {
     return translations[locale];
 }
 export type Translations = ReturnType<typeof getTranslations>;
+
+export function translateCategory(category: string, t: Translations): string {
+    const key = category.toLowerCase();
+    switch (key) {
+        case "drainage_flooding":
+        case "flooding":
+            return t.cat_drainage_flooding;
+        case "fire_hazard":
+        case "fire":
+            return t.cat_fire_hazard;
+        case "safety_concern":
+        case "crime":
+            return t.cat_safety_concern;
+        case "infrastructure":
+        case "infra":
+            return t.cat_infrastructure;
+        case "sanitation_health":
+        case "health":
+            return t.cat_sanitation_health;
+        case "noise_nuisance":
+        case "noise":
+            return t.cat_noise_nuisance;
+        case "environmental":
+        case "environ":
+            return t.cat_environmental;
+        default:
+            return t.cat_other;
+    }
+}

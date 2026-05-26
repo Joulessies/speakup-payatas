@@ -49,6 +49,7 @@ interface Report {
         note: string;
         actor: string;
         created_at: string;
+        photo_url?: string;
     }[];
 }
 
@@ -615,7 +616,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
-                                            {CATEGORY_LABELS[report.admin_category || report.category as keyof typeof CATEGORY_LABELS] || report.category}
+                                            {CATEGORY_LABELS[(report.admin_category || report.category) as ReportCategory] || report.category}
                                         </Badge>
                                         {report.is_flagged && (
                                             <Badge variant="destructive" className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">
@@ -884,7 +885,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                             <div className="flex items-center gap-3">
                                 <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Report Details</h2>
                                 <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
-                                    {CATEGORY_LABELS[detailModal.admin_category || detailModal.category as keyof typeof CATEGORY_LABELS] || detailModal.category}
+                                    {CATEGORY_LABELS[(detailModal.admin_category || detailModal.category) as ReportCategory] || detailModal.category}
                                 </Badge>
                             </div>
                             <button

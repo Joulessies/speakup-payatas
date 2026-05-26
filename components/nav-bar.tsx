@@ -83,7 +83,13 @@ export default function NavBar() {
         return session ? item.roles.includes(session.role) : item.roles.includes("user");
     });
 
-    const isActivePath = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+    const isActivePath = (href: string) => {
+        const exactMatchRoutes = ["/", "/admin", "/staff"];
+        if (exactMatchRoutes.includes(href)) {
+            return pathname === href;
+        }
+        return pathname.startsWith(href);
+    };
 
     const UTIL_NAV = [
         { href: "/transparency", label: "Transparency", icon: Eye },

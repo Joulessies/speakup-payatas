@@ -16,6 +16,7 @@ interface Report {
     reporter_hash: string;
     latitude: number;
     longitude: number;
+    photo_url?: string;
 }
 
 export default function AdminReportsPage() {
@@ -394,6 +395,19 @@ export default function AdminReportsPage() {
                                     {viewTarget.latitude.toFixed(6)}, {viewTarget.longitude.toFixed(6)}
                                 </p>
                             </div>
+                            {viewTarget.photo_url && (
+                                <div>
+                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Photo Evidence</label>
+                                    <div className="mt-2 flex justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={viewTarget.photo_url}
+                                            alt="Report Evidence"
+                                            className="max-w-full max-h-64 object-contain rounded-xl border border-dashed border-gray-300 dark:border-white/10"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="mt-6 flex gap-3">
                             <button

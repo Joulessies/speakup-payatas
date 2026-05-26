@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
@@ -83,13 +83,13 @@ export default function TrackPage() {
         setQueryInput(generated.slice(0, 12));
         setSearchError(null);
     };
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const normalizedQuery = normalizeInput(queryInput);
+    const triggerSearch = useCallback(async (searchQuery: string) => {
+        const normalizedQuery = normalizeInput(searchQuery);
         if (!normalizedQuery)
             return;
         const looksLikeReceipt = normalizedQuery.toUpperCase().startsWith("SPK-");
-        if (!looksLikeReceipt && normalizedQuery.length < 8) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(normalizedQuery);
+        if (!looksLikeReceipt && !isUuid && normalizedQuery.length < 8) {
             setSearchError(t.trackMinCharsError);
             setReports(null);
             return;
@@ -122,7 +122,22 @@ export default function TrackPage() {
             setReports([]);
         }
         setLoading(false);
+    }, [t]);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await triggerSearch(queryInput);
     };
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const targetId = params.get("id") || params.get("q");
+        if (targetId) {
+            const cleanId = targetId.trim();
+            setQueryInput(cleanId);
+            triggerSearch(cleanId);
+        }
+    }, [triggerSearch]);
     const handleUpvote = async (reportId: string) => {
         setConfirming(reportId);
         try {

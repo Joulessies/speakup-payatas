@@ -51,10 +51,15 @@ async function isBlocked(reporterHash: string): Promise<boolean> {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { reporter_hash, receipt_id, category, description, latitude, longitude, severity } = body;
+    const { reporter_hash, receipt_id, category, description, latitude, longitude, severity, photo_url } = body;
     if (!reporter_hash || !category || latitude == null || longitude == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    // Inline data URLs can grow unbounded; cap the size so a misuse can't bloat the row.
+    const cleanedPhotoUrl = typeof photo_url === "string" && photo_url.trim().length > 0
+      ? (photo_url.length > 2_000_000 ? null : photo_url.trim())
+      : null;
 
     if (await isBlocked(reporter_hash)) {
       return NextResponse.json(
@@ -120,6 +125,7 @@ export async function POST(request: Request) {
         ai_category: classifyReport(description || ""),
         submitted_at: now,
         action_history: actionHistory,
+        photo_url: cleanedPhotoUrl,
       })
       .select("id, created_at")
       .single();

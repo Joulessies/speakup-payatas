@@ -61,9 +61,9 @@ export async function POST() {
                 longitude: sumLng / clusterReports.length,
                 count: clusterReports.length,
                 category_breakdown: categoryBreakdown,
-                urgency: computeClusterUrgency(clusterReports),
+                urgency: computeClusterUrgency(clusterReports.map((r) => ({ severity: r.severity ?? 1, created_at: r.created_at }))),
                 anomaly: detectAnomaly(clusterReports),
-                reports: clusterReports.map((r) => ({ severity: r.severity, category: r.category, created_at: r.created_at })),
+                reports: clusterReports.map((r) => ({ severity: r.severity ?? 1, category: r.category, created_at: r.created_at })),
             });
         }
         rankedClusters.sort((a, b) => b.urgency.score - a.urgency.score);

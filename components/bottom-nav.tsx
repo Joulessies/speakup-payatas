@@ -94,7 +94,10 @@ export default function BottomNav() {
     };
 
     const isActive = (href: string) => {
-        if (href === "/") return pathname === "/";
+        const exactMatchRoutes = ["/", "/admin", "/staff"];
+        if (exactMatchRoutes.includes(href)) {
+            return pathname === href;
+        }
         return pathname.startsWith(href);
     };
 

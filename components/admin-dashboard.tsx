@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback, type Dispatch, type SetState
 import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
+import { translateCategory } from "@/lib/i18n";
 import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
@@ -63,14 +64,14 @@ type PlaybackFrame = {
     ][];
 };
 
-function getDensityLabel(count: number) {
+function getDensityLabel(count: number, t: any) {
     if (count >= 15)
-        return { text: "Critical", color: "bg-red-500" };
+        return { text: t.sevCritical || "Critical", color: "bg-red-500" };
     if (count >= 10)
-        return { text: "High", color: "bg-orange-500" };
+        return { text: t.sevHigh || "High", color: "bg-orange-500" };
     if (count >= 5)
-        return { text: "Medium", color: "bg-amber-500" };
-    return { text: "Low", color: "bg-emerald-500" };
+        return { text: t.sevModerate || "Medium", color: "bg-amber-500" };
+    return { text: t.sevLow || "Low", color: "bg-emerald-500" };
 }
 
 export default function AdminDashboard() {
@@ -381,7 +382,7 @@ export default function AdminDashboard() {
             <Layers className={`h-4 w-4 ${showHeatmap ? "text-indigo-400" : ""}`} />
             {showHeatmap && <div className="absolute -inset-1 bg-indigo-400 rounded-full blur-sm opacity-30 animate-ping"></div>}
           </div>
-          <span className="font-medium">{showHeatmap ? "Heatmap Active" : "Heatmap"}</span>
+          <span className="font-medium">{showHeatmap ? t.mapHeatmapActive : t.mapHeatmap}</span>
           {showHeatmap && <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>}
         </button>
       </div>
@@ -602,7 +603,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                         ? "bg-white/[0.03] text-white/45 hover:bg-white/[0.06]"
                         : "bg-black/[0.02] text-gray-400 hover:bg-black/[0.05]"}`}>
                 {CATEGORY_ICONS[cat]}
-                {cat === "infrastructure" ? "Infra" : cat}
+                {translateCategory(cat, t)}
               </button>);
         })}
         </div>
@@ -618,7 +619,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
           </p>)}
         <div className="flex flex-col gap-2">
           {clusters.map((cluster, i) => {
-            const density = getDensityLabel(cluster.count);
+            const density = getDensityLabel(cluster.count, t);
             const isSelected = selectedCluster === i;
             const topCategory = Object.entries(cluster.category_breakdown).sort((a, b) => b[1] - a[1])[0];
             return (<button key={i} onClick={() => setSelectedCluster(isSelected ? null : i)} className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left border transition-all ${isSelected
@@ -642,8 +643,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
                     {topCategory && CATEGORY_ICONS[topCategory[0]]}
-                    <span className={`text-sm font-medium capitalize truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                      {topCategory ? topCategory[0] : "Mixed"}
+                    <span className={`text-sm font-medium truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                      {topCategory ? translateCategory(topCategory[0], t) : (t.catOther || "Mixed")}
                     </span>
                   </div>
                   <span className={`block text-[10px] font-mono truncate ${isDark ? "text-white/30" : "text-gray-400"}`}>
@@ -662,12 +663,12 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
       
       {selectedCluster !== null && clusters[selectedCluster] && (<div>
           <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-            Cluster Drill-down
+            {t.mapClusterDrilldown}
           </h2>
           <div className={`rounded-xl border p-3 space-y-2 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.01]"}`}>
             <div className="flex items-center justify-between">
               <p className={`text-xs font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                {clusters[selectedCluster].count} reports · score {Math.round(clusters[selectedCluster].weighted_score ?? clusters[selectedCluster].count)}
+                {t.mapReportsCount(clusters[selectedCluster].count)} · {t.mapScore} {Math.round(clusters[selectedCluster].weighted_score ?? clusters[selectedCluster].count)}
               </p>
               <div className="flex items-center gap-1">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${clusters[selectedCluster].latitude},${clusters[selectedCluster].longitude}`} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] ${isDark ? "bg-white/[0.05] text-white/70" : "bg-gray-100 text-gray-700"}`}>
@@ -681,8 +682,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
               {(clusters[selectedCluster].reports ?? []).slice(0, 20).map((report) => (<div key={report.id} className={`rounded-lg border px-2 py-2 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-black/[0.06] bg-black/[0.01]"}`}>
                   <div className="flex items-start justify-between gap-2">
-                    <p className={`text-xs capitalize font-medium ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                      {report.category} · S{report.severity}
+                    <p className={`text-xs font-medium ${isDark ? "text-white/80" : "text-gray-800"}`}>
+                      {translateCategory(report.category, t)} · S{report.severity}
                     </p>
                     <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>
                       {new Date(report.created_at).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
@@ -714,10 +715,10 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                 ? "bg-white/[0.02] border-white/[0.04]"
                 : "bg-black/[0.02] border-black/[0.04]"}`}>
           {[
-            { color: "bg-emerald-500", label: t.adminDensityLow, intensity: "Low" },
-            { color: "bg-amber-500", label: t.adminDensityMedium, intensity: "Medium" },
-            { color: "bg-orange-500", label: t.adminDensityHigh, intensity: "High" },
-            { color: "bg-red-500", label: t.adminDensityCritical, intensity: "Critical" },
+            { color: "bg-emerald-500", label: t.adminDensityLow, intensity: t.sevLow || "Low" },
+            { color: "bg-amber-500", label: t.adminDensityMedium, intensity: t.sevModerate || "Medium" },
+            { color: "bg-orange-500", label: t.adminDensityHigh, intensity: t.sevHigh || "High" },
+            { color: "bg-red-500", label: t.adminDensityCritical, intensity: t.sevCritical || "Critical" },
         ].map((item, index) => (<div key={item.color} className="flex items-center gap-3 group">
               <div className="relative">
                 <span className={`w-3 h-3 rounded-full ${item.color} ${showHeatmap ? "animate-pulse" : ""} shadow-sm group-hover:scale-110 transition-transform duration-200`}></span>
@@ -739,9 +740,9 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             : "bg-indigo-50 border-indigo-200 text-indigo-700"}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
-              <span className="font-medium">Heatmap Active</span>
+              <span className="font-medium">{t.mapHeatmapActive}</span>
             </div>
-            <p className="text-[10px] opacity-80">Showing density patterns across the selected time window</p>
+            <p className="text-[10px] opacity-80">{t.mapHeatmapHint}</p>
           </div>
         )}
       </div>

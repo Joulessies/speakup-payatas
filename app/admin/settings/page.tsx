@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import { User, Lock, Palette, Globe, Save, Eye, EyeOff, LogOut, AlertTriangle } from "lucide-react";
+import { User, Lock, Palette, Globe, Eye, EyeOff, LogOut, AlertTriangle, Loader2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -10,8 +10,9 @@ export default function AccountSettingsPage() {
     const { theme, toggleTheme } = useTheme();
     const { locale, setLocale, t } = useLanguage();
     const isDark = theme === "dark";
-    
+
     const [loading, setLoading] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(true);
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -29,63 +30,40 @@ export default function AccountSettingsPage() {
     });
 
     useEffect(() => {
-        // Load user profile data
         loadProfile();
     }, []);
 
     const loadProfile = async () => {
+        setProfileLoading(true);
         try {
-            // This would typically come from an API
-            // For now, using mock data
-            setProfile({
-                username: "admin",
-                email: "admin@speakup-payatas.com",
-                role: "admin"
-            });
-        } catch (error) {
+            const res = await fetch("/api/auth/me", { cache: "no-store" });
+            if (!res.ok) {
+                toast.error("Failed to load profile. Please re-login.");
+                return;
+            }
+            const data = await res.json();
+            if (data?.authenticated) {
+                setProfile({
+                    username: data.username ?? "",
+                    email: data.username ?? "",
+                    role: data.role ?? "",
+                });
+            } else {
+                toast.error("Session expired. Please re-login.");
+            }
+        } catch {
             toast.error("Failed to load profile");
+        } finally {
+            setProfileLoading(false);
         }
     };
 
     const handleProfileUpdate = async () => {
-        setLoading(true);
-        try {
-            // API call to update profile
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-            toast.success("Profile updated successfully");
-        } catch (error) {
-            toast.error("Failed to update profile");
-        } finally {
-            setLoading(false);
-        }
+        toast.info("Admin and staff profiles are managed via server environment variables. Contact the system administrator to make changes.");
     };
 
     const handlePasswordChange = async () => {
-        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-            toast.error("New passwords do not match");
-            return;
-        }
-        
-        if (passwordForm.newPassword.length < 6) {
-            toast.error("Password must be at least 6 characters");
-            return;
-        }
-
-        setLoading(true);
-        try {
-            // API call to change password
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-            toast.success("Password changed successfully");
-            setPasswordForm({
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: ""
-            });
-        } catch (error) {
-            toast.error("Failed to change password");
-        } finally {
-            setLoading(false);
-        }
+        toast.info("Admin and staff passwords are managed via server environment variables. Update the ADMIN_PASSWORD or STAFF_PASSWORD environment variable and restart the server.");
     };
 
     const handleLogout = async () => {
@@ -103,14 +81,14 @@ export default function AccountSettingsPage() {
 
     return (
         <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
-            <div className="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
+            <div className="max-w-4xl mx-auto w-full px-4 py-8 space-y-8 pb-24">
                 {/* Header */}
                 <div>
                     <h1 className={`text-3xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
                         Account Settings
                     </h1>
                     <p className={`text-sm mt-2 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                        Manage your account settings and preferences.
+                        {profileLoading ? "Loading your profile…" : `Signed in as ${profile.role} · ${profile.username}`}
                     </p>
                 </div>
 
@@ -129,175 +107,78 @@ export default function AccountSettingsPage() {
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                Username
-                            </label>
-                            <input
-                                type="text"
-                                value={profile.username}
-                                onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                    ? "bg-white/5 border-white/10 text-white" 
-                                    : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                            />
+                    {profileLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
                         </div>
-
-                        <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                value={profile.email}
-                                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                    ? "bg-white/5 border-white/10 text-white" 
-                                    : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                            />
-                        </div>
-
-                        <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                Role
-                            </label>
-                            <input
-                                type="text"
-                                value={profile.role}
-                                disabled
-                                className={`w-full px-4 py-2 rounded-lg border outline-none opacity-60 cursor-not-allowed ${isDark 
-                                    ? "bg-white/5 border-white/10 text-white" 
-                                    : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handleProfileUpdate}
-                            disabled={loading}
-                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-colors"
-                        >
-                            {loading ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Saving...
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                                        Username
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={profile.username}
+                                        disabled
+                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-60 cursor-not-allowed ${isDark
+                                            ? "bg-white/5 border-white/10 text-white"
+                                            : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                    />
                                 </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Save className="h-4 w-4" />
-                                    Save Changes
+
+                                <div>
+                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                                        Role
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={profile.role}
+                                        disabled
+                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-60 cursor-not-allowed capitalize ${isDark
+                                            ? "bg-white/5 border-white/10 text-white"
+                                            : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                    />
                                 </div>
-                            )}
-                        </Button>
-                    </div>
+                            </div>
+
+                            <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-indigo-500/[0.06] border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}>
+                                <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                                <p className={`text-xs leading-relaxed ${isDark ? "text-indigo-200/80" : "text-indigo-700"}`}>
+                                    Admin and staff profiles are system accounts managed via server environment variables.
+                                    To update credentials, modify the <code className="font-mono">ADMIN_EMAIL</code> / <code className="font-mono">STAFF_EMAIL</code> variables and restart the server.
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                {/* Password Change */}
-                <div className={`rounded-2xl border p-6 space-y-6 ${isDark 
-                    ? "bg-white/5 border-white/10" 
+                {/* Security */}
+                <div className={`rounded-2xl border p-6 space-y-6 ${isDark
+                    ? "bg-white/5 border-white/10"
                     : "bg-white border-gray-200"}`}>
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark 
-                            ? "bg-amber-500/20 text-amber-400" 
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark
+                            ? "bg-amber-500/20 text-amber-400"
                             : "bg-amber-100 text-amber-600"}`}>
                             <Lock className="h-5 w-5" />
                         </div>
                         <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-                            Change Password
+                            Security
                         </h2>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-amber-500/[0.06] border-amber-500/20" : "bg-amber-50 border-amber-200"}`}>
+                        <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                         <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                Current Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showCurrentPassword ? "text" : "password"}
-                                    value={passwordForm.currentPassword}
-                                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                                    className={`w-full px-4 py-2 pr-10 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                        ? "bg-white/5 border-white/10 text-white" 
-                                        : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/40" : "text-gray-400"}`}
-                                >
-                                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
+                            <p className={`text-xs leading-relaxed ${isDark ? "text-amber-200/80" : "text-amber-700"}`}>
+                                Admin and staff passwords are managed through server environment variables for security.
+                            </p>
+                            <p className={`text-xs leading-relaxed mt-1.5 ${isDark ? "text-amber-200/60" : "text-amber-600"}`}>
+                                To change your password, update the <code className="font-mono px-1 py-0.5 rounded bg-amber-500/10">ADMIN_PASSWORD</code> or <code className="font-mono px-1 py-0.5 rounded bg-amber-500/10">STAFF_PASSWORD</code> environment variable in your deployment configuration, then restart the server.
+                            </p>
                         </div>
-
-                        <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                New Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showNewPassword ? "text" : "password"}
-                                    value={passwordForm.newPassword}
-                                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                                    className={`w-full px-4 py-2 pr-10 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                        ? "bg-white/5 border-white/10 text-white" 
-                                        : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNewPassword(!showNewPassword)}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/40" : "text-gray-400"}`}
-                                >
-                                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
-                                Confirm New Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    value={passwordForm.confirmPassword}
-                                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                                    className={`w-full px-4 py-2 pr-10 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                        ? "bg-white/5 border-white/10 text-white" 
-                                        : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/40" : "text-gray-400"}`}
-                                >
-                                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handlePasswordChange}
-                            disabled={loading}
-                            className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
-                        >
-                            {loading ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Updating...
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Lock className="h-4 w-4" />
-                                    Change Password
-                                </div>
-                            )}
-                        </Button>
                     </div>
                 </div>
 

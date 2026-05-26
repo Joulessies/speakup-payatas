@@ -13,9 +13,9 @@ import { db } from "@/lib/db";
 import { generateReporterHash, getDeviceId } from "@/lib/crypto";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import EmergencyReminder from "@/components/emergency-reminder";
 import GpsHelpDialog from "@/components/gps-help-dialog";
 import { type ReportCategory, type OfflineReport, CATEGORY_LABELS } from "@/types";
+import { translateCategory } from "@/lib/i18n";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
 import { isWithinPayatas } from "@/lib/payatas-boundary";
@@ -146,14 +146,14 @@ export default function ReportForm() {
         icon: React.ReactNode;
         color: string;
     }[] = [
-        { key: "drainage_flooding", label: CATEGORY_LABELS["drainage_flooding"], icon: <Droplets className="h-5 w-5"/>, color: "text-blue-400" },
-        { key: "fire_hazard", label: CATEGORY_LABELS["fire_hazard"], icon: <Flame className="h-5 w-5"/>, color: "text-orange-400" },
-        { key: "safety_concern", label: CATEGORY_LABELS["safety_concern"], icon: <ShieldAlert className="h-5 w-5"/>, color: "text-red-400" },
-        { key: "infrastructure", label: CATEGORY_LABELS["infrastructure"], icon: <Wrench className="h-5 w-5"/>, color: "text-amber-400" },
-        { key: "sanitation_health", label: CATEGORY_LABELS["sanitation_health"], icon: <HeartPulse className="h-5 w-5"/>, color: "text-pink-400" },
-        { key: "environmental", label: CATEGORY_LABELS["environmental"], icon: <Leaf className="h-5 w-5"/>, color: "text-emerald-400" },
-        { key: "noise_nuisance", label: CATEGORY_LABELS["noise_nuisance"], icon: <CircleHelp className="h-5 w-5"/>, color: "text-indigo-400" },
-        { key: "other", label: CATEGORY_LABELS["other"], icon: <CircleHelp className="h-5 w-5"/>, color: "text-gray-400" },
+        { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5"/>, color: "text-blue-400" },
+        { key: "fire_hazard", label: translateCategory("fire_hazard", t), icon: <Flame className="h-5 w-5"/>, color: "text-orange-400" },
+        { key: "safety_concern", label: translateCategory("safety_concern", t), icon: <ShieldAlert className="h-5 w-5"/>, color: "text-red-400" },
+        { key: "infrastructure", label: translateCategory("infrastructure", t), icon: <Wrench className="h-5 w-5"/>, color: "text-amber-400" },
+        { key: "sanitation_health", label: translateCategory("sanitation_health", t), icon: <HeartPulse className="h-5 w-5"/>, color: "text-pink-400" },
+        { key: "environmental", label: translateCategory("environmental", t), icon: <Leaf className="h-5 w-5"/>, color: "text-emerald-400" },
+        { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5"/>, color: "text-indigo-400" },
+        { key: "other", label: translateCategory("other", t), icon: <CircleHelp className="h-5 w-5"/>, color: "text-gray-400" },
     ];
     const SEVERITY_CONFIG = [
         { value: 1, label: t.sevLow, color: "bg-emerald-500" },

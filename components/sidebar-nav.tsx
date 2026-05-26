@@ -41,7 +41,7 @@ export default function SidebarNav() {
     const pathname = usePathname();
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string } | null>(null);
+    const [session, setSession] = useState<{ role: "admin" | "staff" | "user"; username: string; reporter_hash?: string } | null>(null);
     const [collapsed, setCollapsed] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
@@ -56,7 +56,7 @@ export default function SidebarNav() {
                 }
                 const data = await res.json();
                 if (data?.authenticated) {
-                    setSession({ role: data.role, username: data.username });
+                    setSession({ role: data.role, username: data.username, reporter_hash: data.reporter_hash });
                 } else {
                     setSession(null);
                 }
@@ -79,8 +79,9 @@ export default function SidebarNav() {
     };
 
     const isActive = (href: string) => {
-        if (href === "/") {
-            return pathname === "/";
+        const exactMatchRoutes = ["/", "/admin", "/staff"];
+        if (exactMatchRoutes.includes(href)) {
+            return pathname === href;
         }
         return pathname.startsWith(href);
     };
@@ -205,7 +206,7 @@ export default function SidebarNav() {
                                         <span className={`text-[10px] px-2 py-0.5 rounded ${roleBadgeColor}`}>{session.role}</span>
                                     </div>
                                 )}
-                                {!collapsed && <NotificationBell role={session.role} />}
+                                {!collapsed && <NotificationBell role={session.role} reporterHash={session.reporter_hash} />}
                             </div>
                             <Link
                                 href={session.role === "admin" ? "/admin/settings" : "/account"}

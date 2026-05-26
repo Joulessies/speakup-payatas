@@ -13,11 +13,15 @@ import {
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
 import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import type { ClusterResult } from "@/types";
+import { CATEGORY_LABELS } from "@/types";
 import { useTheme } from "./theme-provider";
+import { useLanguage } from "./language-provider";
 import MapsMissingKey from "./maps-missing-key";
+import { translateCategory } from "@/lib/i18n";
 
 function MapInnerLoaded() {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const isDark = theme === "dark";
     const { isLoaded, loadError } = usePayatasGoogleMapsLoader();
     const { failed: authFailed, errorCode } = useGoogleMapsAuthState();
@@ -57,27 +61,27 @@ function MapInnerLoaded() {
       
       <div className="absolute top-4 left-4 z-[1] rounded-xl border border-white/10 bg-black/80 px-4 py-3 text-sm text-white backdrop-blur-sm space-y-1">
         <p className="text-base font-semibold tracking-tight">SpeakUp Payatas</p>
-        {loading ? (<p className="text-white/60">Loading clusters…</p>) : (<>
+        {loading ? (<p className="text-white/60">{t.mapLoadingHotspots}</p>) : (<>
             <p>
-              <span className="text-white/60">Reports:</span> {totalReports}
+              <span className="text-white/60">{t.adminReports}:</span> {totalReports}
             </p>
             <p>
-              <span className="text-white/60">Hotspots:</span> {clusters.length}
+              <span className="text-white/60">{t.adminHotspots}:</span> {clusters.length}
             </p>
             <p>
-              <span className="text-white/60">Scattered:</span> {noiseCount}
+              <span className="text-white/60">{t.adminScattered}:</span> {noiseCount}
             </p>
           </>)}
       </div>
 
       
       <div className="absolute bottom-6 left-4 z-[1] rounded-xl border border-white/10 bg-black/80 px-4 py-3 text-xs text-white backdrop-blur-sm space-y-1.5">
-        <p className="text-sm font-medium">Density</p>
+        <p className="text-sm font-medium">{t.mapDensity}</p>
         {[
-            { color: "#22c55e", label: "Low (< 5)" },
-            { color: "#eab308", label: "Medium (5-9)" },
-            { color: "#f97316", label: "High (10-14)" },
-            { color: "#ef4444", label: "Critical (15+)" },
+            { color: "#22c55e", label: t.adminDensityLow },
+            { color: "#eab308", label: t.adminDensityMedium },
+            { color: "#f97316", label: t.adminDensityHigh },
+            { color: "#ef4444", label: t.adminDensityCritical },
         ].map((item) => (<div key={item.color} className="flex items-center gap-2">
             <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: item.color }}/>
             {item.label}
@@ -110,10 +114,10 @@ function MapInnerLoaded() {
             }} onCloseClick={() => setPopupIndex(null)}>
             <div className="min-w-[140px] space-y-1 text-sm">
               <p className="font-semibold">
-                {clusters[popupIndex].count} report{clusters[popupIndex].count !== 1 ? "s" : ""}
+                {t.mapReportsCount(clusters[popupIndex].count)}
               </p>
               {Object.entries(clusters[popupIndex].category_breakdown).map(([cat, count]) => (<p key={cat} className="text-xs text-gray-600">
-                    {cat}: {count}
+                    {translateCategory(cat, t)}: {count}
                   </p>))}
               <p className="font-mono text-xs text-gray-400">
                 {clusters[popupIndex].latitude.toFixed(5)},{" "}

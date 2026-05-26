@@ -2,7 +2,7 @@
 
 import { useJsApiLoader } from "@react-google-maps/api";
 
-const libraries = ["marker", "visualization"] as const;
+const libraries = ["visualization"] as any;
 
 export function usePayatasGoogleMapsLoader() {
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";

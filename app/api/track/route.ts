@@ -17,9 +17,11 @@ export async function GET(request: Request) {
         const normalizedQuery = query.toLowerCase();
         const matched = mockReports
             .filter((r) => {
+                const id = r.id.toLowerCase();
                 const hash = r.reporter_hash.toLowerCase();
                 const receipt = r.receipt_id?.toLowerCase() ?? "";
-                return (hash === normalizedQuery ||
+                return (id === normalizedQuery ||
+                    hash === normalizedQuery ||
                     hash.startsWith(normalizedQuery) ||
                     normalizedQuery.startsWith(hash.slice(0, 12)) ||
                     (receipt.length > 0 &&

@@ -93,7 +93,7 @@ export async function POST(request: Request) {
             .filter((r) => r.created_at >= since)
             .map((r) => ({
             id: r.id,
-            receipt_id: r.receipt_id,
+            receipt_id: r.receipt_id ?? undefined,
             category: r.category,
             severity: r.severity ?? 1,
             created_at: r.created_at,
