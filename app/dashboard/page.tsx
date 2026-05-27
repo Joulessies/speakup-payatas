@@ -73,6 +73,7 @@ export default function UserDashboard() {
     const isDark = theme === "dark";
     const [reporterHash, setReporterHash] = useState<string | null>(null);
     const [reportCount, setReportCount] = useState<{ total: number; pending: number; resolved: number } | null>(null);
+    const [myReports, setMyReports] = useState<any[]>([]);
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
     const [statsLoading, setStatsLoading] = useState(true);
@@ -86,6 +87,7 @@ export default function UserDashboard() {
                 const res = await fetch(`/api/reports/my?reporter_hash=${hash}`);
                 const data = await res.json();
                 const reports = data.reports ?? [];
+                setMyReports(reports);
                 setReportCount({
                     total: reports.length,
                     pending: reports.filter((r: { status: string }) => r.status !== "resolved").length,
@@ -148,6 +150,100 @@ export default function UserDashboard() {
                             <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
                         </div>
                     ))}
+                </div>
+
+                {/* My Reports History */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className="px-5 pt-5 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
+                                <LayoutDashboard className={`h-4 w-4 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                            </div>
+                            <div>
+                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                    My Reports History
+                                </h2>
+                                <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                    All your submitted reports and their live progress status
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-5 pb-5">
+                        {statsLoading ? (
+                            <div className="py-8 flex justify-center">
+                                <Loader2 className="h-6 w-6 animate-spin opacity-40" />
+                            </div>
+                        ) : myReports.length === 0 ? (
+                            <div className={`text-center py-8 rounded-xl border border-dashed ${isDark ? "border-white/10 bg-white/[0.01]" : "border-gray-200 bg-gray-50/50"}`}>
+                                <FileWarning className={`h-8 w-8 mx-auto mb-2 opacity-30`} />
+                                <p className={`text-xs font-medium ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                    You haven't submitted any reports yet
+                                </p>
+                                <p className={`text-[10px] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                    Report an issue to help improve Barangay Payatas.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                                {myReports.map((r) => {
+                                    const statusColors: Record<string, string> = {
+                                        pending: isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-amber-55 text-amber-700 border-amber-200",
+                                        verified: isDark ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-blue-55 text-blue-700 border-blue-200",
+                                        in_progress: isDark ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" : "bg-indigo-55 text-indigo-700 border-indigo-200",
+                                        resolved: isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-55 text-emerald-700 border-emerald-200",
+                                    };
+                                    const statusLabel: Record<string, string> = {
+                                        pending: "Submitted",
+                                        verified: "Verified",
+                                        in_progress: "In Progress",
+                                        resolved: "Resolved",
+                                    };
+                                    return (
+                                        <div
+                                            key={r.id}
+                                            className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                                                isDark ? "bg-white/[0.01] border-white/[0.06] hover:bg-white/[0.03]" : "bg-white border-gray-100 hover:bg-gray-50/50"
+                                            }`}
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className={`text-xs font-semibold capitalize ${isDark ? "text-white/80" : "text-gray-800"}`}>
+                                                        {r.category.replace(/_/g, " ")}
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium border uppercase tracking-wider ${statusColors[r.status] ?? ""}`}>
+                                                        {statusLabel[r.status] ?? r.status}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-xs line-clamp-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                                    {r.description || "No description provided."}
+                                                </p>
+                                                <p className={`text-[9px] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                                                    {new Date(r.created_at).toLocaleDateString("en-PH", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit"
+                                                    })}
+                                                </p>
+                                            </div>
+                                            <Link
+                                                href={`/track?q=${r.receipt_id || r.id}`}
+                                                className={`sm:self-center self-start text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                                                    isDark 
+                                                        ? "border-white/10 text-white/70 hover:bg-white/[0.05] hover:text-white" 
+                                                        : "border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                                }`}
+                                            >
+                                                <Eye className="h-3 w-3" /> Track Details
+                                            </Link>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Transparency Board */}

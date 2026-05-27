@@ -134,7 +134,6 @@ export default function StatusUpdateDialog({ open, reportId, targetStatus, onCan
                             ref={fileInput}
                             type="file"
                             accept="image/*"
-                            capture="environment"
                             className="hidden"
                             onChange={(e) => handlePhoto(e.target.files?.[0])}
                         />

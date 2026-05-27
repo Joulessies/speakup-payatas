@@ -4,6 +4,7 @@ import { Loader2, BarChart3, TrendingUp, MapPin, Download, Calendar, ArrowLeft, 
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORY_LABELS } from "@/types";
+import { getAreaFromCoordinates } from "@/lib/payatas-boundary";
 
 interface MonthlyData {
     month: string;
@@ -59,8 +60,10 @@ export default function StaffMonthlySummary() {
                 const status = r.status || "pending";
                 monthData.byStatus[status] = (monthData.byStatus[status] || 0) + 1;
 
-                // Area (approximate from coordinates or use a placeholder)
-                const area = r.location_area || "Unknown Area";
+                // Area — derive from GPS coordinates since location_area is not stored in DB
+                const area = (r.latitude && r.longitude)
+                    ? getAreaFromCoordinates(r.latitude, r.longitude)
+                    : "Unknown Area";
                 monthData.byArea[area] = (monthData.byArea[area] || 0) + 1;
             });
 
@@ -137,11 +140,10 @@ ${Object.entries(data?.byStatus || {}).map(([s, c]) => `- ${s}: ${c}`).join("\n"
                     <button
                         onClick={exportToPDF}
                         disabled={loading || !data}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                            isDark
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isDark
                                 ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
                                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-                        }`}
+                            }`}
                     >
                         <Download className="h-4 w-4" />
                         Export
@@ -200,12 +202,11 @@ ${Object.entries(data?.byStatus || {}).map(([s, c]) => `- ${s}: ${c}`).join("\n"
                                 <div className="space-y-3">
                                     {data.topIssues.map((issue, idx) => (
                                         <div key={issue.category} className="flex items-center gap-3">
-                                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
-                                                idx === 0 ? (isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-700")
-                                                : idx === 1 ? (isDark ? "bg-gray-500/20 text-gray-400" : "bg-gray-200 text-gray-700")
-                                                : idx === 2 ? (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-700")
-                                                : (isDark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600")
-                                            }`}>
+                                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${idx === 0 ? (isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-700")
+                                                    : idx === 1 ? (isDark ? "bg-gray-500/20 text-gray-400" : "bg-gray-200 text-gray-700")
+                                                        : idx === 2 ? (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-700")
+                                                            : (isDark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600")
+                                                }`}>
                                                 {idx + 1}
                                             </span>
                                             <div className="flex-1">

@@ -75,9 +75,21 @@ export function mapStylesForTheme(isDark: boolean): google.maps.MapTypeStyle[] {
     return isDark ? DARK_STYLES : HIDE_MAP_CLUTTER;
 }
 
+function getBaseOptions(isDark: boolean): google.maps.MapOptions {
+    const mapId = getGoogleMapsMapId();
+    const options: google.maps.MapOptions = {};
+    if (mapId) {
+        options.mapId = mapId;
+    } else {
+        options.styles = mapStylesForTheme(isDark);
+    }
+    return options;
+}
+
 /** Full interactions for dedicated map pages (pan, zoom, keyboard, scale, fullscreen). */
 export function googleMapPublicPageOptions(isDark: boolean): google.maps.MapOptions {
     return {
+        ...getBaseOptions(isDark),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: true,
@@ -88,13 +100,13 @@ export function googleMapPublicPageOptions(isDark: boolean): google.maps.MapOpti
         clickableIcons: false,
         keyboardShortcuts: true,
         gestureHandling: "greedy",
-        styles: mapStylesForTheme(isDark),
     };
 }
 
 /** Embedded admin dashboard map: interactive without fullscreen takeover. */
 export function googleMapAdminOptions(isDark: boolean): google.maps.MapOptions {
     return {
+        ...getBaseOptions(isDark),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: false,
@@ -105,13 +117,13 @@ export function googleMapAdminOptions(isDark: boolean): google.maps.MapOptions {
         clickableIcons: false,
         keyboardShortcuts: true,
         gestureHandling: "greedy",
-        styles: mapStylesForTheme(isDark),
     };
 }
 
 /** Compact map for report form: cooperative gestures play nicer with page scroll on mobile. */
 export function googleMapPickerOptions(isDark: boolean): google.maps.MapOptions {
     return {
+        ...getBaseOptions(isDark),
         disableDefaultUI: true,
         zoomControl: true,
         fullscreenControl: false,
@@ -124,7 +136,6 @@ export function googleMapPickerOptions(isDark: boolean): google.maps.MapOptions 
         gestureHandling: "cooperative",
         minZoom: 13,
         maxZoom: 19,
-        styles: mapStylesForTheme(isDark),
     };
 }
 

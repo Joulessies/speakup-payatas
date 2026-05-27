@@ -15,7 +15,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "reporter_hash required (min 8 chars)" }, { status: 400 });
         }
         const myReports = mockReports
-            .filter((r) => r.reporter_hash.startsWith(reporter_hash))
+            .filter((r) => r.reporter_hash.toLowerCase().startsWith(reporter_hash.toLowerCase()))
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             .map((r) => ({
                 id: r.id,

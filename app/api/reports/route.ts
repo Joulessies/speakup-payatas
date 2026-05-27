@@ -174,6 +174,8 @@ export async function GET(request: Request) {
     const verification = searchParams.get("verification");
     const limit = Number(searchParams.get("limit") ?? "30");
     const reporterHash = searchParams.get("reporter_hash");
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
 
     const cap = await getReportsListLimitCap();
     const boundedLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, cap)) : Math.min(30, cap);
@@ -187,6 +189,8 @@ export async function GET(request: Request) {
     if (status) query = query.eq("status", status);
     if (verification) query = query.eq("verification_status", verification);
     if (reporterHash) query = query.ilike("reporter_hash", `${reporterHash}%`);
+    if (startDate) query = query.gte("created_at", startDate);
+    if (endDate) query = query.lte("created_at", endDate);
 
     const { data, error } = await query;
     if (error) {
