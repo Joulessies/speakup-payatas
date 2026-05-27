@@ -21,13 +21,13 @@ export const PAYATAS_BOUNDARY: [
         [121.084, 14.7],
         [121.085, 14.695],
     ];
-export function isWithinPayatas(lat: number, lng: number): boolean {
-    const isPresentation =
-        (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) ||
-        process.env.NEXT_PUBLIC_PRESENTATION_MODE === "true" ||
-        process.env.NEXT_PUBLIC_PRESENTATION_MODE !== "false";
+// PRESENTATION MODE CONFIGURATION:
+// set PRESENTATION_MODE to true: Bypasses the boundary check and snaps mock coordinates inside Payatas.
+// set PRESENTATION_MODE to false: Activates strict real-world geofencing (rejects reports outside Payatas).
+export const PRESENTATION_MODE = true; 
 
-    if (isPresentation) {
+export function isWithinPayatas(lat: number, lng: number): boolean {
+    if (PRESENTATION_MODE) {
         return true;
     }
 

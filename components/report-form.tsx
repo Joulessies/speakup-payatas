@@ -18,12 +18,12 @@ import { type ReportCategory, type OfflineReport, CATEGORY_LABELS } from "@/type
 import { translateCategory } from "@/lib/i18n";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
-import { isWithinPayatas } from "@/lib/payatas-boundary";
+import { isWithinPayatas, PRESENTATION_MODE } from "@/lib/payatas-boundary";
 import { detectPlatform, type PlatformInfo } from "@/lib/geolocation-help";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
     ssr: false,
-    loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30"/>,
+    loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30" />,
 });
 
 export default function ReportForm() {
@@ -146,15 +146,15 @@ export default function ReportForm() {
         icon: React.ReactNode;
         color: string;
     }[] = [
-        { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5"/>, color: "text-blue-400" },
-        { key: "fire_hazard", label: translateCategory("fire_hazard", t), icon: <Flame className="h-5 w-5"/>, color: "text-orange-400" },
-        { key: "safety_concern", label: translateCategory("safety_concern", t), icon: <ShieldAlert className="h-5 w-5"/>, color: "text-red-400" },
-        { key: "infrastructure", label: translateCategory("infrastructure", t), icon: <Wrench className="h-5 w-5"/>, color: "text-amber-400" },
-        { key: "sanitation_health", label: translateCategory("sanitation_health", t), icon: <HeartPulse className="h-5 w-5"/>, color: "text-pink-400" },
-        { key: "environmental", label: translateCategory("environmental", t), icon: <Leaf className="h-5 w-5"/>, color: "text-emerald-400" },
-        { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5"/>, color: "text-indigo-400" },
-        { key: "other", label: translateCategory("other", t), icon: <CircleHelp className="h-5 w-5"/>, color: "text-gray-400" },
-    ];
+            { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5" />, color: "text-blue-400" },
+            { key: "fire_hazard", label: translateCategory("fire_hazard", t), icon: <Flame className="h-5 w-5" />, color: "text-orange-400" },
+            { key: "safety_concern", label: translateCategory("safety_concern", t), icon: <ShieldAlert className="h-5 w-5" />, color: "text-red-400" },
+            { key: "infrastructure", label: translateCategory("infrastructure", t), icon: <Wrench className="h-5 w-5" />, color: "text-amber-400" },
+            { key: "sanitation_health", label: translateCategory("sanitation_health", t), icon: <HeartPulse className="h-5 w-5" />, color: "text-pink-400" },
+            { key: "environmental", label: translateCategory("environmental", t), icon: <Leaf className="h-5 w-5" />, color: "text-emerald-400" },
+            { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-indigo-400" },
+            { key: "other", label: translateCategory("other", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-gray-400" },
+        ];
     const SEVERITY_CONFIG = [
         { value: 1, label: t.sevLow, color: "bg-emerald-500" },
         { value: 2, label: t.sevMinor, color: "bg-lime-500" },
@@ -403,13 +403,34 @@ export default function ReportForm() {
         setSubmitting(true);
         const reporterHash = await generateReporterHash(getDeviceId());
         const nextReceiptId = generateReceiptId();
+
+        let finalLat = latitude;
+        let finalLng = longitude;
+        
+        if (PRESENTATION_MODE) {
+            const isFarFromPayatas = Math.abs(latitude - 14.7055) > 0.04 || Math.abs(longitude - 121.0990) > 0.04;
+            if (isFarFromPayatas) {
+                const PAYATAS_AREAS = [
+                    { lat: 14.7085, lng: 121.1070 }, // Lupang Pangako
+                    { lat: 14.7080, lng: 121.0960 }, // Phase 1, Payatas A
+                    { lat: 14.7060, lng: 121.1020 }, // Phase 2, Payatas B
+                    { lat: 14.7020, lng: 121.1050 }, // Phase 4, Payatas B
+                    { lat: 14.6970, lng: 121.0940 }, // Group Two
+                    { lat: 14.6940, lng: 121.1020 }  // Sitio Damayan
+                ];
+                const randomArea = PAYATAS_AREAS[Math.floor(Math.random() * PAYATAS_AREAS.length)];
+                finalLat = randomArea.lat + (Math.random() - 0.5) * 0.003;
+                finalLng = randomArea.lng + (Math.random() - 0.5) * 0.003;
+            }
+        }
+
         const report: OfflineReport = {
             receipt_id: nextReceiptId,
             reporter_hash: reporterHash,
             category,
             description,
-            latitude,
-            longitude,
+            latitude: finalLat,
+            longitude: finalLng,
             severity,
             photo_url: photoPreview || undefined,
             is_synced: 0,
@@ -486,207 +507,207 @@ export default function ReportForm() {
         }
     };
     return (<Card className={`w-full flex flex-col overflow-hidden backdrop-blur-xl shadow-2xl rounded-2xl max-h-[calc(100dvh-6.5rem)] sm:max-h-[calc(100dvh-7rem)] ${isDark
-            ? "border-white/[0.08] bg-black/50 text-white"
-            : "border-black/[0.06] bg-white/70 text-gray-900"}`}>
-      <CardHeader className="px-4 pt-4 pb-2 md:px-5 md:pt-5 md:pb-3 space-y-1.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base md:text-lg font-semibold tracking-tight min-w-0">
-            {t.reportTitle}
-          </CardTitle>
-          <Badge variant={online ? "default" : "destructive"} className="gap-1 text-[11px] px-2.5 py-0.5 shrink-0">
-            {online ? <Wifi className="h-3 w-3"/> : <WifiOff className="h-3 w-3"/>}
-            {online ? t.reportOnline : t.reportOffline}
-          </Badge>
-        </div>
-        <CardDescription className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
-          {t.reportAnonymousId}:{" "}
-          <code className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isDark ? "bg-white/[0.06] text-white/50" : "bg-black/[0.04] text-gray-500"}`}>
-            {hashPreview}…
-          </code>
-        </CardDescription>
-        {pendingCount > 0 && (<div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg ${isDark ? "bg-amber-500/10 text-amber-300" : "bg-amber-50 text-amber-700"}`}>
-            <WifiOff className="h-3 w-3 shrink-0"/>
-            {t.reportPendingQueue(pendingCount)}
-          </div>)}
-      </CardHeader>
-
-      <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 md:px-5 md:pb-5">
-        {submitted ? (<div className="flex flex-col items-center gap-3 py-10 text-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
-              <CheckCircle2 className="h-8 w-8 text-green-500"/>
+        ? "border-white/[0.08] bg-black/50 text-white"
+        : "border-black/[0.06] bg-white/70 text-gray-900"}`}>
+        <CardHeader className="px-4 pt-4 pb-2 md:px-5 md:pt-5 md:pb-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <CardTitle className="text-base md:text-lg font-semibold tracking-tight min-w-0">
+                    {t.reportTitle}
+                </CardTitle>
+                <Badge variant={online ? "default" : "destructive"} className="gap-1 text-[11px] px-2.5 py-0.5 shrink-0">
+                    {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                    {online ? t.reportOnline : t.reportOffline}
+                </Badge>
             </div>
-            <p className="text-lg font-semibold">{t.reportSubmitted}</p>
-            <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>
-              {online ? t.reportSentSecurely : t.reportSavedOffline}
-            </p>
-            {receiptId && (<div className={`w-full max-w-xs rounded-lg px-3 py-2 text-left ${isDark ? "bg-white/[0.06]" : "bg-black/[0.03]"}`}>
-                <p className={`text-[11px] uppercase tracking-wide ${isDark ? "text-white/50" : "text-gray-500"}`}>{t.reportReceiptLabel}</p>
-                <p className="font-mono text-sm">{receiptId}</p>
-                <p className={`text-[11px] ${isDark ? "text-white/45" : "text-gray-500"}`}>{t.reportReceiptHint}</p>
-              </div>)}
-          </div>) : (<form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pb-1">
-            
-            <div className="space-y-2">
-              <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                {t.reportWhatHappened}
-              </Label>
-              <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
-                {CATEGORIES.map((cat) => {
-                const isSelected = category === cat.key;
-                return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
-                        ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-indigo-50 ring-1 ring-indigo-200"
-                        : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
-                      <span className={isSelected ? cat.color : isDark ? "text-white/40" : "text-gray-400"}>
-                        {cat.icon}
-                      </span>
-                      <span className={`w-full truncate px-0.5 text-[10px] font-medium leading-none ${isSelected
-                        ? isDark ? "text-white" : "text-gray-900"
-                        : isDark ? "text-white/40" : "text-gray-400"}`}>
-                        {cat.label}
-                      </span>
-                    </button>);
-            })}
-              </div>
-            </div>
+            <CardDescription className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                {t.reportAnonymousId}:{" "}
+                <code className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isDark ? "bg-white/[0.06] text-white/50" : "bg-black/[0.04] text-gray-500"}`}>
+                    {hashPreview}…
+                </code>
+            </CardDescription>
+            {pendingCount > 0 && (<div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg ${isDark ? "bg-amber-500/10 text-amber-300" : "bg-amber-50 text-amber-700"}`}>
+                <WifiOff className="h-3 w-3 shrink-0" />
+                {t.reportPendingQueue(pendingCount)}
+            </div>)}
+        </CardHeader>
 
-            
-            <div className="space-y-2">
-              <Label htmlFor="description" className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                {t.reportDescription}
-              </Label>
-              <Textarea id="description" placeholder={t.reportDescriptionPlaceholder} value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="resize-none text-sm min-h-12"/>
-            </div>
-
-            
-            <div className="space-y-2">
-              <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                {t.reportPhoto}
-              </Label>
-              <p className={`text-[10px] leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                Accepted formats: JPG, PNG, GIF • Max file size: 5MB • Images are automatically compressed for faster upload
-              </p>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto}/>
-              {photoPreview ? (<div className="relative w-full h-32 rounded-xl overflow-hidden">
-                  <img src={photoPreview} alt="Evidence" className="w-full h-full object-cover"/>
-                  <button type="button" aria-label="Remove selected photo" onClick={() => setPhotoPreview(null)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                    <X className="h-4 w-4"/>
-                  </button>
-                  <button type="button" aria-label="Change selected photo" onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                    {t.reportChangePhoto}
-                  </button>
-                </div>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={() => fileInputRef.current?.click()}>
-                  <Camera className="h-4 w-4"/>
-                  {t.reportAddPhoto}
-                </Button>)}
-            </div>
-
-            
-            <div className="space-y-2">
-              <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                {t.reportSeverity}
-              </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                {SEVERITY_CONFIG.map((s) => {
-                const isSelected = severity === s.value;
-                return (<button key={s.value} type="button" aria-label={`Severity ${s.label}`} onClick={() => setSeverity(s.value)} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
-                        ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-gray-100 ring-1 ring-gray-200"
-                        : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
-                      <span className={`w-2.5 h-2.5 rounded-full ${s.color} ${isSelected ? "opacity-100 scale-110" : "opacity-40"} transition-all`}/>
-                      <span className={`text-[10px] font-medium ${isSelected ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/30" : "text-gray-400"}`}>
-                        {s.label}
-                      </span>
-                    </button>);
-            })}
-              </div>
-            </div>
-
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                  {t.reportLocation}
-                </Label>
-                <button
-                    type="button"
-                    onClick={() => setShowGpsHelp(true)}
-                    className={`flex items-center gap-1 text-[11px] font-medium underline-offset-2 hover:underline ${isDark ? "text-indigo-300" : "text-indigo-600"}`}
-                >
-                    <HelpCircle className="h-3 w-3"/>
-                    {t.locationHelpButtonLabel}
-                </button>
-              </div>
-
-              {platform?.isSecureContext === false && (
-                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-red-500/10 border-red-500/30 text-red-200" : "bg-red-50 border-red-200 text-red-800"}`}>
-                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
-                    <p className="text-[11px] leading-snug">{t.locationInsecureBanner}</p>
+        <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 md:px-5 md:pb-5">
+            {submitted ? (<div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
                 </div>
-              )}
+                <p className="text-lg font-semibold">{t.reportSubmitted}</p>
+                <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                    {online ? t.reportSentSecurely : t.reportSavedOffline}
+                </p>
+                {receiptId && (<div className={`w-full max-w-xs rounded-lg px-3 py-2 text-left ${isDark ? "bg-white/[0.06]" : "bg-black/[0.03]"}`}>
+                    <p className={`text-[11px] uppercase tracking-wide ${isDark ? "text-white/50" : "text-gray-500"}`}>{t.reportReceiptLabel}</p>
+                    <p className="font-mono text-sm">{receiptId}</p>
+                    <p className={`text-[11px] ${isDark ? "text-white/45" : "text-gray-500"}`}>{t.reportReceiptHint}</p>
+                </div>)}
+            </div>) : (<form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pb-1">
 
-              {platform?.isInAppWebView && (
-                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
-                    <ExternalLink className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
-                    <p className="text-[11px] leading-snug">{t.locationInAppBrowserBanner(platform.inAppName ?? "this app")}</p>
+                <div className="space-y-2">
+                    <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        {t.reportWhatHappened}
+                    </Label>
+                    <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
+                        {CATEGORIES.map((cat) => {
+                            const isSelected = category === cat.key;
+                            return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
+                                ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-indigo-50 ring-1 ring-indigo-200"
+                                : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
+                                <span className={isSelected ? cat.color : isDark ? "text-white/40" : "text-gray-400"}>
+                                    {cat.icon}
+                                </span>
+                                <span className={`w-full truncate px-0.5 text-[10px] font-medium leading-none ${isSelected
+                                    ? isDark ? "text-white" : "text-gray-900"
+                                    : isDark ? "text-white/40" : "text-gray-400"}`}>
+                                    {cat.label}
+                                </span>
+                            </button>);
+                        })}
+                    </div>
                 </div>
-              )}
 
-              {gpsPermission === "denied" && !platform?.isInAppWebView && platform?.isSecureContext !== false && (
-                <button
-                    type="button"
-                    onClick={() => setShowGpsHelp(true)}
-                    className={`w-full flex items-start gap-2 px-3 py-2 rounded-xl border text-left ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200 hover:bg-amber-500/15" : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"}`}
-                >
-                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
-                    <p className="text-[11px] leading-snug">{t.locationPermissionBlockedBanner}</p>
-                </button>
-              )}
 
-              {latitude !== null && longitude !== null ? (<button type="button" onClick={detectGPS} className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
-                  <LocateFixed className="h-4 w-4 shrink-0"/>
-                  <span className="min-w-0 truncate text-xs sm:text-sm font-mono">{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
-                  <span className="ml-auto text-[10px] opacity-50">{t.reportTapRefresh}</span>
-                </button>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={detectGPS} disabled={gpsLoading}>
-                  {gpsLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4"/>}
-                  {gpsLoading ? t.reportDetecting : t.reportDetectLocation}
-                </Button>)}
-              {locationAccuracy !== null && (<p className={`text-xs ${locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS
-                    ? isDark ? "text-amber-300" : "text-amber-700"
-                    : isDark ? "text-emerald-300" : "text-emerald-700"}`}>
-                  {t.reportAccuracyLabel(Math.round(locationAccuracy))} · {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? t.reportAccuracyPoor : t.reportAccuracyGood}
-                  {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? ` — ${t.reportRetryForBetterAccuracy}` : ""}
-                </p>)}
-              {hasMapPicker && (gpsPermission === "denied" || platform?.isInAppWebView || platform?.isSecureContext === false) && latitude === null && longitude === null && (
-                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-800"}`}>
-                    <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0"/>
-                    <p className="text-[11px] leading-snug font-medium">{t.locationMapFallbackCallout}</p>
+                <div className="space-y-2">
+                    <Label htmlFor="description" className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        {t.reportDescription}
+                    </Label>
+                    <Textarea id="description" placeholder={t.reportDescriptionPlaceholder} value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="resize-none text-sm min-h-12" />
                 </div>
-              )}
-              {hasMapPicker && (<>
-                  <ReportLocationPicker latitude={latitude} longitude={longitude} isDark={isDark} outsideBoundaryWarning={t.reportOutsideBoundary} onLocationChange={(lat, lng) => {
-                    setLatitude(lat);
-                    setLongitude(lng);
-                }} onAdjustPin={() => setLocationAccuracy(null)}/>
-                  <p className={`text-[10px] leading-snug ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                    {t.reportMapPickerHint}
-                  </p>
-                </>)}
-            </div>
 
-            
-            {error && (<Alert variant="destructive" className="py-2 rounded-xl">
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>)}
 
-            <div className={`text-[10px] text-center px-2 py-1.5 rounded-lg border ${isDark ? "bg-red-500/10 border-red-500/20 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
-                ⚠️ False reporting or repeated spam may result in your account being blocked or suspended.
-            </div>
+                <div className="space-y-2">
+                    <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        {t.reportPhoto}
+                    </Label>
+                    <p className={`text-[10px] leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        Accepted formats: JPG, PNG, GIF • Max file size: 5MB • Images are automatically compressed for faster upload
+                    </p>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                    {photoPreview ? (<div className="relative w-full h-32 rounded-xl overflow-hidden">
+                        <img src={photoPreview} alt="Evidence" className="w-full h-full object-cover" />
+                        <button type="button" aria-label="Remove selected photo" onClick={() => setPhotoPreview(null)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                            <X className="h-4 w-4" />
+                        </button>
+                        <button type="button" aria-label="Change selected photo" onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                            {t.reportChangePhoto}
+                        </button>
+                    </div>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={() => fileInputRef.current?.click()}>
+                        <Camera className="h-4 w-4" />
+                        {t.reportAddPhoto}
+                    </Button>)}
+                </div>
 
-            <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin"/> : online ? <Send className="h-4 w-4"/> : <ShieldCheck className="h-4 w-4"/>}
-              {submitting ? t.reportSubmitting : online ? t.reportSubmit : t.reportSaveOffline}
-            </Button>
-          </form>)}
-      </CardContent>
-      <GpsHelpDialog open={showGpsHelp} onClose={() => setShowGpsHelp(false)} platform={platform}/>
+
+                <div className="space-y-2">
+                    <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        {t.reportSeverity}
+                    </Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                        {SEVERITY_CONFIG.map((s) => {
+                            const isSelected = severity === s.value;
+                            return (<button key={s.value} type="button" aria-label={`Severity ${s.label}`} onClick={() => setSeverity(s.value)} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
+                                ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-gray-100 ring-1 ring-gray-200"
+                                : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
+                                <span className={`w-2.5 h-2.5 rounded-full ${s.color} ${isSelected ? "opacity-100 scale-110" : "opacity-40"} transition-all`} />
+                                <span className={`text-[10px] font-medium ${isSelected ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/30" : "text-gray-400"}`}>
+                                    {s.label}
+                                </span>
+                            </button>);
+                        })}
+                    </div>
+                </div>
+
+
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                        <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                            {t.reportLocation}
+                        </Label>
+                        <button
+                            type="button"
+                            onClick={() => setShowGpsHelp(true)}
+                            className={`flex items-center gap-1 text-[11px] font-medium underline-offset-2 hover:underline ${isDark ? "text-indigo-300" : "text-indigo-600"}`}
+                        >
+                            <HelpCircle className="h-3 w-3" />
+                            {t.locationHelpButtonLabel}
+                        </button>
+                    </div>
+
+                    {platform?.isSecureContext === false && (
+                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-red-500/10 border-red-500/30 text-red-200" : "bg-red-50 border-red-200 text-red-800"}`}>
+                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <p className="text-[11px] leading-snug">{t.locationInsecureBanner}</p>
+                        </div>
+                    )}
+
+                    {platform?.isInAppWebView && (
+                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                            <ExternalLink className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <p className="text-[11px] leading-snug">{t.locationInAppBrowserBanner(platform.inAppName ?? "this app")}</p>
+                        </div>
+                    )}
+
+                    {gpsPermission === "denied" && !platform?.isInAppWebView && platform?.isSecureContext !== false && (
+                        <button
+                            type="button"
+                            onClick={() => setShowGpsHelp(true)}
+                            className={`w-full flex items-start gap-2 px-3 py-2 rounded-xl border text-left ${isDark ? "bg-amber-500/10 border-amber-500/30 text-amber-200 hover:bg-amber-500/15" : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"}`}
+                        >
+                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <p className="text-[11px] leading-snug">{t.locationPermissionBlockedBanner}</p>
+                        </button>
+                    )}
+
+                    {latitude !== null && longitude !== null ? (<button type="button" onClick={detectGPS} className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                        <LocateFixed className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0 truncate text-xs sm:text-sm font-mono">{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
+                        <span className="ml-auto text-[10px] opacity-50">{t.reportTapRefresh}</span>
+                    </button>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={detectGPS} disabled={gpsLoading}>
+                        {gpsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                        {gpsLoading ? t.reportDetecting : t.reportDetectLocation}
+                    </Button>)}
+                    {locationAccuracy !== null && (<p className={`text-xs ${locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS
+                        ? isDark ? "text-amber-300" : "text-amber-700"
+                        : isDark ? "text-emerald-300" : "text-emerald-700"}`}>
+                        {t.reportAccuracyLabel(Math.round(locationAccuracy))} · {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? t.reportAccuracyPoor : t.reportAccuracyGood}
+                        {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? ` — ${t.reportRetryForBetterAccuracy}` : ""}
+                    </p>)}
+                    {hasMapPicker && (gpsPermission === "denied" || platform?.isInAppWebView || platform?.isSecureContext === false) && latitude === null && longitude === null && (
+                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-800"}`}>
+                            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <p className="text-[11px] leading-snug font-medium">{t.locationMapFallbackCallout}</p>
+                        </div>
+                    )}
+                    {hasMapPicker && (<>
+                        <ReportLocationPicker latitude={latitude} longitude={longitude} isDark={isDark} outsideBoundaryWarning={t.reportOutsideBoundary} onLocationChange={(lat, lng) => {
+                            setLatitude(lat);
+                            setLongitude(lng);
+                        }} onAdjustPin={() => setLocationAccuracy(null)} />
+                        <p className={`text-[10px] leading-snug ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                            {t.reportMapPickerHint}
+                        </p>
+                    </>)}
+                </div>
+
+
+                {error && (<Alert variant="destructive" className="py-2 rounded-xl">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                </Alert>)}
+
+                <div className={`text-[10px] text-center px-2 py-1.5 rounded-lg border ${isDark ? "bg-red-500/10 border-red-500/20 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
+                    ⚠️ False reporting or repeated spam may result in your account being blocked or suspended.
+                </div>
+
+                <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : online ? <Send className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                    {submitting ? t.reportSubmitting : online ? t.reportSubmit : t.reportSaveOffline}
+                </Button>
+            </form>)}
+        </CardContent>
+        <GpsHelpDialog open={showGpsHelp} onClose={() => setShowGpsHelp(false)} platform={platform} />
     </Card>);
 }
