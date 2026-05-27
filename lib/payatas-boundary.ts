@@ -21,9 +21,7 @@ export const PAYATAS_BOUNDARY: [
         [121.084, 14.7],
         [121.085, 14.695],
     ];
-// PRESENTATION MODE CONFIGURATION:
-// set PRESENTATION_MODE to true: Bypasses the boundary check and snaps mock coordinates inside Payatas.
-// set PRESENTATION_MODE to false: Activates strict real-world geofencing (rejects reports outside Payatas).
+// ETO LANG BURAHIN MO
 export const PRESENTATION_MODE = true; 
 
 export function isWithinPayatas(lat: number, lng: number): boolean {
