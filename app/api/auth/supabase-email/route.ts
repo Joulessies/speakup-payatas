@@ -54,6 +54,15 @@ export async function POST(request: Request) {
         }
 
         const existingUser = await getUserByEmail(email);
+        if (existingUser?.suspended_until) {
+            const suspendedUntil = new Date(existingUser.suspended_until);
+            if (suspendedUntil.getTime() > Date.now()) {
+                return NextResponse.json({
+                    error: `Your account is suspended until ${suspendedUntil.toLocaleString()} due to a guidelines violation.`
+                }, { status: 403 });
+            }
+        }
+
         if (action === "register") {
             if (existingUser) {
                 return NextResponse.json({ error: "Email already registered." }, { status: 409 });

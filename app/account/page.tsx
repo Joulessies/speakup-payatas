@@ -60,6 +60,19 @@ export default function AccountSettingsPage() {
     const [showDangerConfirm, setShowDangerConfirm] = useState<DangerMode | null>(null);
     const [dangerPassword, setDangerPassword] = useState("");
     const [dangerSubmitting, setDangerSubmitting] = useState(false);
+    const [loggingOutState, setLoggingOutState] = useState(false);
+
+    const handleDirectLogout = async () => {
+        setLoggingOutState(true);
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            toast.success("Logged out successfully");
+        } catch {
+        } finally {
+            setLoggingOutState(false);
+            window.location.href = "/login";
+        }
+    };
 
     const passwordValidation = useMemo(
         () => (newPassword ? validatePassword(newPassword) : null),
@@ -374,6 +387,30 @@ export default function AccountSettingsPage() {
                                 </Button>
                             </div>
                         </form>
+                    </CardContent>
+                </Card>
+
+                <Card className={isDark ? "bg-white/[0.03] border-white/[0.08]" : ""}>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <PowerOff className="h-4 w-4 text-indigo-500" />
+                            <CardTitle className="text-base">Sign Out</CardTitle>
+                        </div>
+                        <CardDescription>
+                            End your current session on this device.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleDirectLogout}
+                            disabled={loggingOutState}
+                            className="w-full sm:w-auto gap-2 border-indigo-500/40 text-indigo-700 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-500/10"
+                        >
+                            {loggingOutState ? <Loader2 className="h-4 w-4 animate-spin" /> : <PowerOff className="h-4 w-4" />}
+                            Logout from this device
+                        </Button>
                     </CardContent>
                 </Card>
 

@@ -136,6 +136,14 @@ export default function TrackPage() {
             const cleanId = targetId.trim();
             setQueryInput(cleanId);
             triggerSearch(cleanId);
+        } else {
+            // Auto-load current user's reports using their device Anonymous ID prefix
+            (async () => {
+                const generated = await generateReporterHash(getDeviceId());
+                const prefix = generated.slice(0, 12);
+                setQueryInput(prefix);
+                triggerSearch(prefix);
+            })();
         }
     }, [triggerSearch]);
     const handleUpvote = async (reportId: string) => {

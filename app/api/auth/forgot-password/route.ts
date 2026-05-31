@@ -4,6 +4,10 @@ import { sendSemaphoreTransactionalSms } from "@/lib/semaphore";
 import { createPasswordResetToken, verifyPasswordResetToken } from "@/lib/password-reset";
 import { getSmsBackend, isMockSmsDelivery } from "@/lib/sms-provider";
 
+// In-memory rate limiting map for password reset requests (1 request per 60s per email)
+const forgotPasswordRateLimits = new Map<string, number>();
+const RATE_LIMIT_COOLDOWN_MS = 60 * 1000; // 60 seconds
+
 /**
  * Request a password reset - sends OTP via SMS to registered phone
  */
@@ -14,6 +18,16 @@ export async function POST(request: Request) {
 
         if (!email || !/\S+@\S+\.\S+/.test(email)) {
             return NextResponse.json({ error: "Please provide a valid email address." }, { status: 400 });
+        }
+
+        // Server-side rate limit
+        const lastRequest = forgotPasswordRateLimits.get(email);
+        const now = Date.now();
+        if (lastRequest && now - lastRequest < RATE_LIMIT_COOLDOWN_MS) {
+            const waitSeconds = Math.ceil((RATE_LIMIT_COOLDOWN_MS - (now - lastRequest)) / 1000);
+            return NextResponse.json({
+                error: `Please wait ${waitSeconds} seconds before requesting another code.`
+            }, { status: 429 });
         }
 
         const user = await getUserByEmail(email);
@@ -38,6 +52,9 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
+        // Record the request timestamp
+        forgotPasswordRateLimits.set(email, now);
+
         // Create reset token
         const token = await createPasswordResetToken(user.id, user.phone_e164);
 
@@ -55,9 +72,14 @@ export async function POST(request: Request) {
                 `Code for ${phoneNumber}: ${token}. Set SEMAPHORE_API_KEY or MESSAGEBIRD_ACCESS_KEY to deliver real SMS.`
             );
         } else {
-            void sendSemaphoreTransactionalSms(user.phone_e164, message).catch((err) => {
-                console.error("[forgot-password] SMS error:", err instanceof Error ? err.message : err);
-            });
+            try {
+                await sendSemaphoreTransactionalSms(user.phone_e164, message);
+            } catch (err) {
+                console.error("[forgot-password] SMS error:", err);
+                return NextResponse.json({ 
+                    error: err instanceof Error ? err.message : "SMS provider failed to send code. Please try again." 
+                }, { status: 500 });
+            }
         }
 
         // Mask phone number for display (e.g., +63 9XX XXX X123)

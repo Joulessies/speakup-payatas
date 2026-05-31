@@ -348,7 +348,11 @@ export default function LoginPage() {
         e.preventDefault();
         setSubmitAttempted(true);
         if (method === "email_otp") {
-            await submitEmailOtpLogin();
+            if (!otpSent) {
+                await sendEmailOtp();
+            } else {
+                await submitEmailOtpLogin();
+            }
             return;
         }
         setLoading(true);
@@ -430,7 +434,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className={`flex flex-col items-center justify-start h-full w-full overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
+        <div className={`flex flex-col items-center justify-start min-h-full w-full px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
             <div className="w-full max-w-5xl space-y-4">
                 <div className="flex justify-end">
                     <ThemeToggle className={isDark ? "bg-white/[0.04] hover:bg-white/10" : "bg-black/[0.04] hover:bg-black/10"} />
@@ -560,39 +564,27 @@ export default function LoginPage() {
                                         </>
                                     )}
 
-                                    {method === "email_otp" && (
-                                        <>
-                                            {!otpSent ? (
-                                                <Button
+                                    {method === "email_otp" && otpSent && (
+                                        <div className="space-y-3">
+                                            <div className="space-y-1.5">
+                                                <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
+                                                <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                                    {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
+                                                </span>
+                                                <button
                                                     type="button"
+                                                    suppressHydrationWarning
                                                     onClick={sendEmailOtp}
-                                                    disabled={sendingOtp || normalizedEmailOtpPhone.length !== 10}
-                                                    className={`w-full h-12 rounded-full font-semibold text-base ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                                    disabled={otpResendTimer > 0 || sendingOtp}
+                                                    className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
                                                 >
-                                                    {sendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send code"}
-                                                </Button>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
-                                                        <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                                            {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={sendEmailOtp}
-                                                            disabled={otpResendTimer > 0 || sendingOtp}
-                                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
-                                                        >
-                                                            {sendingOtp ? "Sending…" : "Resend code"}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
+                                                    {sendingOtp ? "Sending…" : "Resend code"}
+                                                </button>
+                                            </div>
+                                        </div>
                                     )}
 
                                     {mode === "register" && passwordValidation && (
@@ -653,6 +645,7 @@ export default function LoginPage() {
                                                 I agree to the{" "}
                                                 <button
                                                     type="button"
+                                                    suppressHydrationWarning
                                                     onClick={() => setShowTerms(true)}
                                                     className={`underline underline-offset-2 font-medium ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
                                                 >
@@ -677,6 +670,7 @@ export default function LoginPage() {
                                             </div>
                                             <button
                                                 type="button"
+                                                suppressHydrationWarning
                                                 onClick={() => setShowForgotPassword(true)}
                                                 className={`text-xs underline underline-offset-2 transition-colors ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
                                             >
@@ -697,18 +691,22 @@ export default function LoginPage() {
                                         disabled={
                                             method === "password"
                                                 ? (loading || !email.trim() || !password.trim() || (mode === "register" && (!confirmPassword.trim() || normalizedRegisterPhone.length !== 10 || !agreedToTerms)))
-                                                : (verifyingOtp || !otpSent || normalizedEmailOtpPhone.length !== 10 || !/^\d{6,8}$/.test(otp.trim().replace(/\s/g, "")) || (mode === "register" && !agreedToTerms))
+                                                : (!otpSent
+                                                    ? (sendingOtp || normalizedEmailOtpPhone.length !== 10 || (mode === "register" && !agreedToTerms))
+                                                    : (verifyingOtp || normalizedEmailOtpPhone.length !== 10 || !/^\d{6,8}$/.test(otp.trim().replace(/\s/g, "")) || (mode === "register" && !agreedToTerms)))
                                         }
                                     >
                                         {method === "password"
                                             ? (loading ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "register" ? "Create Account" : "Sign In")
-                                            : (verifyingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "register" ? "Verify code & Register" : "Verify code & Sign In")}
+                                            : (!otpSent
+                                                ? (sendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Verification Code")
+                                                : (verifyingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "register" ? "Verify code & Register" : "Verify code & Sign In"))}
                                     </Button>
 
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[11px] pt-1 text-center sm:text-left">
                                         <p className={isDark ? "text-white/40" : "text-[#7b7468]"}>
                                             {mode === "register" ? "Have an account?" : "No account yet?"}{" "}
-                                            <button type="button" onClick={() => {
+                                            <button type="button" suppressHydrationWarning onClick={() => {
                                                 const nextMode = mode === "register" ? "login" : "register";
                                                 setMode(nextMode);
                                                 setError(null);
@@ -722,7 +720,7 @@ export default function LoginPage() {
                                                 {mode === "register" ? "Sign in" : "Register"}
                                             </button>
                                         </p>
-                                        <button type="button" onClick={() => setShowTerms(true)} className={`sm:shrink-0 underline underline-offset-2 transition-colors ${isDark ? "text-white/35 hover:text-white/55" : "text-[#8a8377] hover:text-[#5e5649]"}`}>Terms & Conditions</button>
+                                        <button type="button" suppressHydrationWarning onClick={() => setShowTerms(true)} className={`sm:shrink-0 underline underline-offset-2 transition-colors ${isDark ? "text-white/35 hover:text-white/55" : "text-[#8a8377] hover:text-[#5e5649]"}`}>Terms & Conditions</button>
                                     </div>
                                 </form>
                             </CardContent>

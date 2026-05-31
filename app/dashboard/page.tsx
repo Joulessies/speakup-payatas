@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, FileWarning, ChevronDown, ChevronUp, TrendingUp, Eye } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, TrendingUp, Eye } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 import Link from "next/link";
 import TransparencyBoard from "@/components/transparency-board";
+import PredictiveAnalytics from "@/components/predictive-analytics";
 
 interface TrendPoint {
     date: string;
@@ -152,100 +153,6 @@ export default function UserDashboard() {
                     ))}
                 </div>
 
-                {/* My Reports History */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                    <div className="px-5 pt-5 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
-                                <LayoutDashboard className={`h-4 w-4 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                            </div>
-                            <div>
-                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    My Reports History
-                                </h2>
-                                <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                                    All your submitted reports and their live progress status
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="px-5 pb-5">
-                        {statsLoading ? (
-                            <div className="py-8 flex justify-center">
-                                <Loader2 className="h-6 w-6 animate-spin opacity-40" />
-                            </div>
-                        ) : myReports.length === 0 ? (
-                            <div className={`text-center py-8 rounded-xl border border-dashed ${isDark ? "border-white/10 bg-white/[0.01]" : "border-gray-200 bg-gray-50/50"}`}>
-                                <FileWarning className={`h-8 w-8 mx-auto mb-2 opacity-30`} />
-                                <p className={`text-xs font-medium ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                                    You haven't submitted any reports yet
-                                </p>
-                                <p className={`text-[10px] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                                    Report an issue to help improve Barangay Payatas.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
-                                {myReports.map((r) => {
-                                    const statusColors: Record<string, string> = {
-                                        pending: isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-amber-55 text-amber-700 border-amber-200",
-                                        verified: isDark ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-blue-55 text-blue-700 border-blue-200",
-                                        in_progress: isDark ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" : "bg-indigo-55 text-indigo-700 border-indigo-200",
-                                        resolved: isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-55 text-emerald-700 border-emerald-200",
-                                    };
-                                    const statusLabel: Record<string, string> = {
-                                        pending: "Submitted",
-                                        verified: "Verified",
-                                        in_progress: "In Progress",
-                                        resolved: "Resolved",
-                                    };
-                                    return (
-                                        <div
-                                            key={r.id}
-                                            className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                                                isDark ? "bg-white/[0.01] border-white/[0.06] hover:bg-white/[0.03]" : "bg-white border-gray-100 hover:bg-gray-50/50"
-                                            }`}
-                                        >
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className={`text-xs font-semibold capitalize ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                                                        {r.category.replace(/_/g, " ")}
-                                                    </span>
-                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium border uppercase tracking-wider ${statusColors[r.status] ?? ""}`}>
-                                                        {statusLabel[r.status] ?? r.status}
-                                                    </span>
-                                                </div>
-                                                <p className={`text-xs line-clamp-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                                    {r.description || "No description provided."}
-                                                </p>
-                                                <p className={`text-[9px] ${isDark ? "text-white/35" : "text-gray-400"}`}>
-                                                    {new Date(r.created_at).toLocaleDateString("en-PH", {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        year: "numeric",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit"
-                                                    })}
-                                                </p>
-                                            </div>
-                                            <Link
-                                                href={`/track?q=${r.receipt_id || r.id}`}
-                                                className={`sm:self-center self-start text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
-                                                    isDark 
-                                                        ? "border-white/10 text-white/70 hover:bg-white/[0.05] hover:text-white" 
-                                                        : "border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                                                }`}
-                                            >
-                                                <Eye className="h-3 w-3" /> Track Details
-                                            </Link>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
                 {/* Transparency Board */}
                 <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
                     <div className="flex items-center gap-3 px-5 pt-5 pb-4">
@@ -267,12 +174,27 @@ export default function UserDashboard() {
                     </div>
                 </div>
 
-                {/* Analytics (collapsible) */}
+                {/* Predictive Analytics */}
+                <div className={`rounded-2xl border overflow-hidden p-5 ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
+                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        </div>
+                        <div>
+                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                Predictive Community Analytics
+                            </h2>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                Algorithm-based spatial analysis & trend forecasting for Payatas-A
+                            </p>
+                        </div>
+                    </div>
+                    <PredictiveAnalytics isDark={isDark} />
+                </div>
+
+                {/* Community Analytics (Always Visible) */}
                 <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                    <button
-                        onClick={() => setShowAnalytics((p) => !p)}
-                        className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"}`}
-                    >
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-dashed border-border/50">
                         <div className="flex items-center gap-3">
                             <TrendingUp className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                             <div>
@@ -286,49 +208,42 @@ export default function UserDashboard() {
                                 )}
                             </div>
                         </div>
-                        {showAnalytics ? (
-                            <ChevronUp className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-400"}`} />
-                        ) : (
-                            <ChevronDown className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-400"}`} />
-                        )}
-                    </button>
-                    {showAnalytics && (
-                        <div className="px-5 pb-5 space-y-4 border-t border-dashed border-border/50">
-                            <div className="pt-4">
-                                <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                                    Report trend — last 14 days
-                                </p>
-                                {analyticsLoading ? (
-                                    <div className="h-32 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin opacity-40" /></div>
-                                ) : (
-                                    <LineChart data={analytics?.trend_data ?? []} isDark={isDark} />
-                                )}
-                            </div>
-                            {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 && (
-                                <div>
-                                    <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>Category breakdown</p>
-                                    <div className="space-y-2">
-                                        {Object.entries(analytics.category_distribution)
-                                            .sort((a, b) => b[1] - a[1])
-                                            .slice(0, 5)
-                                            .map(([cat, count]) => {
-                                                const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
-                                                return (
-                                                    <div key={cat} className="flex items-center gap-3">
-                                                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
-                                                        <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{cat}</span>
-                                                        <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                                                            <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
-                                                        </div>
-                                                        <span className={`text-[10px] font-mono w-10 text-right ${isDark ? "text-white/40" : "text-gray-500"}`}>{pct}%</span>
-                                                    </div>
-                                                );
-                                            })}
-                                    </div>
-                                </div>
+                    </div>
+                    <div className="px-5 pb-5 space-y-4 pt-4">
+                        <div>
+                            <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                Report trend — last 14 days
+                            </p>
+                            {analyticsLoading ? (
+                                <div className="h-32 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin opacity-40" /></div>
+                            ) : (
+                                <LineChart data={analytics?.trend_data ?? []} isDark={isDark} />
                             )}
                         </div>
-                    )}
+                        {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 && (
+                            <div>
+                                <p className={`text-xs font-medium mb-3 ${isDark ? "text-white/50" : "text-gray-500"}`}>Category breakdown</p>
+                                <div className="space-y-2">
+                                    {Object.entries(analytics.category_distribution)
+                                        .sort((a, b) => b[1] - a[1])
+                                        .slice(0, 5)
+                                        .map(([cat, count]) => {
+                                            const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
+                                            return (
+                                                <div key={cat} className="flex items-center gap-3">
+                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
+                                                    <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{cat}</span>
+                                                    <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                                                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                    <span className={`text-[10px] font-mono w-10 text-right ${isDark ? "text-white/40" : "text-gray-500"}`}>{pct}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

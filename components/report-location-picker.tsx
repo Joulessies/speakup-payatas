@@ -42,7 +42,7 @@ function DraggableAdvancedMarker({
     longitude: number;
     onDragEnd: (lat: number, lng: number) => void;
 }) {
-    const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+    const markerRef = useRef<google.maps.Marker | null>(null);
     const onDragEndRef = useRef(onDragEnd);
     onDragEndRef.current = onDragEnd;
     const posRef = useRef({ latitude, longitude });
@@ -51,35 +51,28 @@ function DraggableAdvancedMarker({
     useEffect(() => {
         if (!map)
             return;
-        let cancelled = false;
-        let dragListener: google.maps.MapsEventListener | null = null;
+        
+        const { latitude: lat, longitude: lng } = posRef.current;
+        const marker = new google.maps.Marker({
+            map,
+            position: { lat, lng },
+            draggable: true,
+        });
+        markerRef.current = marker;
 
-        void (async () => {
-            const { AdvancedMarkerElement } = (await google.maps.importLibrary(
-                "marker",
-            )) as google.maps.MarkerLibrary;
-            if (cancelled)
-                return;
-            const { latitude: lat, longitude: lng } = posRef.current;
-            const marker = new AdvancedMarkerElement({
-                map,
-                position: { lat, lng },
-                gmpDraggable: true,
-            });
-            markerRef.current = marker;
-            dragListener = marker.addListener("gmp-dragend", () => {
-                const ll = readDragPosition(markerRef.current?.position ?? null);
-                if (ll)
-                    onDragEndRef.current(ll.lat, ll.lng);
-            });
-        })();
+        const dragListener = marker.addListener("dragend", () => {
+            const pos = markerRef.current?.getPosition();
+            if (pos) {
+                onDragEndRef.current(pos.lat(), pos.lng());
+            }
+        });
 
         return () => {
-            cancelled = true;
-            if (dragListener)
-                dragListener.remove();
+            if (dragListener) {
+                google.maps.event.removeListener(dragListener);
+            }
             if (markerRef.current) {
-                markerRef.current.map = null;
+                markerRef.current.setMap(null);
                 markerRef.current = null;
             }
         };
@@ -89,7 +82,7 @@ function DraggableAdvancedMarker({
         const m = markerRef.current;
         if (!m)
             return;
-        m.position = { lat: latitude, lng: longitude };
+        m.setPosition({ lat: latitude, lng: longitude });
     }, [latitude, longitude]);
 
     return null;

@@ -1,10 +1,73 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CATEGORY_LABELS } from "@/types";
+import dynamic from "next/dynamic";
+
+interface TrendPoint {
+    date: string;
+    count: number;
+    categories: Record<string, number>;
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+    flooding: "#60a5fa", fire: "#fb923c", crime: "#f87171",
+    infrastructure: "#fbbf24", health: "#f472b6",
+    environmental: "#34d399", other: "#9ca3af",
+};
+
+const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
+    ssr: false,
+    loading: () => <div className="h-[350px] w-full flex items-center justify-center bg-zinc-950/20 border border-white/5 rounded-2xl animate-pulse text-xs text-white/30">Loading Hotspot Map...</div>,
+});
+
+function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
+    if (!data || data.length < 2) return (
+        <div className={`h-32 flex items-center justify-center text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Not enough data to display trend
+        </div>
+    );
+    const maxCount = Math.max(...data.map((d) => d.count), 1);
+    const width = 100;
+    const height = 60;
+    const points = data.map((d, i) => ({
+        x: (i / (data.length - 1)) * width,
+        y: height - (d.count / maxCount) * height * 0.85,
+        count: d.count,
+        date: d.date,
+    }));
+    const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    const fillD = `${pathD} L ${points[points.length - 1].x} ${height} L 0 ${height} Z`;
+
+    return (
+        <div className="w-full">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-32" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+                <path d={fillD} fill="url(#lineGrad)" />
+                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" />
+                {points.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="1" fill="#6366f1" />
+                ))}
+            </svg>
+            <div className="flex justify-between mt-1 px-1">
+                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    {new Date(data[0].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
+                </span>
+                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    {new Date(data[data.length - 1].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
+                </span>
+            </div>
+        </div>
+    );
+}
 
 interface ReportSummary {
     id: string;
@@ -32,6 +95,13 @@ export default function StaffDashboard() {
     const [stats, setStats] = useState<SummaryStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+
+    // Map and analytics states
+    const [clusters, setClusters] = useState<any[]>([]);
+    const [heatPoints, setHeatPoints] = useState<any[]>([]);
+    const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
+    const [analytics, setAnalytics] = useState<any | null>(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
     useEffect(() => {
         loadDashboardData();
@@ -62,10 +132,54 @@ export default function StaffDashboard() {
             });
 
             setStats(stats);
+
+            // Fetch clusters for maps
+            try {
+                const clustersRes = await fetch("/api/clusters", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ window: "30d" }),
+                });
+                const clustersData = await clustersRes.json();
+                setClusters(clustersData.clusters ?? []);
+                setHeatPoints(clustersData.heat_points ?? []);
+            } catch (err) {
+                console.error("Failed to load clusters for staff dashboard", err);
+            }
+
+            // Fetch analytics trend for line graphs
+            try {
+                const analyticsRes = await fetch("/api/analytics", { method: "POST" });
+                if (analyticsRes.ok) {
+                    const json = await analyticsRes.json();
+                    setAnalytics(json);
+                }
+            } catch (err) {
+                console.error("Failed to load analytics for staff dashboard", err);
+            } finally {
+                setAnalyticsLoading(false);
+            }
         } catch (error) {
             console.error("Failed to load dashboard data:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const selectedCluster = useMemo(() => {
+        if (selectedClusterId === null) return null;
+        const idx = clusters.findIndex(
+            (c) => `${c.latitude.toFixed(6)}_${c.longitude.toFixed(6)}` === selectedClusterId
+        );
+        return idx !== -1 ? idx : null;
+    }, [clusters, selectedClusterId]);
+
+    const handleClusterClick = (idx: number | null) => {
+        if (idx === null) {
+            setSelectedClusterId(null);
+        } else {
+            const c = clusters[idx];
+            setSelectedClusterId(c ? `${c.latitude.toFixed(6)}_${c.longitude.toFixed(6)}` : null);
         }
     };
 
@@ -176,6 +290,96 @@ export default function StaffDashboard() {
                         </div>
                     </div>
                 )}
+
+                {/* Hotspot Map & Analytics Dashboard */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Hotspot Map Card */}
+                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                        <div className="mb-4">
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                Active Hotspot Risk Map (Payatas-A)
+                            </h2>
+                            <p className={`text-xs mt-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                DBSCAN-clustered risk assessments based on local resident reports.
+                            </p>
+                        </div>
+                        <div className="h-[350px] w-full rounded-xl overflow-hidden relative border border-white/[0.06]">
+                            <AdminMapInner
+                                clusters={clusters}
+                                selectedCluster={selectedCluster}
+                                onClusterClick={handleClusterClick}
+                                showHeatmap={false}
+                                heatPoints={heatPoints}
+                            />
+                        </div>
+                        {selectedCluster !== null && clusters[selectedCluster] && (
+                            <div className={`mt-3 p-3 rounded-xl border text-xs leading-relaxed ${isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-indigo-50/50 border-indigo-100"}`}>
+                                <h4 className="font-bold text-indigo-400">
+                                    Cluster Details — {clusters[selectedCluster].count} reports
+                                </h4>
+                                <p className={`mt-1 ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                    Top Category: <span className="capitalize font-semibold">{
+                                        Object.entries(clusters[selectedCluster].category_breakdown).sort((a, b) => b[1] - a[1])[0]?.[0] || "Mixed"
+                                    }</span>
+                                </p>
+                                <p className={`mt-0.5 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                    Coordinates: {clusters[selectedCluster].latitude.toFixed(5)}, {clusters[selectedCluster].longitude.toFixed(5)}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Analytics Trend & Distribution */}
+                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col justify-between ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                        <div>
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                        Report Frequency Trend
+                                    </h2>
+                                    <p className={`text-xs mt-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                        Volume of reports submitted in the last 14 days.
+                                    </p>
+                                </div>
+                            </div>
+                            {analyticsLoading ? (
+                                <div className="h-32 flex items-center justify-center">
+                                    <Loader2 className="h-5 w-5 animate-spin opacity-45" />
+                                </div>
+                            ) : (
+                                <LineChart data={analytics?.trend_data ?? []} isDark={isDark} />
+                            )}
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-dashed border-border/50">
+                            <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                Primary Incident Types
+                            </h3>
+                            {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 ? (
+                                <div className="space-y-2">
+                                    {Object.entries(analytics.category_distribution)
+                                        .sort((a, b) => b[1] - a[1])
+                                        .slice(0, 4)
+                                        .map(([cat, count]) => {
+                                            const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
+                                            return (
+                                                <div key={cat} className="flex items-center gap-3">
+                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
+                                                    <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}</span>
+                                                    <div className={`w-20 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                                                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                    <span className={`text-[10px] font-mono w-8 text-right ${isDark ? "text-white/45" : "text-gray-500"}`}>{pct}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${isDark ? "text-white/30" : "text-gray-400"}`}>No category data available.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

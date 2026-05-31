@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     } | null>(null);
     const [filterInView, setFilterInView] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [selectedCluster, setSelectedCluster] = useState<number | null>(null);
+    const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
     const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set(ALL_CATEGORIES));
     const [panelOpen, setPanelOpen] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(false);
@@ -289,17 +289,27 @@ export default function AdminDashboard() {
             .filter(Boolean) as ClusterWithReports[];
     }, [sourceClusters, activeCategories, filterInView, mapBounds]);
     const totalFiltered = filteredClusters.reduce((s, c) => s + c.count, 0);
-    useEffect(() => {
-        if (selectedCluster === null)
-            return;
-        if (selectedCluster >= filteredClusters.length) {
-            setSelectedCluster(null);
+    const selectedCluster = useMemo(() => {
+        if (selectedClusterId === null) return null;
+        const idx = filteredClusters.findIndex(
+            (c) => `${c.latitude.toFixed(6)}_${c.longitude.toFixed(6)}` === selectedClusterId
+        );
+        return idx !== -1 ? idx : null;
+    }, [filteredClusters, selectedClusterId]);
+
+    const handleClusterClick = (idx: number | null) => {
+        if (idx === null) {
+            setSelectedClusterId(null);
+        } else {
+            const c = filteredClusters[idx];
+            setSelectedClusterId(c ? `${c.latitude.toFixed(6)}_${c.longitude.toFixed(6)}` : null);
         }
-    }, [filteredClusters.length, selectedCluster]);
+    };
+
     return (<div className="relative flex flex-col h-full overflow-hidden">
       
       <div className="absolute inset-0 z-0">
-        <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={setSelectedCluster} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} onMapBoundsChange={setMapBounds}/>
+        <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={handleClusterClick} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} onMapBoundsChange={setMapBounds}/>
       </div>
 
       {clusterError && (
@@ -323,7 +333,7 @@ export default function AdminDashboard() {
       <aside className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark
             ? "bg-black/80 backdrop-blur-xl border-white/[0.06]"
             : "bg-white/80 backdrop-blur-xl border-black/[0.06]"}`}>
-        <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={setSelectedCluster} activeCategories={activeCategories} toggleCategory={toggleCategory} filterInView={filterInView} setFilterInView={setFilterInView} mapBounds={mapBounds} t={t} workflowReports={workflowReports} workflowLoading={workflowLoading} workflowSaving={workflowSaving} statusDrafts={statusDrafts} setStatusDrafts={setStatusDrafts} noteDrafts={noteDrafts} setNoteDrafts={setNoteDrafts} handleWorkflowUpdate={handleWorkflowUpdate} showHeatmap={showHeatmap}/>
+        <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={handleClusterClick} activeCategories={activeCategories} toggleCategory={toggleCategory} filterInView={filterInView} setFilterInView={setFilterInView} mapBounds={mapBounds} t={t} workflowReports={workflowReports} workflowLoading={workflowLoading} workflowSaving={workflowSaving} statusDrafts={statusDrafts} setStatusDrafts={setStatusDrafts} noteDrafts={noteDrafts} setNoteDrafts={setNoteDrafts} handleWorkflowUpdate={handleWorkflowUpdate} showHeatmap={showHeatmap}/>
       </aside>
 
       
@@ -423,7 +433,7 @@ export default function AdminDashboard() {
         </button>
         <div className={`h-[60vh] overflow-y-auto ${isDark ? "bg-black/90 backdrop-blur-xl" : "bg-white/90 backdrop-blur-xl"}`}>
           <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={(i) => {
-            setSelectedCluster(i);
+            handleClusterClick(i);
             setPanelOpen(false);
         }} activeCategories={activeCategories} toggleCategory={toggleCategory} filterInView={filterInView} setFilterInView={setFilterInView} mapBounds={mapBounds} t={t} workflowReports={workflowReports} workflowLoading={workflowLoading} workflowSaving={workflowSaving} statusDrafts={statusDrafts} setStatusDrafts={setStatusDrafts} noteDrafts={noteDrafts} setNoteDrafts={setNoteDrafts} handleWorkflowUpdate={handleWorkflowUpdate} showHeatmap={showHeatmap}/>
         </div>

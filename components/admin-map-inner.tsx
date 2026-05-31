@@ -42,6 +42,23 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
   const boundaryPath = payatasBoundaryPath();
   const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
 
+  const [visLoaded, setVisLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (typeof google !== "undefined" && google.maps && google.maps.visualization) {
+      setVisLoaded(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      if (typeof google !== "undefined" && google.maps && google.maps.visualization) {
+        setVisLoaded(true);
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isLoaded]);
+
   const fallbackHeatPoints: [number, number, number][] = useMemo(() => clusters.map((c) => [
     c.latitude,
     c.longitude,
@@ -49,7 +66,7 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
   ]), [clusters]);
 
   const heatmapData = useMemo(() => {
-    if (!isLoaded || typeof google === "undefined" || typeof google.maps.visualization === "undefined") {
+    if (!isLoaded || !visLoaded || typeof google === "undefined") {
       return [];
     }
     const pts = (heatPoints && heatPoints.length > 0 ? heatPoints : fallbackHeatPoints)
@@ -58,10 +75,10 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
       location: new google.maps.LatLng(lat, lng),
       weight,
     }));
-  }, [isLoaded, heatPoints, fallbackHeatPoints]);
+  }, [isLoaded, visLoaded, heatPoints, fallbackHeatPoints]);
 
   useEffect(() => {
-    if (!mapInstance || !isLoaded || typeof google === "undefined" || typeof google.maps.visualization === "undefined") {
+    if (!mapInstance || !isLoaded || !visLoaded || typeof google === "undefined") {
       return;
     }
 
@@ -98,7 +115,7 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
         heatmapRef.current = null;
       }
     };
-  }, [mapInstance, isLoaded, showHeatmap, heatmapData]);
+  }, [mapInstance, isLoaded, visLoaded, showHeatmap, heatmapData]);
 
   useEffect(() => {
     if (!mapInstance || !onMapBoundsChange)

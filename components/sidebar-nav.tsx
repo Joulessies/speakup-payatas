@@ -93,7 +93,7 @@ export default function SidebarNav() {
             case "user":
                 return [
                     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-                    { href: "/", label: "Report", icon: FileWarning },
+                    { href: "/report", label: "Report", icon: FileWarning },
                     { href: "/track", label: "Report History", icon: History },
                     { href: "/transparency", label: "Transparency", icon: Eye },
                     { href: "/feedback", label: "Feedback", icon: MessageSquare },

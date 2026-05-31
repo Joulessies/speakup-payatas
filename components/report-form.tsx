@@ -406,7 +406,7 @@ export default function ReportForm() {
 
         let finalLat = latitude;
         let finalLng = longitude;
-        
+
         if (PRESENTATION_MODE) {
             const isFarFromPayatas = Math.abs(latitude - 14.7055) > 0.04 || Math.abs(longitude - 121.0990) > 0.04;
             if (isFarFromPayatas) {
@@ -586,7 +586,7 @@ export default function ReportForm() {
                     <p className={`text-[10px] leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>
                         Accepted formats: JPG, PNG, GIF • Max file size: 5MB • Images are automatically compressed for faster upload
                     </p>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                    <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
                     {photoPreview ? (<div className="relative w-full h-32 rounded-xl overflow-hidden">
                         <img src={photoPreview} alt="Evidence" className="w-full h-full object-cover" />
                         <button type="button" aria-label="Remove selected photo" onClick={() => setPhotoPreview(null)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
@@ -662,14 +662,41 @@ export default function ReportForm() {
                         </button>
                     )}
 
-                    {latitude !== null && longitude !== null ? (<button type="button" onClick={detectGPS} className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
-                        <LocateFixed className="h-4 w-4 shrink-0" />
-                        <span className="min-w-0 truncate text-xs sm:text-sm font-mono">{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
-                        <span className="ml-auto text-[10px] opacity-50">{t.reportTapRefresh}</span>
-                    </button>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={detectGPS} disabled={gpsLoading}>
-                        {gpsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                        {gpsLoading ? t.reportDetecting : t.reportDetectLocation}
-                    </Button>)}
+                    {latitude !== null && longitude !== null ? (
+                        <button 
+                            type="button" 
+                            onClick={detectGPS} 
+                            disabled={gpsLoading}
+                            className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl transition-all disabled:opacity-75 ${
+                                isDark 
+                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15" 
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                            }`}
+                        >
+                            {gpsLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                            ) : (
+                                <LocateFixed className="h-4 w-4 shrink-0" />
+                            )}
+                            <span className="min-w-0 truncate text-xs sm:text-sm font-mono">
+                                {gpsLoading ? t.reportDetecting : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`}
+                            </span>
+                            <span className="ml-auto text-[10px] opacity-50">
+                                {gpsLoading ? "" : t.reportTapRefresh}
+                            </span>
+                        </button>
+                    ) : (
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} 
+                            onClick={detectGPS} 
+                            disabled={gpsLoading}
+                        >
+                            {gpsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                            {gpsLoading ? t.reportDetecting : t.reportDetectLocation}
+                        </Button>
+                    )}
                     {locationAccuracy !== null && (<p className={`text-xs ${locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS
                         ? isDark ? "text-amber-300" : "text-amber-700"
                         : isDark ? "text-emerald-300" : "text-emerald-700"}`}>
@@ -699,7 +726,7 @@ export default function ReportForm() {
                 </Alert>)}
 
                 <div className={`text-[10px] text-center px-2 py-1.5 rounded-lg border ${isDark ? "bg-red-500/10 border-red-500/20 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
-                    ⚠️ False reporting or repeated spam may result in your account being blocked or suspended.
+                    ⚠️ False reporting or repeated spam will result in automated account suspension (1st offense: 24h, 2nd: 3 days, 3rd: permanent deletion notice) under our community standards.
                 </div>
 
                 <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>

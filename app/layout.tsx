@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: Readonly<{
                     <LanguageProvider>
                         {isLoggedIn && useSidebar && <SidebarNav />}
                         {isLoggedIn && !useSidebar && <NavBar />}
-                        <main className={`flex-1 min-h-0 overflow-hidden ${isLoggedIn ? "pb-14 md:pb-0" : "pb-0"}`}>
+                        <main className={`flex-1 min-h-0 ${isLoggedIn ? "overflow-hidden pb-14 md:pb-0" : "overflow-y-auto pb-0"}`}>
                             {children}
                         </main>
                         {isLoggedIn && useSidebar && <BottomNav />}

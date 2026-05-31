@@ -8,7 +8,7 @@ import LogoutConfirmDialog from "./logout-confirm-dialog";
 import {
     LayoutDashboard,
     FileWarning,
-    Search,
+    History,
     Eye,
     MessageSquare,
     Shield,
@@ -69,10 +69,9 @@ export default function BottomNav() {
             case "user":
                 return [
                     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-                    { href: "/", label: "Reports", icon: FileWarning },
-                    { href: "/track", label: "Track", icon: Search },
+                    { href: "/report", label: "Report", icon: FileWarning },
+                    { href: "/track", label: "History", icon: History },
                     { href: "/transparency", label: "Transparency", icon: Eye },
-                    { href: "/feedback", label: "Feedback", icon: MessageSquare },
                 ];
             case "staff":
                 return [
@@ -86,7 +85,6 @@ export default function BottomNav() {
                     { href: "/admin", label: "Map", icon: Map },
                     { href: "/admin/reports", label: "Reports", icon: FileWarning },
                     { href: "/admin/users", label: "Users", icon: Users },
-                    { href: "/analytics", label: "Analytics", icon: BarChart3 },
                 ];
             default:
                 return [];
@@ -130,7 +128,6 @@ export default function BottomNav() {
                         </span>
                     </Link>
                 ))}
-                
                 {/* Account Settings Button */}
                 <Link
                     href={session.role === "admin" ? "/admin/settings" : "/account"}
@@ -149,28 +146,7 @@ export default function BottomNav() {
                         Settings
                     </span>
                 </Link>
-                
-                {/* Logout Button */}
-                <button
-                    onClick={() => setShowLogoutConfirm(true)}
-                    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                        isDark
-                            ? "text-white/50 hover:text-white/70"
-                            : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                    <LogOut className="h-5 w-5" />
-                    <span className="text-[10px] font-medium leading-none">
-                        Logout
-                    </span>
-                </button>
             </div>
-            <LogoutConfirmDialog
-                open={showLogoutConfirm}
-                loading={loggingOut}
-                onCancel={() => setShowLogoutConfirm(false)}
-                onConfirm={handleLogout}
-            />
         </div>
     );
 }

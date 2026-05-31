@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell, X, Check, AlertTriangle, FileWarning, RefreshCw, ExternalLink } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,10 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotifItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [activeToast, setActiveToast] = useState<NotifItem | null>(null);
+
+    const prevItemsRef = useRef<NotifItem[]>([]);
+    const isFirstFetchRef = useRef(true);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -30,16 +34,43 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             if (role === "user" && !reporterHash) return;
             const res = await fetch(`/api/notifications?${params.toString()}`);
             const data = await res.json();
-            setItems(data.notifications ?? []);
-            setUnreadCount(data.unread_count ?? 0);
+            
+            const newItems: NotifItem[] = data.notifications ?? [];
+            const newUnreadCount = data.unread_count ?? 0;
+
+            // Trigger premium toast popup if a new unread notification has arrived
+            if (!isFirstFetchRef.current && newItems.length > 0) {
+                const newlyArrived = newItems.filter(
+                    (newItem) => !newItem.read && !prevItemsRef.current.some((oldItem) => oldItem.id === newItem.id)
+                );
+                if (newlyArrived.length > 0) {
+                    setActiveToast(newlyArrived[0]);
+                }
+            }
+
+            prevItemsRef.current = newItems;
+            isFirstFetchRef.current = false;
+            setItems(newItems);
+            setUnreadCount(newUnreadCount);
         } catch { /* ignore */ }
     }, [role, reporterHash]);
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000);
+        // Poll every 15 seconds for a responsive feel
+        const interval = setInterval(fetchNotifications, 15000);
         return () => clearInterval(interval);
     }, [fetchNotifications]);
+
+    // Auto-dismiss the notification toast after 6 seconds
+    useEffect(() => {
+        if (activeToast) {
+            const timer = setTimeout(() => {
+                setActiveToast(null);
+            }, 6000);
+            return () => clearTimeout(timer);
+        }
+    }, [activeToast]);
 
     const markAllRead = async () => {
         try {
@@ -61,7 +92,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             await fetch("/api/notifications", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ notification_ids: [notif.id] }),
+                body: JSON.stringify({ notification_ids: [notif.id], role, reporter_hash: reporterHash }),
             });
             setItems((prev) => prev.map((n) => n.id === notif.id ? { ...n, read: true } : n));
             setUnreadCount((prev) => Math.max(0, prev - (notif.read ? 0 : 1)));
@@ -169,6 +200,39 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Premium Toast Popup for incoming notifications */}
+            {activeToast && (
+                <div className={`fixed top-4 right-4 z-[9999] w-[92vw] max-w-sm p-4 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-0 scale-100 animate-in slide-in-from-top-10 ${
+                    isDark ? "bg-[#0d0d12]/95 border-white/10 text-white shadow-black/50" : "bg-white/95 border-gray-200 text-gray-900 shadow-gray-200/50"
+                }`}>
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 p-1.5 rounded-xl bg-indigo-500/10 shrink-0 text-indigo-400">
+                            {getIcon(activeToast.type)}
+                        </div>
+                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => {
+                            handleNotifClick(activeToast);
+                            setActiveToast(null);
+                        }}>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500 mb-0.5">
+                                Bagong Ulat / New Alert
+                            </p>
+                            <h4 className="text-xs font-bold truncate">
+                                {activeToast.title}
+                            </h4>
+                            <p className={`text-[11px] mt-0.5 line-clamp-2 leading-relaxed ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                {activeToast.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setActiveToast(null)}
+                            className={`p-1 rounded-lg transition-colors ${isDark ? "text-white/40 hover:bg-white/[0.06] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"}`}
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
