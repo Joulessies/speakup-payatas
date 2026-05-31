@@ -21,8 +21,6 @@ export const PAYATAS_BOUNDARY: [
         [121.084, 14.7],
         [121.085, 14.695],
     ];
-
-
 export const PRESENTATION_MODE = true;
 
 export function isWithinPayatas(lat: number, lng: number): boolean {
