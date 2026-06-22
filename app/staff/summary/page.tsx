@@ -14,6 +14,7 @@ interface MonthlyData {
     byStatus: Record<string, number>;
     topIssues: { category: string; count: number }[];
     mostAffectedAreas: { area: string; count: number }[];
+    rawReports: any[];
 }
 
 export default function StaffMonthlySummary() {
@@ -49,6 +50,7 @@ export default function StaffMonthlySummary() {
                 byStatus: {},
                 topIssues: [],
                 mostAffectedAreas: [],
+                rawReports: reports,
             };
 
             reports.forEach((r: any) => {
@@ -87,28 +89,27 @@ export default function StaffMonthlySummary() {
         }
     };
 
-    const exportToPDF = () => {
-        // Simplified export - in production, use a PDF library like jsPDF
-        const content = `
-MONTHLY SUMMARY - ${data?.month}
+    const exportToCSV = () => {
+        if (!data || !data.rawReports) return;
 
-Total Reports: ${data?.total}
+        const headers = ["ID", "Category", "Status", "Verification", "Created At", "Area", "Description", "Receipt ID"];
+        const rows = data.rawReports.map((r: any) => [
+            r.id,
+            r.category,
+            r.status,
+            r.verification_status,
+            new Date(r.created_at).toISOString(),
+            (r.latitude && r.longitude) ? getAreaFromCoordinates(r.latitude, r.longitude) : "Unknown Area",
+            r.description?.replace(/,/g, ";") || "",
+            r.receipt_id || "",
+        ]);
 
-Top Issues:
-${data?.topIssues.map((i, idx) => `${idx + 1}. ${CATEGORY_LABELS[i.category as keyof typeof CATEGORY_LABELS] || i.category}: ${i.count} reports`).join("\n")}
-
-Most Affected Areas:
-${data?.mostAffectedAreas.map((a, idx) => `${idx + 1}. ${a.area}: ${a.count} reports`).join("\n")}
-
-Status Breakdown:
-${Object.entries(data?.byStatus || {}).map(([s, c]) => `- ${s}: ${c}`).join("\n")}
-        `;
-
-        const blob = new Blob([content], { type: "text/plain" });
+        const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `monthly-summary-${data?.month.toLowerCase().replace(/\s+/g, "-")}.txt`;
+        a.download = `monthly-summary-${data.month.toLowerCase().replace(/\s+/g, "-")}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -138,7 +139,7 @@ ${Object.entries(data?.byStatus || {}).map(([s, c]) => `- ${s}: ${c}`).join("\n"
                         </div>
                     </div>
                     <button
-                        onClick={exportToPDF}
+                        onClick={exportToCSV}
                         disabled={loading || !data}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isDark
                                 ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
