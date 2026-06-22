@@ -17,6 +17,7 @@ import { useLanguage } from "./language-provider";
 import MapsMissingKey from "./maps-missing-key";
 import type { ClusterResult } from "@/types";
 import { translateCategory } from "@/lib/i18n";
+import { Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapIcon, Navigation } from "lucide-react";
 
 interface AdminMapProps {
   clusters: (ClusterResult & { weighted_score?: number })[];
@@ -89,9 +90,9 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
     }
 
     if (showHeatmap && heatmapData.length > 0) {
-      const layer = new google.maps.visualization.HeatmapLayer({
-        data: heatmapData,
-        options: {
+      try {
+        const layer = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData,
           radius: 45,
           opacity: 0.75,
           maxIntensity: 8,
@@ -103,10 +104,12 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
             "rgba(239,68,68,0.85)",
             "rgba(220,38,38,1)",
           ],
-        } as any
-      });
-      layer.setMap(mapInstance);
-      heatmapRef.current = layer;
+        });
+        layer.setMap(mapInstance);
+        heatmapRef.current = layer;
+      } catch (e) {
+        console.error("Failed to create HeatmapLayer:", e);
+      }
     }
 
     return () => {
@@ -176,59 +179,84 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
       lat: selected.latitude,
       lng: selected.longitude,
     }} onCloseClick={() => onClusterClick(null)}>
-      <div className="min-w-[200px] p-2 space-y-3">
+      <div className="min-w-[240px] p-1.5 space-y-4 font-sans animate-in fade-in zoom-in-95 duration-200">
         {/* Header with count and density */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-bold text-lg text-gray-900">
+            <h3 className={`font-bold text-2xl tracking-tight leading-none ${isDark ? "text-white" : "text-gray-900"}`}>
               {t.mapReportsCount(selected.count)}
             </h3>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className={`w-2 h-2 rounded-full ${selected.count >= 15 ? "bg-red-500" :
-                  selected.count >= 10 ? "bg-orange-500" :
-                    selected.count >= 5 ? "bg-amber-500" : "bg-emerald-500"
-                }`}></div>
-              <span className="text-xs font-medium text-gray-600">
+            <div className="mt-2.5">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  selected.count >= 15 ? (isDark ? "bg-red-500/15 text-red-400 border border-red-500/20" : "bg-red-50 text-red-700 border border-red-200") :
+                  selected.count >= 10 ? (isDark ? "bg-orange-500/15 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-700 border border-orange-200") :
+                  selected.count >= 5 ? (isDark ? "bg-amber-500/15 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-700 border border-amber-200") :
+                  (isDark ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200")
+                }`}>
+                <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${selected.count >= 15 ? "bg-red-500" : selected.count >= 10 ? "bg-orange-500" : selected.count >= 5 ? "bg-amber-500" : "bg-emerald-500"}`}></div>
                 {selected.count >= 15 ? t.mapCriticalDensity :
                   selected.count >= 10 ? t.mapHighDensity :
                     selected.count >= 5 ? t.mapMediumDensity : t.mapLowDensity}
-              </span>
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-xs font-medium text-gray-500">{t.mapScore}</div>
-            <div className="text-sm font-bold text-indigo-600">
+          <div className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl border ${isDark ? "bg-indigo-500/15 border-indigo-500/30" : "bg-indigo-50 border-indigo-200"}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-indigo-400" : "text-indigo-600/80"}`}>{t.mapScore}</span>
+            <span className={`text-xl font-black ${isDark ? "text-indigo-300" : "text-indigo-700"} leading-none mt-0.5`}>
               {Math.round(selected.weighted_score ?? selected.count)}
-            </div>
+            </span>
           </div>
         </div>
 
         {/* Category breakdown */}
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{t.mapCategories}</h4>
-          <div className="space-y-1.5">
+          <h4 className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-400"}`}>{t.mapCategories}</h4>
+          <div className="space-y-2">
             {Object.entries(selected.category_breakdown)
               .sort((a, b) => b[1] - a[1])
               .slice(0, 4)
               .map(([cat, count]) => {
                 const percentage = Math.round((count / selected.count) * 100);
+                const Icon = cat === 'flooding' ? Droplets :
+                             cat === 'fire' ? Flame :
+                             cat === 'crime' ? ShieldAlert :
+                             cat === 'infrastructure' ? Wrench :
+                             cat === 'health' ? HeartPulse :
+                             cat === 'environmental' ? Leaf : CircleHelp;
+                const iconColor = cat === 'flooding' ? 'text-blue-500' :
+                                  cat === 'fire' ? 'text-orange-500' :
+                                  cat === 'crime' ? 'text-red-500' :
+                                  cat === 'infrastructure' ? 'text-amber-500' :
+                                  cat === 'health' ? 'text-pink-500' :
+                                  cat === 'environmental' ? 'text-emerald-500' : 'text-gray-500';
+                const bgLight = cat === 'flooding' ? 'bg-blue-50' :
+                                cat === 'fire' ? 'bg-orange-50' :
+                                cat === 'crime' ? 'bg-red-50' :
+                                cat === 'infrastructure' ? 'bg-amber-50' :
+                                cat === 'health' ? 'bg-pink-50' :
+                                cat === 'environmental' ? 'bg-emerald-50' : 'bg-gray-50';
+                const bgDark = cat === 'flooding' ? 'bg-blue-500/15' :
+                               cat === 'fire' ? 'bg-orange-500/15' :
+                               cat === 'crime' ? 'bg-red-500/15' :
+                               cat === 'infrastructure' ? 'bg-amber-500/15' :
+                               cat === 'health' ? 'bg-pink-500/15' :
+                               cat === 'environmental' ? 'bg-emerald-500/15' : 'bg-gray-500/15';
+
                 return (
-                  <div key={cat} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${cat === 'flooding' ? 'bg-blue-400' :
-                          cat === 'fire' ? 'bg-orange-400' :
-                            cat === 'crime' ? 'bg-red-400' :
-                              cat === 'infrastructure' ? 'bg-amber-400' :
-                                cat === 'health' ? 'bg-pink-400' :
-                                  cat === 'environmental' ? 'bg-emerald-400' : 'bg-gray-400'
-                        }`}></div>
-                      <span className="text-sm font-medium text-gray-700">
+                  <div key={cat} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-1.5 rounded-lg ${isDark ? bgDark : bgLight}`}>
+                        <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
+                      </div>
+                      <span className={`text-sm font-medium transition-colors ${isDark ? "text-white/80 group-hover:text-white" : "text-gray-700 group-hover:text-gray-900"}`}>
                         {translateCategory(cat, t)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900">{count}</span>
-                      <span className="text-xs text-gray-500">({percentage}%)</span>
+                      <span className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{count}</span>
+                      <div className="w-8 flex justify-end">
+                        <span className={`text-[10px] font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}>{percentage}%</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -236,39 +264,34 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
           </div>
         </div>
 
-        {/* Location */}
-        <div className="space-y-1">
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{t.mapLocation}</h4>
-          <p className="font-mono text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
-            {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
-          </p>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-2 pt-2 border-t border-gray-200">
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${selected.latitude},${selected.longitude}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {t.mapMaps}
-          </a>
-          <a
-            href={`https://waze.com/ul?ll=${selected.latitude}%2C${selected.longitude}&navigate=yes`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-indigo-500 text-white text-xs font-medium rounded hover:bg-indigo-600 transition-colors"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            {t.mapNavigate}
-          </a>
+        {/* Location & Buttons */}
+        <div className={`pt-3.5 border-t ${isDark ? "border-white/10" : "border-gray-100"}`}>
+          <div className="flex items-center justify-between mb-3.5">
+             <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-white/40" : "text-gray-400"}`}>{t.mapLocation}</span>
+             <p className={`font-mono text-[10px] px-2 py-0.5 rounded-md ${isDark ? "bg-white/5 text-white/60" : "bg-gray-100 text-gray-500"}`}>
+               {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
+             </p>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${selected.latitude},${selected.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 active:scale-95 ${isDark ? "bg-white/10 hover:bg-white/15 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              {t.mapMaps}
+            </a>
+            <a
+              href={`https://waze.com/ul?ll=${selected.latitude}%2C${selected.longitude}&navigate=yes`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-500/20 transition-all duration-200 active:scale-95"
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              {t.mapNavigate}
+            </a>
+          </div>
         </div>
       </div>
     </InfoWindow>)}

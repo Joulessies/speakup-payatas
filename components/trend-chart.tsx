@@ -1,4 +1,6 @@
 "use client";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+
 interface TrendPoint {
     date: string;
     count: number;
@@ -13,66 +15,81 @@ const CATEGORY_COLORS: Record<string, string> = {
     environmental: "#34d399",
     other: "#9ca3af",
 };
+
 export default function TrendChart({ data, isDark, }: {
     data: TrendPoint[];
     isDark: boolean;
 }) {
     if (!data || data.length === 0)
         return null;
-    const maxCount = Math.max(...data.map((d) => d.count), 1);
-    const barMaxHeight = 120;
-    return (<div className="w-full">
-      
-      <div className="flex items-end gap-[4px] h-[152px] px-1.5">
-        {data.map((point) => {
-            const barHeight = (point.count / maxCount) * barMaxHeight;
-            const categories = Object.entries(point.categories);
-            const totalForStacking = point.count || 1;
-            return (<div key={point.date} className="flex-1 flex flex-col items-center justify-end group relative">
-              
-              <div className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none ${isDark ? "bg-white/10 text-white" : "bg-gray-800 text-white"}`}>
-                {point.count} reports
-              </div>
 
-              
-              <div className="w-full rounded-t-md overflow-hidden transition-all" style={{ height: Math.max(barHeight, point.count > 0 ? 4 : 0) }}>
-                {categories.length > 0 ? (categories.map(([cat, count]) => (<div key={cat} style={{
-                        height: `${(count / totalForStacking) * 100}%`,
-                        backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af",
-                        opacity: 0.85,
-                    }}/>))) : (<div className="w-full h-full" style={{
-                        backgroundColor: isDark
-                            ? "rgba(255,255,255,0.1)"
-                            : "rgba(0,0,0,0.05)",
-                    }}/>)}
-              </div>
-            </div>);
-        })}
-      </div>
+    const chartData = data.map(d => ({
+        ...d,
+        formattedDate: new Date(d.date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" }),
+        ...d.categories
+    }));
 
-      
-      <div className="flex gap-[4px] px-1.5 mt-2">
-        {data.map((point, i) => {
-            const show = i === 0 || i === data.length - 1 || i % 3 === 0;
-            return (<div key={point.date} className="flex-1 text-center">
-              {show && (<span className={`text-[9px] font-medium ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                  {new Date(point.date + "T00:00:00").toLocaleDateString("en-PH", {
-                        month: "short",
-                        day: "numeric",
-                    })}
-                </span>)}
-            </div>);
-        })}
-      </div>
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            // Count total from payload
+            const total = payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
+            return (
+                <div className={`p-2.5 rounded-xl shadow-xl border text-xs font-sans ${isDark ? "bg-[#0a0a0f]/95 backdrop-blur-md border-white/10 text-white" : "bg-white/95 backdrop-blur-md border-gray-200 text-gray-900"}`}>
+                    <p className={`font-semibold mb-2 pb-2 border-b ${isDark ? "text-white/60 border-white/10" : "text-gray-500 border-gray-100"}`}>{label} · {total} Reports</p>
+                    <div className="space-y-1.5">
+                        {payload.map((entry: any, index: number) => {
+                            if (!entry.value) return null;
+                            return (
+                                <div key={index} className="flex items-center justify-between gap-4 font-medium">
+                                    <span className={`flex items-center gap-1.5 capitalize ${isDark ? "text-white/80" : "text-gray-600"}`}>
+                                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                                        {entry.name}
+                                    </span>
+                                    <span className="font-bold">{entry.value}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
 
-      
-      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3.5">
-        {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (<div key={cat} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }}/>
-            <span className={`text-[10px] capitalize ${isDark ? "text-white/45" : "text-gray-500"}`}>
-              {cat}
-            </span>
-          </div>))}
-      </div>
-    </div>);
+    return (
+        <div className="w-full">
+            <div className="w-full h-[152px] mt-2" style={{ fontFamily: "inherit" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }} barSize={12}>
+                        <XAxis 
+                            dataKey="formattedDate" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fill: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)" }} 
+                            dy={5}
+                            minTickGap={20}
+                        />
+                        <Tooltip 
+                            content={<CustomTooltip />} 
+                            cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} 
+                        />
+                        {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
+                            <Bar key={cat} dataKey={cat} stackId="a" fill={color} radius={[0, 0, 0, 0]} />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+            
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3.5 px-1.5">
+                {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
+                    <div key={cat} className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }}/>
+                        <span className={`text-[10px] capitalize ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            {cat}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 }

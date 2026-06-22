@@ -3,7 +3,7 @@
  * Uses a simple in-memory store with expiration (in production, use Redis or database)
  */
 
-import { randomBytes } from "crypto";
+import { randomInt } from "crypto";
 
 interface ResetTokenEntry {
     token: string;
@@ -21,8 +21,8 @@ const TOKEN_LENGTH = 6;
  * Generate a numeric reset token
  */
 export async function createPasswordResetToken(userId: string, phone: string): Promise<string> {
-    // Generate 6-digit numeric code
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 6-digit numeric code securely
+    const token = randomInt(100000, 1000000).toString();
     
     const key = `${userId}:${phone}`;
     

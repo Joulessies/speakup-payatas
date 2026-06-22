@@ -121,16 +121,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html,
   body {
     overflow-x: hidden;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
   html {
     @apply font-sans;
   }
@@ -143,6 +148,7 @@
   border-color: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
 }
+
 .dark .backdrop-blur-xl input::placeholder,
 .dark .backdrop-blur-xl textarea::placeholder {
   color: rgba(255, 255, 255, 0.35) !important;
@@ -155,6 +161,7 @@
   border-color: rgba(212, 203, 189, 0.8) !important;
   color: #2d2a26 !important;
 }
+
 :root:not(.dark) .backdrop-blur-xl input::placeholder,
 :root:not(.dark) .backdrop-blur-xl textarea::placeholder {
   color: rgba(107, 101, 93, 0.6) !important;
@@ -163,31 +170,51 @@
 main {
   animation: fadeIn 0.2s ease-out;
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media print {
-  nav { display: none !important; }
-  main { padding-bottom: 0 !important; }
-  body { background: white !important; }
+  nav {
+    display: none !important;
+  }
+
+  main {
+    padding-bottom: 0 !important;
+  }
+
+  body {
+    background: white !important;
+  }
 }
 
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(107, 101, 93, 0.25);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 101, 93, 0.4);
 }
@@ -199,4 +226,39 @@ main {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.gm-style .gm-style-iw-c {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 0 !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+.gm-style .gm-style-iw-t::after {
+  background: var(--card) !important;
+  box-shadow: -2px 2px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.gm-style .gm-style-iw-d {
+  overflow: auto !important;
+  max-height: none !important;
+}
+
+.gm-style .gm-ui-hover-effect {
+  top: 8px !important;
+  right: 8px !important;
+  background-color: var(--muted) !important;
+  border-radius: 50% !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s;
+}
+
+.gm-style .gm-ui-hover-effect:hover {
+  opacity: 1 !important;
+}
+
+.gm-style .gm-ui-hover-effect span {
+  background-color: var(--muted-foreground) !important;
 }

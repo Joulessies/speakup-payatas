@@ -226,7 +226,7 @@ export default function TrackPage() {
                   {t.trackReports} ({reports.length})
                 </h2>
                 {lastQuery && (<p className={`text-xs mb-3 ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                    {t.trackResultsFor(lastQuery)} <span className="font-mono">{lastQuery}</span>
+                    {t.trackResultsFor(lastQuery)}
                   </p>)}
                 <div className="flex flex-col gap-3">
                   {reports.map((report) => {

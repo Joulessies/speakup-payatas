@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { DBSCAN } from "density-clustering";
-import { fetchReportsBase } from "@/lib/server-db";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
+
 const REF_LAT = 14.7055;
 const REF_LNG = 121.099;
 const DEG_TO_M_LAT = 111320;
 const DEG_TO_M_LNG = Math.cos((REF_LAT * Math.PI) / 180) * 111320;
-function toMeters(lat: number, lng: number): [
-    number,
-    number
-] {
+
+function toMeters(lat: number, lng: number): [number, number] {
     return [(lng - REF_LNG) * DEG_TO_M_LNG, (lat - REF_LAT) * DEG_TO_M_LAT];
 }
+
 type WindowKey = "24h" | "7d" | "30d";
 type ReportSummary = {
     id: string;
@@ -23,20 +23,19 @@ type ReportSummary = {
     status: string;
     description: string;
 };
+
 function getWindowMs(window: WindowKey): number {
-    if (window === "24h")
-        return 24 * 60 * 60 * 1000;
-    if (window === "7d")
-        return 7 * 24 * 60 * 60 * 1000;
+    if (window === "24h") return 24 * 60 * 60 * 1000;
+    if (window === "7d") return 7 * 24 * 60 * 60 * 1000;
     return 30 * 24 * 60 * 60 * 1000;
 }
+
 function getBucketMs(window: WindowKey): number {
-    if (window === "24h")
-        return 2 * 60 * 60 * 1000;
-    if (window === "7d")
-        return 12 * 60 * 60 * 1000;
+    if (window === "24h") return 2 * 60 * 60 * 1000;
+    if (window === "7d") return 12 * 60 * 60 * 1000;
     return 24 * 60 * 60 * 1000;
 }
+
 function clusterReports(reports: ReportSummary[]) {
     if (reports.length === 0) {
         return { clusters: [], noise_count: 0 };
@@ -54,8 +53,7 @@ function clusterReports(reports: ReportSummary[]) {
             sumLat += report.latitude;
             sumLng += report.longitude;
             weightedScore += Math.max(1, report.severity ?? 1);
-            categoryBreakdown[report.category] =
-                (categoryBreakdown[report.category] || 0) + 1;
+            categoryBreakdown[report.category] = (categoryBreakdown[report.category] || 0) + 1;
         }
         clusterReports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         return {
@@ -73,24 +71,30 @@ function clusterReports(reports: ReportSummary[]) {
         noise_count: dbscan.noise.length,
     };
 }
+
 export async function POST(request: Request) {
     try {
-        const mockReports = await fetchReportsBase();
         let body: {
             window?: WindowKey;
             includePlayback?: boolean;
         } = {};
         try {
             body = await request.json();
-        }
-        catch {
-        }
+        } catch {}
+        
         const selectedWindow: WindowKey = body.window === "24h" || body.window === "30d" ? body.window : "7d";
         const now = Date.now();
         const windowMs = getWindowMs(selectedWindow);
         const since = new Date(now - windowMs).toISOString();
-        const reports = mockReports
-            .filter((r) => r.created_at >= since)
+        
+        const { data, error } = await getSupabaseAdmin()
+            .from("reports")
+            .select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description")
+            .gte("created_at", since);
+            
+        if (error) throw new Error(error.message);
+        
+        const reports = (data ?? [])
             .map((r) => ({
             id: r.id,
             receipt_id: r.receipt_id ?? undefined,

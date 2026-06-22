@@ -22,7 +22,7 @@ const STATUS_LABEL: Record<StaffStatus, string> = {
     resolved: "Resolved",
 };
 
-const MAX_PHOTO_BYTES = 1_500_000; // ~1.5 MB after base64 encoding caps payload growth.
+const MAX_PHOTO_BYTES = 1_400_000; // ~1.4 MB after base64 encoding caps payload growth.
 
 /**
  * Modal that staff/admin use when changing a report's status. They can optionally attach a

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CATEGORY_LABELS } from "@/types";
 import dynamic from "next/dynamic";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 interface TrendPoint {
     date: string;
@@ -30,41 +31,61 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
             Not enough data to display trend
         </div>
     );
-    const maxCount = Math.max(...data.map((d) => d.count), 1);
-    const width = 100;
-    const height = 60;
-    const points = data.map((d, i) => ({
-        x: (i / (data.length - 1)) * width,
-        y: height - (d.count / maxCount) * height * 0.85,
-        count: d.count,
-        date: d.date,
+    
+    // Format dates for X-Axis
+    const formattedData = data.map(d => ({
+        ...d,
+        formattedDate: new Date(d.date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })
     }));
-    const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-    const fillD = `${pathD} L ${points[points.length - 1].x} ${height} L 0 ${height} Z`;
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className={`p-2 rounded-lg shadow-lg border text-xs font-sans ${isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}>
+                    <p className={`font-semibold mb-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>{label}</p>
+                    <p className="font-bold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        {payload[0].value} reports
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
-        <div className="w-full">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-32" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path d={fillD} fill="url(#lineGrad)" />
-                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" />
-                {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="1" fill="#6366f1" />
-                ))}
-            </svg>
-            <div className="flex justify-between mt-1 px-1">
-                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                    {new Date(data[0].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
-                </span>
-                <span className={`text-[9px] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                    {new Date(data[data.length - 1].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
-                </span>
-            </div>
+        <div className="w-full h-36 mt-2" style={{ fontFamily: "inherit", marginLeft: "-10px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={formattedData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <XAxis 
+                        dataKey="formattedDate" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)" }} 
+                        dy={5}
+                        minTickGap={20}
+                    />
+                    <Tooltip 
+                        content={<CustomTooltip />} 
+                        cursor={{ stroke: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', strokeWidth: 1, strokeDasharray: '3 3' }} 
+                    />
+                    <Area 
+                        type="monotone" 
+                        dataKey="count" 
+                        stroke="#6366f1" 
+                        strokeWidth={2.5}
+                        fillOpacity={1} 
+                        fill="url(#colorCount)" 
+                        animationDuration={1000}
+                    />
+                </AreaChart>
+            </ResponsiveContainer>
         </div>
     );
 }

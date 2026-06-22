@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchReportsBase } from "@/lib/server-db";
+import { normalizeActionHistory } from "@/lib/server-db";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 function serverErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to load reports";
@@ -8,27 +9,32 @@ function serverErrorResponse(err: unknown) {
 
 export async function GET(request: Request) {
     try {
-        const mockReports = await fetchReportsBase();
         const { searchParams } = new URL(request.url);
         const reporter_hash = searchParams.get("reporter_hash");
         if (!reporter_hash || reporter_hash.length < 8) {
             return NextResponse.json({ error: "reporter_hash required (min 8 chars)" }, { status: 400 });
         }
-        const myReports = mockReports
-            .filter((r) => r.reporter_hash.toLowerCase().startsWith(reporter_hash.toLowerCase()))
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .map((r) => ({
-                id: r.id,
-                receipt_id: r.receipt_id,
-                category: r.category,
-                description: r.description,
-                severity: r.severity,
-                status: r.status,
-                verification_status: r.verification_status,
-                submitted_at: r.submitted_at,
-                created_at: r.created_at,
-                action_history: r.action_history,
-            }));
+        
+        const { data, error } = await getSupabaseAdmin()
+            .from("reports")
+            .select("id, receipt_id, category, description, severity, status, verification_status, submitted_at, created_at, action_history")
+            .ilike("reporter_hash", `${reporter_hash}%`)
+            .order("created_at", { ascending: false });
+            
+        if (error) throw new Error(error.message);
+
+        const myReports = (data ?? []).map((r) => ({
+            id: r.id,
+            receipt_id: r.receipt_id,
+            category: r.category,
+            description: r.description,
+            severity: r.severity,
+            status: r.status,
+            verification_status: r.verification_status,
+            submitted_at: r.submitted_at,
+            created_at: r.created_at,
+            action_history: normalizeActionHistory(r.action_history),
+        }));
 
         const grouped: Record<string, typeof myReports> = {};
         for (const r of myReports) {

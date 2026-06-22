@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchReportsBase } from "@/lib/server-db";
+import { normalizeActionHistory } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 function serverErrorResponse(err: unknown) {
@@ -17,16 +17,29 @@ interface FeedbackRow {
 
 export async function GET(request: Request) {
     try {
-        const mockReports = await fetchReportsBase();
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
         const limit = Number(searchParams.get("limit") ?? "20");
 
-        const filteredResolved = mockReports
-            .filter((r) => r.status === "resolved" && r.verification_status !== "spam")
-            .filter((r) => (category ? r.category === category : true))
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, Math.max(1, Math.min(limit, 50)));
+        let query = getSupabaseAdmin()
+            .from("reports")
+            .select("*")
+            .eq("status", "resolved")
+            .neq("verification_status", "spam")
+            .order("created_at", { ascending: false })
+            .limit(Math.max(1, Math.min(limit, 50)));
+
+        if (category) {
+            query = query.eq("category", category);
+        }
+
+        const { data, error } = await query;
+        if (error) throw new Error(error.message);
+
+        const filteredResolved = (data ?? []).map((r) => ({
+            ...r,
+            action_history: normalizeActionHistory(r.action_history),
+        }));
 
         // Pull any feedback the residents left for these reports. Failures here are non-fatal — the
         // transparency feed still renders without ratings.

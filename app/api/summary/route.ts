@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchReportsBase } from "@/lib/server-db";
+import { normalizeActionHistory } from "@/lib/server-db";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import DBSCAN from "density-clustering";
 
 const LAT_TO_M = 111320;
@@ -12,11 +13,21 @@ function serverErrorResponse(err: unknown) {
 
 export async function GET() {
     try {
-        const mockReports = await fetchReportsBase();
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthReports = mockReports.filter((r) => new Date(r.created_at) >= monthStart);
+        
+        const { data, error } = await getSupabaseAdmin()
+            .from("reports")
+            .select("*")
+            .gte("created_at", monthStart.toISOString());
+            
+        if (error) throw new Error(error.message);
+        
+        const monthReports = (data ?? []).map(r => ({
+            ...r,
+            action_history: normalizeActionHistory(r.action_history)
+        }));
         const resolvedReports = monthReports.filter((r) => r.status === "resolved");
         const spamReports = monthReports.filter((r) => r.verification_status === "spam");
         const validReports = monthReports.filter((r) => r.verification_status === "valid");

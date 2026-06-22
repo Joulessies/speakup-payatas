@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Loader2, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, CheckCircle2, ShieldAlert, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Area, Line, ComposedChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from "recharts";
 
 interface TrendPoint {
     date: string;
@@ -199,28 +200,47 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
     }
 
     const { combined, trendDirection, percentChange, forecastedPoints } = forecastResults;
-    const maxCount = Math.max(...combined.map((d) => d.count), 1);
-    const width = 140;
-    const height = 70;
-    const padding = 10;
-    const chartW = width - padding * 2;
-    const chartH = height - padding * 2;
+    
+    // Format data for Recharts
+    const chartData = combined.map((p) => {
+        const d = new Date(p.date + "T00:00:00");
+        return {
+            ...p,
+            formattedDate: d.toLocaleDateString("en-PH", { month: "short", day: "numeric" }),
+            historyCount: p.isForecast ? null : p.count,
+            forecastCount: p.isForecast ? p.count : null,
+        };
+    });
 
-    const points = combined.map((p, i) => ({
-        x: padding + (i / (combined.length - 1)) * chartW,
-        y: padding + chartH - (p.count / maxCount) * chartH * 0.85,
-        count: p.count,
-        date: p.date,
-        isForecast: p.isForecast,
-    }));
+    // Connect the history line with the forecast line continuously
+    const lastHistoryIdx = chartData.findIndex((p, i) => i < chartData.length - 1 && chartData[i + 1].isForecast);
+    if (lastHistoryIdx !== -1) {
+        chartData[lastHistoryIdx].forecastCount = chartData[lastHistoryIdx].historyCount;
+    }
 
-    // Split points into history and forecast path
-    const historyPoints = points.filter((p) => !p.isForecast);
-    const forecastPoints = points.filter((p, i) => p.isForecast || i === historyPoints.length - 1);
-
-    const historyPathD = historyPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-    const forecastPathD = forecastPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-    const fillD = `${historyPathD} L ${historyPoints[historyPoints.length - 1].x} ${height - padding} L ${padding} ${height - padding} Z`;
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className={`p-2.5 rounded-xl shadow-xl border text-xs font-sans ${isDark ? "bg-[#0a0a0f]/95 backdrop-blur-md border-white/10 text-white" : "bg-white/95 backdrop-blur-md border-gray-200 text-gray-900"}`}>
+                    <p className={`font-semibold mb-2 pb-2 border-b ${isDark ? "text-white/60 border-white/10" : "text-gray-500 border-gray-100"}`}>{label}</p>
+                    {payload.map((entry: any, index: number) => {
+                        if (entry.value === null) return null;
+                        const isForecast = entry.dataKey === "forecastCount";
+                        return (
+                            <div key={index} className="flex items-center justify-between gap-4 mt-1.5 font-medium">
+                                <span className={`flex items-center gap-1.5 ${isDark ? "text-white/80" : "text-gray-600"}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isForecast ? "bg-rose-500" : "bg-indigo-500"}`}></span>
+                                    {isForecast ? "Forecast" : "History"}
+                                </span>
+                                <span className="font-bold">{entry.value}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="space-y-6">
@@ -269,41 +289,54 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="relative">
-                            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-                                {/* Grid lines */}
-                                <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke={isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"} strokeWidth="0.5" />
-                                <line x1={padding} y1={padding + chartH / 2} x2={width - padding} y2={padding + chartH / 2} stroke={isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"} strokeWidth="0.5" />
-                                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"} strokeWidth="0.5" />
-                                
-                                {/* Fill area under history */}
-                                <path d={fillD} fill="url(#histGrad)" />
-
-                                {/* History line */}
-                                <path d={historyPathD} fill="none" stroke="#6366f1" strokeWidth="1" strokeLinejoin="round" strokeLinecap="round" />
-
-                                {/* Forecast line */}
-                                <path d={forecastPathD} fill="none" stroke="#f43f5e" strokeWidth="1.1" strokeDasharray="2,2" strokeLinejoin="round" strokeLinecap="round" />
-
-                                {/* Interactive points */}
-                                {points.map((p, i) => (
-                                    <circle 
-                                        key={i} 
-                                        cx={p.x} 
-                                        cy={p.y} 
-                                        r={p.isForecast ? "1" : "0.8"} 
-                                        fill={p.isForecast ? "#f43f5e" : "#6366f1"} 
-                                    />
-                                ))}
-                            </svg>
+                            <div className="w-full h-48 -ml-3 mt-2" style={{ fontFamily: "inherit" }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis 
+                                            dataKey="formattedDate" 
+                                            axisLine={false} 
+                                            tickLine={false} 
+                                            tick={{ fontSize: 10, fill: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)" }} 
+                                            dy={5}
+                                            minTickGap={20}
+                                        />
+                                        <RechartsTooltip 
+                                            content={<CustomTooltip />} 
+                                            cursor={{ stroke: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', strokeWidth: 1, strokeDasharray: '3 3' }} 
+                                        />
+                                        <Area 
+                                            type="monotone" 
+                                            dataKey="historyCount" 
+                                            stroke="#6366f1" 
+                                            strokeWidth={2.5}
+                                            fillOpacity={1} 
+                                            fill="url(#histGrad)" 
+                                            animationDuration={1000}
+                                            connectNulls
+                                        />
+                                        <Line 
+                                            type="monotone" 
+                                            dataKey="forecastCount" 
+                                            stroke="#f43f5e" 
+                                            strokeWidth={2.5}
+                                            strokeDasharray="4 4"
+                                            dot={{ r: 3, fill: isDark ? "#0a0a0f" : "#fff", strokeWidth: 2, stroke: "#f43f5e" }}
+                                            activeDot={{ r: 5, strokeWidth: 0, fill: "#f43f5e" }}
+                                            animationDuration={1000}
+                                            connectNulls
+                                        />
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
                             
                             {/* Forecast Badge Overlay */}
-                            <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/40 backdrop-blur px-2 py-0.5 rounded-full text-[9px] text-[#f43f5e] font-semibold border border-red-500/20">
+                            <div className="absolute top-0 right-2 flex items-center gap-1.5 bg-black/40 backdrop-blur px-2 py-0.5 rounded-full text-[9px] text-[#f43f5e] font-semibold border border-red-500/20 z-10">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e] animate-pulse" />
                                 Forecast Period
                             </div>

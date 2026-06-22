@@ -4,7 +4,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { classifyReport } from "@/lib/classification";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { fetchReportsBase } from "@/lib/server-db";
+import { fetchReportsBase, normalizeActionHistory } from "@/lib/server-db";
 import { getReportsListLimitCap } from "@/lib/api-session";
 import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
 import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
@@ -228,11 +228,16 @@ export async function PATCH(request: Request) {
       ? (photo_url.length > 2_000_000 ? null : photo_url.trim())
       : null;
 
-    const reports = await fetchReportsBase();
-    const report = reports.find((r) => r.id === report_id);
-    if (!report) {
+    const { data: rawReport, error: fetchError } = await getSupabaseAdmin()
+      .from("reports")
+      .select("*")
+      .eq("id", report_id)
+      .single();
+
+    if (fetchError || !rawReport) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
+    const report = { ...rawReport, action_history: normalizeActionHistory(rawReport.action_history) };
 
     const updates: Record<string, unknown> = {};
     const actionHistory = [...(report.action_history ?? [])];

@@ -8,6 +8,13 @@ import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAler
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
 import type { ClusterResult } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     ssr: false,
@@ -338,15 +345,20 @@ export default function AdminDashboard() {
 
       
       <div className="hidden md:flex flex-wrap gap-2 absolute top-4 right-4 z-[1000] max-w-[70vw] justify-end">
-        <div className={`flex items-center rounded-xl border px-2 py-1 text-xs backdrop-blur-xl ${isDark
-            ? "bg-black/60 border-white/10 text-white/70"
-            : "bg-white/70 border-gray-200 text-gray-700"}`}>
-          <span className="mr-1">Window</span>
-          <select value={timeWindow} onChange={(e) => setTimeWindow(e.target.value as "24h" | "7d" | "30d")} className={`bg-transparent outline-none ${isDark ? "text-white" : "text-gray-800"}`}>
-            <option value="24h">24h</option>
-            <option value="7d">7d</option>
-            <option value="30d">30d</option>
-          </select>
+        <div className={`flex items-center rounded-xl border px-3 py-1 text-xs font-medium backdrop-blur-xl transition-colors ${isDark
+            ? "bg-black/60 border-white/10 text-white/70 hover:bg-black/80"
+            : "bg-white/60 border-gray-200 text-gray-700 hover:bg-white/80"}`}>
+          <span className="mr-1.5 opacity-80">Window</span>
+          <Select value={timeWindow} onValueChange={(val) => setTimeWindow(val as "24h" | "7d" | "30d")}>
+            <SelectTrigger className={`h-auto border-0 bg-transparent dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent text-xs focus:ring-0 focus:ring-offset-0 p-0 w-auto shadow-none font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" align="end" className="min-w-[120px]">
+              <SelectItem value="24h">24 Hours</SelectItem>
+              <SelectItem value="7d">7 Days</SelectItem>
+              <SelectItem value="30d">30 Days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <button onClick={() => setLiveMode((prev) => !prev)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-xl transition-colors ${liveMode
             ? isDark

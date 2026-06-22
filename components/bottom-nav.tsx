@@ -16,7 +16,6 @@ import {
     Users,
     Map,
     UserRound,
-    LogOut,
 } from "lucide-react";
 
 interface NavItem {
