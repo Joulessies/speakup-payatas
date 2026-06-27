@@ -72,11 +72,11 @@ export default function LoginPage() {
     // Tailwind classes for invalid input fields (red border + soft ring).
     const errorRing = "border-red-500 ring-1 ring-red-500/30 focus-visible:ring-red-500/40";
     const inputClass = (hasError: boolean) => {
-        const base = `h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`;
+        const base = `h-11 rounded-lg pl-11 pr-4 ${isDark ? "bg-white/[0.04] border-white/[0.1]" : "bg-white border-[#c8d6e8]"}`;
         return hasError ? `${base} ${errorRing}` : base;
     };
     const inputClassPwd = (hasError: boolean) => {
-        const base = `h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`;
+        const base = `h-11 rounded-lg pl-11 pr-12 ${isDark ? "bg-white/[0.04] border-white/[0.1]" : "bg-white border-[#c8d6e8]"}`;
         return hasError ? `${base} ${errorRing}` : base;
     };
     // Live re-validation: as the user types, clear the corresponding error flag so the red highlight goes away.
@@ -370,24 +370,12 @@ export default function LoginPage() {
         }
         setFieldErrors(nextErrors);
 
-        try {
-            if (nextErrors.email) {
-                throw new Error("Enter a valid email address.");
-            }
-            if (nextErrors.password) {
-                if (mode === "register") {
-                    const validation = validatePassword(password);
-                    throw new Error(validation.errors[0] || "Password does not meet requirements.");
-                }
-                throw new Error("Password must be at least 6 characters.");
-            }
-            if (mode === "register" && nextErrors.confirmPassword) {
-                throw new Error("Passwords do not match.");
-            }
-            if (mode === "register" && nextErrors.phone) {
-                throw new Error("Enter a valid PH mobile number for your account (e.g., 09171234567).");
-            }
+        if (Object.keys(nextErrors).length > 0) {
+            setLoading(false);
+            return;
+        }
 
+        try {
             const loginBody: Record<string, string> = {
                 action: mode,
                 method: "email",
@@ -409,10 +397,6 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                // On invalid credentials, flag both email and password so the user knows where to fix.
-                if (res.status === 401 || /invalid|incorrect|wrong|credential|password|email/i.test(String(data?.error ?? ""))) {
-                    setFieldErrors({ email: true, password: true });
-                }
                 throw new Error(data?.error || (mode === "register" ? "Registration failed" : "Login failed"));
             }
 
@@ -434,26 +418,26 @@ export default function LoginPage() {
     };
 
     return (
-        <div className={`flex flex-col items-center justify-start min-h-full w-full px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0a0a0f]" : "bg-[#f5f1e4]"}`}>
+        <div className={`flex flex-col items-center justify-start min-h-full w-full px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"}`}>
             <div className="w-full max-w-5xl space-y-4">
                 <div className="flex justify-end">
                     <ThemeToggle className={isDark ? "bg-white/[0.04] hover:bg-white/10" : "bg-black/[0.04] hover:bg-black/10"} />
                 </div>
-                <Card className={`overflow-hidden rounded-[1.25rem] shadow-2xl sm:rounded-[1.75rem] lg:rounded-[2rem] ${isDark ? "bg-[#121318] border-white/10" : "bg-[#fffbea] border-[#e8e1cf]"}`}>
+                <Card className={`overflow-hidden rounded-xl shadow-lg sm:rounded-2xl ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
                     <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1.35fr] lg:items-stretch">
-                        <div className={`order-1 w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-7 lg:p-8 ${isDark ? "bg-[#13141a]" : "bg-[#fffdf4]"}`}>
+                        <div className={`order-1 w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-7 lg:p-8 ${isDark ? "bg-[#0d1b2e]" : "bg-white"}`}>
                             <CardHeader className="px-0 pt-0 pb-5 sm:pb-6">
                                 <div className="flex items-center justify-center mb-3">
-                                    <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-[#f0ebdc]"}`}>
-                                        <ShieldCheck className={`h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5 ${isDark ? "text-indigo-400" : "text-[#504d44]"}`} />
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${isDark ? "bg-blue-500/15 border-blue-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
+                                        <ShieldCheck className={`h-6 w-6 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
                                     </div>
                                 </div>
                                 <div className="text-center">
-                                    <CardTitle className={`text-2xl sm:text-3xl leading-tight ${isDark ? "text-white" : "text-[#2e2b27]"}`}>
+                                    <CardTitle className={`text-2xl sm:text-3xl leading-tight font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                                         {mode === "register" ? "Create an account" : "Welcome back"}
                                     </CardTitle>
                                 </div>
-                                <CardDescription className={`text-center text-xs sm:text-sm mt-1 px-1 ${isDark ? "text-white/60" : "text-[#70695c]"}`}>
+                                <CardDescription className={`text-center text-xs sm:text-sm mt-1 px-1 ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
                                     {method === "email_otp"
                                         ? (mode === "register" ? "Register with mobile + email code" : "Sign in with mobile + email code")
                                         : (mode === "register" ? "Sign up with email and password" : "Sign in with your email and password")}
@@ -461,10 +445,10 @@ export default function LoginPage() {
                             </CardHeader>
 
                             <CardContent className="px-0 pb-0">
-                                <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl p-1 bg-black/5 dark:bg-white/5">
+                                <div className={`mb-4 grid ${mode === "register" ? "grid-cols-1" : "grid-cols-2"} gap-1.5 rounded-lg p-1 ${isDark ? "bg-white/[0.05]" : "bg-[#e4eaf4]"}`}>
                                     <button
                                         type="button"
-                                        className={`h-10 rounded-lg text-sm font-medium ${method === "password" ? "bg-white dark:bg-white/10 shadow" : "opacity-80"}`}
+                                        className={`h-9 rounded-md text-sm font-semibold transition-colors ${method === "password" ? isDark ? "bg-white/10 text-white shadow" : "bg-white text-[#0f1f3d] shadow-sm" : isDark ? "text-white/50 hover:text-white/70" : "text-[#4a6080] hover:text-[#0f2d5c]"}`}
                                         onClick={() => {
                                             setMethod("password");
                                             setError(null);
@@ -476,19 +460,21 @@ export default function LoginPage() {
                                     >
                                         Password
                                     </button>
-                                    <button
-                                        type="button"
-                                        className={`h-10 rounded-lg text-sm font-medium ${method === "email_otp" ? "bg-white dark:bg-white/10 shadow" : "opacity-80"}`}
-                                        onClick={() => {
-                                            setMethod("email_otp");
-                                            setError(null);
-                                            setOtp("");
-                                            setOtpSent(false);
-                                            setOtpEmail("");
-                                        }}
-                                    >
-                                        Email OTP
-                                    </button>
+                                    {mode !== "register" && (
+                                        <button
+                                            type="button"
+                                            className={`h-9 rounded-md text-sm font-semibold transition-colors ${method === "email_otp" ? isDark ? "bg-white/10 text-white shadow" : "bg-white text-[#0f1f3d] shadow-sm" : isDark ? "text-white/50 hover:text-white/70" : "text-[#4a6080] hover:text-[#0f2d5c]"}`}
+                                            onClick={() => {
+                                                setMethod("email_otp");
+                                                setError(null);
+                                                setOtp("");
+                                                setOtpSent(false);
+                                                setOtpEmail("");
+                                            }}
+                                        >
+                                            Email OTP
+                                        </button>
+                                    )}
                                 </div>
                                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                                     {method === "password" && (
@@ -587,7 +573,7 @@ export default function LoginPage() {
                                         </div>
                                     )}
 
-                                    {mode === "register" && passwordValidation && (
+                                    {mode === "register" && method === "password" && passwordValidation && (
                                         <div className={`space-y-2.5 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                             <div className="flex items-center justify-between">
                                                 <span className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>Password requirements</span>
@@ -687,7 +673,7 @@ export default function LoginPage() {
 
                                     <Button
                                         type="submit"
-                                        className={`w-full h-12 rounded-full font-semibold text-base ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                        className="w-full h-11 rounded-lg font-semibold text-sm tracking-wide"
                                         disabled={
                                             method === "password"
                                                 ? (loading || !email.trim() || !password.trim() || (mode === "register" && (!confirmPassword.trim() || normalizedRegisterPhone.length !== 10 || !agreedToTerms)))
@@ -710,6 +696,9 @@ export default function LoginPage() {
                                                 const nextMode = mode === "register" ? "login" : "register";
                                                 setMode(nextMode);
                                                 setError(null);
+                                                if (nextMode === "register") {
+                                                    setMethod("password");
+                                                }
                                                 if (method === "email_otp") {
                                                     setOtp("");
                                                     setOtpSent(false);
@@ -727,17 +716,16 @@ export default function LoginPage() {
                         </div>
                         <div
                             className="order-2 relative min-h-[200px] sm:min-h-[240px] md:min-h-[280px] lg:min-h-[min(520px,70vh)] xl:min-h-[620px]"
-                            style={{
-                                backgroundImage:
-                                    "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1768199455274-16a9e15946f5?q=80&w=1600&auto=format&fit=crop')",
+                            style={{ 
+                                backgroundImage: 'linear-gradient(rgba(13, 27, 46, 0.4), rgba(13, 27, 46, 0.8)), url("https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/860Roads_Payatas_Bagong_Silangan_Quezon_City_Landmarks_45.jpg/1280px-860Roads_Payatas_Bagong_Silangan_Quezon_City_Landmarks_45.jpg")',
                                 backgroundSize: "cover",
-                                backgroundPosition: "center",
+                                backgroundPosition: "center"
                             }}
                         >
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" aria-hidden />
+                            <div className="absolute inset-0 bg-blue-900/20 mix-blend-multiply" />
                             <div className="absolute top-3 left-3 sm:top-5 sm:left-5 lg:top-6 lg:left-6 max-w-[min(100%-1.5rem,20rem)]">
-                                <span className="inline-flex items-center rounded-full bg-[#ffe16a] px-3 py-1.5 sm:px-4 sm:py-2 text-[0.6875rem] sm:text-xs font-semibold text-[#2f2a20] shadow leading-snug">
-                                    Barangay & community life
+                                <span className="inline-flex items-center rounded-lg bg-blue-600/90 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 text-[0.6875rem] sm:text-xs font-bold text-white shadow leading-snug">
+                                    Barangay Payatas-A
                                 </span>
                             </div>
                             <div className="absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-5 lg:bottom-6 lg:left-6 lg:right-6">
@@ -802,7 +790,7 @@ export default function LoginPage() {
                                     <Button
                                         type="submit"
                                         disabled={forgotLoading || !forgotEmail.trim()}
-                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                        className="w-full h-12 rounded-lg font-semibold"
                                     >
                                         {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Code"}
                                     </Button>
@@ -874,7 +862,7 @@ export default function LoginPage() {
                                     <Button
                                         type="submit"
                                         disabled={resetToken.length !== 6}
-                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                        className="w-full h-12 rounded-lg font-semibold"
                                     >
                                         Verify Code
                                     </Button>
@@ -980,7 +968,7 @@ export default function LoginPage() {
                                     <Button
                                         type="submit"
                                         disabled={forgotLoading || !passwordValidation?.isValid || newPassword !== confirmNewPassword}
-                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                        className="w-full h-12 rounded-lg font-semibold"
                                     >
                                         {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
                                     </Button>
@@ -998,7 +986,7 @@ export default function LoginPage() {
                                     <Button
                                         type="button"
                                         onClick={resetForgotPassword}
-                                        className={`w-full h-12 rounded-full font-semibold ${isDark ? "" : "bg-[#f5d75a] text-[#2b2b2b] hover:bg-[#f1ce43]"}`}
+                                        className="w-full h-12 rounded-lg font-semibold"
                                     >
                                         Back to Sign In
                                     </Button>

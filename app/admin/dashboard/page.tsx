@@ -86,7 +86,7 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-3">
@@ -94,10 +94,10 @@ export default function AdminDashboard() {
                         <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-red-400" : "text-red-600"}`} />
                     </div>
                     <div>
-                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
                             Admin Dashboard
                         </h1>
-                        <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-slate-600"}`}>
                             System overview and management.
                         </p>
                     </div>
@@ -110,26 +110,26 @@ export default function AdminDashboard() {
                     </div>
                 ) : stats ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <Link href="/admin/reports" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.05]" : "bg-white border-gray-100 hover:bg-gray-50"}`}>
+                        <Link href="/admin/reports" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <FileWarning className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-500"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Total Reports</span>
+                                <FileWarning className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Total Reports</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{stats.totalReports}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.totalReports}</p>
                         </Link>
-                        <Link href="/admin/users" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.05]" : "bg-white border-gray-100 hover:bg-gray-50"}`}>
+                        <Link href="/admin/users" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <Users className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-500"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Total Users</span>
+                                <Users className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Total Users</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{stats.totalUsers}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.totalUsers}</p>
                         </Link>
-                        <Link href="/admin" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.05]" : "bg-white border-gray-100 hover:bg-gray-50"}`}>
+                        <Link href="/admin" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <MapPin className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-500"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Active Hotspots</span>
+                                <MapPin className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Active Hotspots</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{stats.activeHotspots}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.activeHotspots}</p>
                         </Link>
                         <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
                             <div className="flex items-center gap-2 mb-2">
@@ -179,17 +179,17 @@ export default function AdminDashboard() {
 
                 {/* Category Breakdown */}
                 {stats && Object.keys(stats.byCategory).length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-slate-800 border-white/[0.07]" : "bg-white border-slate-300"}`}>
+                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-slate-600"}`}>
                             Reports by Category
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {Object.entries(stats.byCategory).map(([category, count]) => (
-                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-white/[0.02]" : "bg-gray-50"}`}>
-                                    <span className={`text-[11px] ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-white/[0.02]" : "bg-slate-50"}`}>
+                                    <span className={`text-[11px] ${isDark ? "text-white/60" : "text-slate-600"}`}>
                                         {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
                                     </span>
-                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{count}</p>
+                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{count}</p>
                                 </div>
                             ))}
                         </div>
@@ -250,23 +250,23 @@ export default function AdminDashboard() {
 
                 {/* Recent Reports */}
                 {stats && stats.recentReports.length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-slate-800 border-white/[0.07]" : "bg-white border-slate-300"}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>
                                 Recent Reports
                             </h2>
-                            <Link href="/admin/reports" className={`text-xs ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}>
+                            <Link href="/admin/reports" className={`text-xs ${isDark ? "text-blue-400 hover:text-blue-300" : "text-[#1a4fad] hover:text-[#1544a0]"}`}>
                                 View all
                             </Link>
                         </div>
                         <div className="space-y-2">
                             {stats.recentReports.map((report) => (
-                                <div key={report.id} className={`p-3 rounded-xl flex items-center justify-between ${isDark ? "bg-white/[0.02]" : "bg-gray-50"}`}>
+                                <div key={report.id} className={`p-3 rounded-xl flex items-center justify-between ${isDark ? "bg-white/[0.02]" : "bg-slate-50"}`}>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
+                                        <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : "border-slate-300 text-slate-600"}>
                                             {CATEGORY_LABELS[report.category as keyof typeof CATEGORY_LABELS] || report.category}
                                         </Badge>
-                                        <span className={`text-xs ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                        <span className={`text-xs ${isDark ? "text-white/50" : "text-slate-600"}`}>
                                             {report.description?.slice(0, 40) || "No description"}...
                                         </span>
                                     </div>

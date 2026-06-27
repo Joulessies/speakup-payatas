@@ -103,47 +103,66 @@ export default function BottomNav() {
     if (!session) return null;
 
     return (
-        <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${isDark 
-            ? "bg-[#0a0a0f] border-white/[0.08]" 
-            : "bg-white border-gray-200"}`}>
-            <div className="flex items-center justify-around py-2">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                            isActive(item.href)
-                                ? isDark
-                                    ? "text-indigo-400"
-                                    : "text-indigo-600"
-                                : isDark
-                                ? "text-white/50 hover:text-white/70"
-                                : "text-gray-500 hover:text-gray-700"
-                        }`}
-                    >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-[10px] font-medium leading-none">
-                            {item.label}
-                        </span>
-                    </Link>
-                ))}
-                {/* Account Settings Button */}
+        <div
+            className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${
+                isDark
+                    ? "bg-[#0d1b2e] border-white/[0.08]"
+                    : "bg-white border-[#c8d6e8]"
+            }`}
+        >
+            <div className="flex items-center justify-around py-1">
+                {navItems.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[52px] ${
+                                active
+                                    ? isDark
+                                        ? "text-blue-400"
+                                        : "text-[#1a4fad]"
+                                    : isDark
+                                    ? "text-white/40 hover:text-white/70"
+                                    : "text-[#4a6080] hover:text-[#0f2d5c]"
+                            }`}
+                        >
+                            {active && (
+                                <span
+                                    className={`absolute top-0 left-3 right-3 h-0.5 rounded-b-full ${
+                                        isDark ? "bg-blue-400" : "bg-[#1a4fad]"
+                                    }`}
+                                />
+                            )}
+                            <item.icon className="h-5 w-5" />
+                            <span className="text-[10px] font-semibold leading-none">
+                                {item.label}
+                            </span>
+                        </Link>
+                    );
+                })}
+                {/* Account / Settings */}
                 <Link
                     href={session.role === "admin" ? "/admin/settings" : "/account"}
-                    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                    className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[52px] ${
                         isActive(session.role === "admin" ? "/admin/settings" : "/account")
                             ? isDark
-                                ? "text-indigo-400"
-                                : "text-indigo-600"
+                                ? "text-blue-400"
+                                : "text-[#1a4fad]"
                             : isDark
-                            ? "text-white/50 hover:text-white/70"
-                            : "text-gray-500 hover:text-gray-700"
+                            ? "text-white/40 hover:text-white/70"
+                            : "text-[#4a6080] hover:text-[#0f2d5c]"
                     }`}
                 >
+                    {isActive(session.role === "admin" ? "/admin/settings" : "/account") && (
+                        <span
+                            className={`absolute top-0 left-3 right-3 h-0.5 rounded-b-full ${
+                                isDark ? "bg-blue-400" : "bg-[#1a4fad]"
+                            }`}
+                        />
+                    )}
                     <UserRound className="h-5 w-5" />
-                    <span className="text-[10px] font-medium leading-none">
-                        Settings
-                    </span>
+                    <span className="text-[10px] font-semibold leading-none">Settings</span>
                 </Link>
             </div>
         </div>

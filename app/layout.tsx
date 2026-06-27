@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -11,9 +11,10 @@ import { Toaster } from "sonner";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, verifyAuthToken, type UserRole } from "@/lib/auth";
 
-const instrumentSans = Instrument_Sans({
+const inter = Inter({
     subsets: ["latin"],
     variable: "--font-sans",
+    display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{
     const useSidebar = shouldUseSidebar(role);
 
     return (
-        <html lang="en" className={cn("h-full antialiased dark", instrumentSans.variable)} suppressHydrationWarning>
+        <html lang="en" className={cn("h-full antialiased dark", inter.variable)} suppressHydrationWarning>
             <body className="h-dvh overflow-hidden flex flex-col md:flex-row font-sans">
                 <ThemeProvider>
                     <LanguageProvider>

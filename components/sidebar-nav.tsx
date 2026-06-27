@@ -28,6 +28,7 @@ import {
     History,
     QrCode,
     Info,
+    TrendingUp,
 } from "lucide-react";
 
 interface NavItem {
@@ -130,61 +131,87 @@ export default function SidebarNav() {
 
     return (
         <>
-            <aside className={`hidden md:flex flex-col h-screen fixed left-0 top-0 border-r z-40 transition-all duration-300 ${collapsed ? "w-[72px]" : "w-[260px]"} ${isDark ? "bg-[#0a0a0f] border-white/[0.08]" : "bg-white border-gray-200"}`}>
-                {/* Logo and Collapse Toggle */}
-                <div className={`flex items-center border-b border-dashed border-gray-700 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
+            <aside
+                className={`hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 transition-all duration-300 border-r ${collapsed ? "w-[72px]" : "w-[260px]"
+                    } ${isDark
+                        ? "bg-[#091829] border-white/[0.06]"
+                        : "bg-[#0f2d5c] border-[#1e3f70]"
+                    }`}
+            >
+                {/* Logo + Collapse */}
+                <div
+                    className={`flex items-center border-b border-white/10 shrink-0 ${collapsed ? "p-3 justify-center h-16" : "px-5 justify-between h-16"
+                        }`}
+                >
                     {!collapsed && (
-                        <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/20" : "bg-indigo-100"}`}>
-                                <ShieldCheck className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-blue-500/20 shrink-0">
+                                <ShieldCheck className="h-5 w-5 text-blue-400" />
                             </div>
-                            <div>
-                                <h1 className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>SpeakUp</h1>
-                                <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>Payatas</p>
+                            <div className="min-w-0">
+                                <h1 className="font-bold text-white leading-none text-[15px]">SpeakUp</h1>
+                                <p className="text-[10px] text-blue-300/70 mt-0.5 leading-none font-medium tracking-wide uppercase">
+                                    Payatas D2
+                                </p>
                             </div>
                         </div>
                     )}
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/60" : "hover:bg-gray-100 text-gray-500"} ${collapsed ? "mx-auto" : ""}`}
+                        className={`p-1.5 rounded-md transition-colors text-white/40 hover:text-white hover:bg-white/10 ${collapsed ? "mx-auto" : ""
+                            }`}
                         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </button>
                 </div>
 
+                {/* Role label */}
+                {!collapsed && session && (
+                    <div className="px-4 pt-4 pb-1">
+                        <span className="text-[9px] font-bold tracking-[0.12em] uppercase text-white/30">
+                            {session.role === "admin"
+                                ? "Administration"
+                                : session.role === "staff"
+                                    ? "Staff Portal"
+                                    : "Citizen Portal"}
+                        </span>
+                    </div>
+                )}
+
                 {/* Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            title={collapsed ? item.label : undefined}
-                            className={`flex items-center rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-3"
-                                } ${isActive(item.href)
-                                    ? isDark
-                                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                                        : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                    : isDark
-                                        ? "text-white/70 hover:bg-white/[0.05] hover:text-white"
-                                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                                }`}
-                        >
-                            <item.icon className="h-5 w-5 shrink-0" />
-                            {!collapsed && (
-                                <>
-                                    <span className="flex-1">{item.label}</span>
-                                    {isActive(item.href) && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
-                                </>
-                            )}
-                        </Link>
-                    ))}
+                <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+                    {navItems.map((item) => {
+                        const active = isActive(item.href);
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                title={collapsed ? item.label : undefined}
+                                className={`flex items-center rounded-lg text-sm font-medium transition-all duration-150 ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5"
+                                    } ${active
+                                        ? "bg-blue-500/20 text-white border-l-2 border-blue-400 pl-[10px]"
+                                        : "text-white/55 hover:bg-white/[0.07] hover:text-white border-l-2 border-transparent"
+                                    }`}
+                            >
+                                <item.icon
+                                    className={`h-4 w-4 shrink-0 ${active ? "text-blue-400" : ""}`}
+                                />
+                                {!collapsed && (
+                                    <span className="flex-1 truncate">{item.label}</span>
+                                )}
+                            </Link>
+                        );
+                    })}
                 </nav>
 
+                {/* Divider */}
+                <div className="mx-3 border-t border-white/10" />
+
                 {/* Bottom Section */}
-                <div className={`p-3 border-t border-dashed border-gray-700 space-y-3 ${collapsed ? "items-center" : ""}`}>
+                <div className={`p-3 space-y-2 shrink-0 ${collapsed ? "items-center" : ""}`}>
                     {!collapsed && (
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between px-1">
                             <LanguageToggle />
                             <ThemeToggle />
                         </div>
@@ -195,23 +222,40 @@ export default function SidebarNav() {
                         </div>
                     )}
                     {session && (
-                        <div className={`rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-gray-50 border-gray-200"} ${collapsed ? "p-2" : "p-3"}`}>
-                            <div className={`flex items-center gap-3 ${collapsed ? "flex-col" : "mb-2"}`}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDark ? "bg-white/10 text-white/70" : "bg-gray-200 text-gray-700"}`}>
+                        <div
+                            className={`rounded-lg border border-white/10 bg-white/[0.05] ${collapsed ? "p-2" : "p-3"
+                                }`}
+                        >
+                            <div className={`flex items-center gap-2.5 ${collapsed ? "flex-col" : "mb-2.5"}`}>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-300 shrink-0">
                                     <UserRound className="h-4 w-4" />
                                 </div>
                                 {!collapsed && (
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-medium truncate ${isDark ? "text-white" : "text-gray-900"}`}>{session.username}</p>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded ${roleBadgeColor}`}>{session.role}</span>
+                                        <p className="text-sm font-semibold text-white truncate">
+                                            {session.username}
+                                        </p>
+                                        <span
+                                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${session.role === "admin"
+                                                    ? "bg-red-500/20 text-red-300"
+                                                    : session.role === "staff"
+                                                        ? "bg-amber-500/20 text-amber-300"
+                                                        : "bg-blue-500/20 text-blue-300"
+                                                }`}
+                                        >
+                                            {session.role}
+                                        </span>
                                     </div>
                                 )}
-                                {!collapsed && <NotificationBell role={session.role} reporterHash={session.reporter_hash} />}
+                                {!collapsed && (
+                                    <NotificationBell role={session.role} reporterHash={session.reporter_hash} />
+                                )}
                             </div>
                             <Link
                                 href={session.role === "admin" ? "/admin/settings" : "/account"}
                                 title={collapsed ? "Account Settings" : undefined}
-                                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"} ${collapsed ? "w-full px-2" : "w-full"}`}
+                                className={`flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-colors text-white/50 hover:text-white hover:bg-white/10 ${collapsed ? "w-full px-2" : "w-full"
+                                    }`}
                             >
                                 <UserRound className="h-3.5 w-3.5" />
                                 {!collapsed && "Account Settings"}
@@ -219,7 +263,8 @@ export default function SidebarNav() {
                             <button
                                 onClick={() => setShowLogoutConfirm(true)}
                                 title={collapsed ? "Logout" : undefined}
-                                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"} ${collapsed ? "w-full px-2" : "w-full"}`}
+                                className={`flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-colors text-white/50 hover:text-white hover:bg-white/10 ${collapsed ? "w-full px-2" : "w-full"
+                                    }`}
                             >
                                 <LogOut className="h-3.5 w-3.5" />
                                 {!collapsed && "Logout"}
@@ -228,8 +273,12 @@ export default function SidebarNav() {
                     )}
                 </div>
             </aside>
-            {/* Desktop Collapsed Spacer */}
-            <div className={`hidden md:block ${collapsed ? "w-[72px]" : "w-[260px]"} shrink-0 transition-all duration-300`} />
+
+            {/* Desktop Spacer */}
+            <div
+                className={`hidden md:block shrink-0 transition-all duration-300 ${collapsed ? "w-[72px]" : "w-[260px]"
+                    }`}
+            />
             <LogoutConfirmDialog
                 open={showLogoutConfirm}
                 loading={loggingOut}

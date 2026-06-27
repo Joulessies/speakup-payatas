@@ -182,7 +182,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
         return (
             <div className={`p-8 flex justify-center items-center ${isDark ? "text-white/40" : "text-gray-400"}`}>
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span className="text-sm font-medium">Running predictive risk analysis...</span>
+                <span className="text-sm font-medium">Running system data analysis...</span>
             </div>
         );
     }
@@ -193,7 +193,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                 <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-red-400" />
                 <p className="text-xs font-semibold text-red-400">Analytics Offline</p>
                 <p className={`text-[10px] mt-0.5 ${isDark ? "text-white/40" : "text-gray-400"}`}>
-                    Need more community reports to generate predictive trend graphs.
+                    Need more community reports to generate trend graphs.
                 </p>
             </div>
         );
@@ -269,7 +269,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                     <div className="space-y-1">
                         <h4 className="text-xs font-bold uppercase tracking-wider">System Status: Stable</h4>
                         <p className={`text-xs ${isDark ? "text-emerald-400/80" : "text-emerald-700"}`}>
-                            Predictive analytics indicate a calm reporting trend. No abnormal spikes or highly-urgent clusters detected in the community.
+                            System data indicates a calm reporting trend. No abnormal spikes or highly-urgent clusters detected in the community.
                         </p>
                     </div>
                 </div>
@@ -281,7 +281,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                     <CardHeader className="pb-2">
                         <div className="flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-indigo-500" />
-                            <CardTitle className="text-sm font-semibold">18-Day Predictive Trend</CardTitle>
+                            <CardTitle className="text-sm font-semibold">18-Day Data Trend</CardTitle>
                         </div>
                         <CardDescription className="text-xs">
                             14-day history (solid) with linear regression 4-day forecast (dashed)

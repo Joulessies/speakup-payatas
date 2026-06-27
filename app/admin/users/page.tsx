@@ -130,7 +130,7 @@ export default function AdminUsersPage() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-background" : "bg-gray-50"}`}>
             <div className="max-w-4xl mx-auto w-full px-4 py-8 space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -283,7 +283,7 @@ export default function AdminUsersPage() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                    <div className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-8">
                             <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
                                 <Plus className="h-5 w-5 text-indigo-500" />
@@ -381,7 +381,7 @@ export default function AdminUsersPage() {
             {/* Suspend/Block Modal */}
             {suspendTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-5">
                             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
                                 <ShieldOff className="h-5 w-5 text-amber-500" />
@@ -433,7 +433,7 @@ export default function AdminUsersPage() {
             {/* Delete Modal */}
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-[#12121a] border border-white/10" : "bg-white border border-gray-100"}`}>
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-6">
                             <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
                                 <Trash2 className="h-5 w-5 text-red-500" />

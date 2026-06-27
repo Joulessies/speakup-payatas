@@ -4,7 +4,8 @@ import { normalizeActionHistory } from "@/lib/server-db";
 
 function serverErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Track lookup failed";
-    return NextResponse.json({ error: message }, { status: 503 });
+    console.error("[/api/track] Error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
 }
 
 export async function GET(request: Request) {
@@ -15,12 +16,26 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
         }
         
-        // Exact ID, or prefix match for hash/receipt
+        // Build a safe OR filter.
+        // In PostgREST's .or() string, ilike wildcards must be provided as
+        // `column.ilike.*value*` — the % sign is the SQL wildcard but the
+        // Supabase JS SDK .or() helper expects the raw filter string where
+        // the percent sign must be included literally (not URL-encoded).
+        // We use a single .or() with three arms, but wrap each ilike value
+        // in quotes so the filter parser doesn't choke on the % character.
+        const prefix = `${query}%`;
         const { data, error } = await getSupabaseAdmin()
             .from("reports")
             .select("id, receipt_id, category, description, severity, status, created_at, action_history")
-            .or(`id.eq.${query},reporter_hash.ilike.${query}%,receipt_id.ilike.${query}%`)
-            .order("created_at", { ascending: false });
+            .or(
+                [
+                    `id.eq.${query}`,
+                    `reporter_hash.ilike.${prefix}`,
+                    `receipt_id.ilike.${prefix}`,
+                ].join(",")
+            )
+            .order("created_at", { ascending: false })
+            .limit(50);
             
         if (error) throw new Error(error.message);
         

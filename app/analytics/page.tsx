@@ -98,12 +98,12 @@ export default function AnalyticsPage() {
         })();
     }, []);
     if (loading) {
-        return (<div className={`flex items-center justify-center h-full ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        return (<div className={`flex items-center justify-center h-full ${isDark ? "bg-background" : "bg-gray-50"}`}>
         <Loader2 className="h-8 w-8 animate-spin text-indigo-500"/>
       </div>);
     }
     if (!data) {
-        return (<div className={`flex flex-col items-center justify-center h-full gap-2 px-4 ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        return (<div className={`flex flex-col items-center justify-center h-full gap-2 px-4 ${isDark ? "bg-background" : "bg-gray-50"}`}>
         <p className={isDark ? "text-white/40" : "text-gray-400"}>Failed to load analytics.</p>
         {errorMessage && (
           <p className={`text-sm text-center max-w-md ${isDark ? "text-red-300/80" : "text-red-600"}`}>
@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
     const totalRecent = trendSeries.reduce((s, d) => s + (typeof d?.count === "number" ? d.count : 0), 0);
     const topCategory = Object.entries(categoryDistributionSafe).sort((a, b) => b[1] - a[1])[0];
     const anomalyClusters = rankedClustersSafe.filter((c) => c?.anomaly?.isAnomaly);
-    return (<div className={`h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+    return (<div className={`h-full overflow-y-auto ${isDark ? "bg-background" : "bg-gray-50"}`}>
       <div className="max-w-6xl mx-auto px-4 py-6 pb-24 md:px-8 md:py-10 space-y-6">
         
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -158,12 +158,12 @@ export default function AnalyticsPage() {
             { icon: TrendingUp, label: "Last 14 Days", value: totalRecent },
             { icon: Zap, label: "Hotspots", value: rankedClustersSafe.length },
             { icon: AlertTriangle, label: "Anomalies", value: data.anomaly_count },
-        ].map((stat) => (<div key={stat.label} className={`flex flex-col gap-2 p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
-              <stat.icon className={`h-4 w-4 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
-              <span className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+        ].map((stat) => (<div key={stat.label} className="flex flex-col gap-2 p-4 rounded-2xl border bg-card border-border">
+              <stat.icon className="h-4 w-4 text-muted-foreground"/>
+              <span className="text-2xl font-bold text-foreground">
                 {stat.value}
               </span>
-              <span className={`text-[11px] font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}>
+              <span className="text-[11px] font-medium text-muted-foreground">
                 {stat.label}
               </span>
             </div>))}

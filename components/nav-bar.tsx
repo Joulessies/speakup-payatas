@@ -100,23 +100,23 @@ export default function NavBar() {
 
     const navLinkClass = (href: string) => {
         const isActive = isActivePath(href);
-        return `shrink-0 inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-xl text-sm font-medium leading-none transition-colors ${isActive
-            ? isDark ? "bg-white/12 text-white" : "bg-gray-100 text-gray-900"
-            : isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"}`;
+        return `shrink-0 inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-lg text-sm font-medium leading-none transition-colors ${isActive
+            ? isDark ? "bg-blue-500/15 text-blue-300" : "bg-[#e8f0fb] text-[#1a4fad]"
+            : isDark ? "text-white/55 hover:text-white hover:bg-white/[0.06]" : "text-[#4a6080] hover:text-[#0f2d5c] hover:bg-[#e4eaf4]"}`;
     };
 
     const authActionClass = `inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md transition-colors ${isDark
-        ? "text-white/70 hover:text-white hover:bg-white/[0.08]" : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"}`;
+        ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-[#4a6080] hover:text-[#0f2d5c] hover:bg-[#e4eaf4]"}`;
 
-    const roleBadgeColor = session?.role === "admin" ? "bg-red-500/20 text-red-300" : session?.role === "staff" ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300";
+    const roleBadgeColor = session?.role === "admin" ? "bg-red-500/20 text-red-300" : session?.role === "staff" ? "bg-amber-500/20 text-amber-300" : "bg-blue-500/20 text-blue-300";
 
     return (<>
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center justify-between gap-3 px-4 lg:px-6 h-14 border-b z-50 backdrop-blur-xl shadow-sm shrink-0 ${isDark ? "bg-black/60 border-white/[0.06]" : "bg-white/70 border-black/[0.06]"}`}>
+        <nav className={`hidden md:flex items-center justify-between gap-3 px-4 lg:px-6 h-14 border-b z-50 backdrop-blur-xl shadow-sm shrink-0 ${isDark ? "bg-[#0d1b2e]/80 border-white/[0.06]" : "bg-white/90 border-[#c8d6e8]"}`}>
             <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-5">
                 <Link href="/" className="inline-flex shrink-0 items-center gap-2 leading-none">
-                    <ShieldCheck className={`h-[18px] w-[18px] shrink-0 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                    <span className={`hidden lg:inline text-base font-semibold tracking-tight leading-none ${isDark ? "text-white" : "text-gray-900"}`}>SpeakUp</span>
+                    <ShieldCheck className={`h-[18px] w-[18px] shrink-0 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+                    <span className={`hidden lg:inline text-base font-semibold tracking-tight leading-none ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>SpeakUp</span>
                 </Link>
                 <div className={`hidden lg:block w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
                 <div className="flex min-w-0 items-center gap-0.5">
@@ -150,7 +150,7 @@ export default function NavBar() {
                     </div>
                 )}
                 {!session && (
-                    <button type="button" onClick={handleLogin} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${isDark ? "text-white/65 border-white/[0.1] hover:text-white hover:bg-white/[0.08]" : "text-gray-700 border-black/[0.1] hover:text-gray-900 hover:bg-gray-100"}`}>Login</button>
+                    <button type="button" onClick={handleLogin} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${isDark ? "text-white/65 border-white/[0.1] hover:text-white hover:bg-white/[0.08]" : "text-[#1a4fad] border-[#c8d6e8] hover:bg-[#e8f0fb]"}`}>Login</button>
                 )}
                 <LanguageToggle />
                 <ThemeToggle />
@@ -158,14 +158,14 @@ export default function NavBar() {
         </nav>
 
         {/* Mobile nav */}
-        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl ${isDark ? "bg-black/80 border-white/[0.08]" : "bg-white/80 border-black/[0.08]"}`}>
+        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl ${isDark ? "bg-[#0d1b2e]/90 border-white/[0.08]" : "bg-white/90 border-[#c8d6e8]"}`}>
             {mobileMoreOpen && (
                 <div className={`mx-3 mb-2 mt-2 rounded-xl border p-2 ${isDark ? "bg-black/90 border-white/[0.08]" : "bg-white/95 border-black/[0.08]"}`}>
                     <div className="grid grid-cols-2 gap-2">
                         {UTIL_NAV.map((item) => (
                             <Link key={item.href} href={item.href} onClick={() => setMobileMoreOpen(false)} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isActivePath(item.href)
-                                ? isDark ? "bg-white/12 text-white" : "bg-gray-100 text-gray-900"
-                                : isDark ? "text-white/65 hover:bg-white/[0.08]" : "text-gray-600 hover:bg-gray-100"}`}>
+                                ? isDark ? "bg-blue-500/15 text-blue-300" : "bg-[#e8f0fb] text-[#1a4fad]"
+                                : isDark ? "text-white/65 hover:bg-white/[0.08]" : "text-[#4a6080] hover:bg-[#e4eaf4]"}`}>
                                 <item.icon className="h-4 w-4" />{item.label}
                             </Link>
                         ))}
@@ -194,13 +194,13 @@ export default function NavBar() {
                 {visibleMainNav.slice(0, 4).map((item) => {
                     const isActive = isActivePath(item.href);
                     return (
-                        <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors active:scale-95 ${isActive ? isDark ? "text-indigo-400" : "text-indigo-600" : isDark ? "text-white/35" : "text-gray-400"}`}>
+                <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors active:scale-95 ${isActive ? isDark ? "text-blue-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
                             <item.icon className={`h-[22px] w-[22px] ${isActive ? "scale-105" : ""} transition-transform`} />
                             <span className={`w-full truncate px-1 text-center text-[10px] font-semibold leading-none ${isActive ? "" : "opacity-70"}`}>{item.label}</span>
                         </Link>
                     );
                 })}
-                <button type="button" onClick={() => setMobileMoreOpen((prev) => !prev)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors ${mobileMoreOpen ? isDark ? "text-indigo-400" : "text-indigo-600" : isDark ? "text-white/35" : "text-gray-400"}`}>
+                <button type="button" onClick={() => setMobileMoreOpen((prev) => !prev)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors ${mobileMoreOpen ? isDark ? "text-blue-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
                     {mobileMoreOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
                     <span className={`w-full truncate px-1 text-center text-[10px] font-semibold leading-none ${mobileMoreOpen ? "" : "opacity-70"}`}>More</span>
                 </button>

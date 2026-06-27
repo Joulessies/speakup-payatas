@@ -87,7 +87,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
         <div className="space-y-4">
             {!embedded && (
                 <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs border ${isDark ? "bg-white/[0.03] border-white/10 text-white/70" : "bg-white border-gray-200 text-gray-700"}`}>
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border ${isDark ? "bg-white/[0.03] border-white/10 text-white/70" : "bg-white border-[#c8d6e8] text-[#1e3a6e]"}`}>
                         <Search className="h-4 w-4 opacity-50" />
                         <span>Filter by category:</span>
                         <select
@@ -114,7 +114,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
             {loading ? (
                 <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin opacity-50" /></div>
             ) : displayReports.length === 0 ? (
-                <div className={`p-8 text-center text-sm rounded-2xl border border-dashed ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
+                <div className={`p-8 text-center text-sm rounded-xl border border-dashed ${isDark ? "border-white/10 text-white/40" : "border-[#c8d6e8] text-[#4a6080]"}`}>
                     {embedded ? "No resolved reports yet." : "No resolved reports found for this filter."}
                 </div>
             ) : (
@@ -122,14 +122,14 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                     {displayReports.map((r) => (
                         <div
                             key={r.id}
-                            className={`rounded-2xl border overflow-hidden transition-all cursor-pointer ${
+                            className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
                                 isDark
-                                    ? "bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.04] hover:border-white/[0.12]"
-                                    : "bg-white border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
-                            } ${expandedId === r.id ? "ring-1 ring-indigo-500/30" : ""}`}
+                                    ? "bg-[#112240] border-white/[0.07] hover:bg-[#1a2f50] hover:border-white/[0.12]"
+                                    : "bg-white border-[#c8d6e8] shadow-sm hover:shadow-md hover:border-[#aec3de]"
+                            } ${expandedId === r.id ? "ring-1 ring-blue-500/30" : ""}`}
                             onClick={() => handleCardClick(r.id)}
                         >
-                            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-gray-50 border-gray-100"}`}>
+                            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-[#f0f4f8] border-[#c8d6e8]"}`}>
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                     <span className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>
@@ -166,7 +166,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                     )}
                                 </div>
                                 {embedded && (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${isDark ? "text-indigo-400" : "text-indigo-600"}`}>
+                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
                                         <ArrowRight className="h-3 w-3" /> View details
                                     </span>
                                 )}
@@ -234,7 +234,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                 <div className="text-center pt-1">
                     <button
                         onClick={() => router.push("/transparency")}
-                        className={`text-xs font-medium px-4 py-2 rounded-xl transition-colors ${isDark ? "text-indigo-400 hover:bg-indigo-500/10" : "text-indigo-600 hover:bg-indigo-50"}`}
+                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-blue-400 hover:bg-blue-500/10" : "text-[#1a4fad] hover:bg-[#e8f0fb]"}`}
                     >
                         View all {reports.length} resolved reports →
                     </button>

@@ -10,32 +10,20 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const PAYATAS_CENTER = { lat: 14.7055, lng: 121.0990 };
-const categories = [
-  "drainage_flooding",
-  "fire_hazard",
-  "safety_concern",
-  "infrastructure",
-  "sanitation_health",
-  "noise_nuisance",
-  "environmental",
-  "other"
-];
+const categories = ["flooding", "fire", "crime", "infrastructure", "health", "environmental", "other"];
 
 async function seed() {
   const reports = [];
   const now = new Date();
 
   for (let i = 0; i < 80; i++) {
-    // Generate clusters of points around some hotspots
     let lat, lng;
     if (Math.random() > 0.3) {
-      // Create a hotspot
       const hotspotLat = PAYATAS_CENTER.lat + (i % 3 - 1) * 0.003;
       const hotspotLng = PAYATAS_CENTER.lng + ((i + 1) % 3 - 1) * 0.003;
       lat = hotspotLat + (Math.random() - 0.5) * 0.001;
       lng = hotspotLng + (Math.random() - 0.5) * 0.001;
     } else {
-      // Scattered points
       lat = PAYATAS_CENTER.lat + (Math.random() - 0.5) * 0.01;
       lng = PAYATAS_CENTER.lng + (Math.random() - 0.5) * 0.01;
     }
@@ -47,7 +35,7 @@ async function seed() {
     reports.push({
       receipt_id: `REP-${Math.floor(Math.random() * 100000)}`,
       category: category,
-      severity: Math.floor(Math.random() * 5) + 1, // 1 to 5 severity
+      severity: Math.floor(Math.random() * 10) + 1, // 1 to 10 severity
       created_at: created_at,
       latitude: lat,
       longitude: lng,

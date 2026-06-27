@@ -24,7 +24,7 @@ const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
 });
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-    flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
+    flooding: <Droplets className="h-3.5 w-3.5 text-muted-foreground"/>,
     fire: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
     crime: <ShieldAlert className="h-3.5 w-3.5 text-red-400"/>,
     infrastructure: <Wrench className="h-3.5 w-3.5 text-amber-400"/>,
@@ -337,17 +337,19 @@ export default function AdminDashboard() {
       )}
 
       
-      <aside className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark
-            ? "bg-black/80 backdrop-blur-xl border-white/[0.06]"
-            : "bg-white/80 backdrop-blur-xl border-black/[0.06]"}`}>
+      <aside 
+        style={{ backgroundColor: isDark ? "#091829" : "#ffffff" }}
+        className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark
+            ? "border-white/[0.06]"
+            : "border-border"}`}>
         <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={handleClusterClick} activeCategories={activeCategories} toggleCategory={toggleCategory} filterInView={filterInView} setFilterInView={setFilterInView} mapBounds={mapBounds} t={t} workflowReports={workflowReports} workflowLoading={workflowLoading} workflowSaving={workflowSaving} statusDrafts={statusDrafts} setStatusDrafts={setStatusDrafts} noteDrafts={noteDrafts} setNoteDrafts={setNoteDrafts} handleWorkflowUpdate={handleWorkflowUpdate} showHeatmap={showHeatmap}/>
       </aside>
 
       
       <div className="hidden md:flex flex-wrap gap-2 absolute top-4 right-4 z-[1000] max-w-[70vw] justify-end">
         <div className={`flex items-center rounded-xl border px-3 py-1 text-xs font-medium backdrop-blur-xl transition-colors ${isDark
-            ? "bg-black/60 border-white/10 text-white/70 hover:bg-black/80"
-            : "bg-white/60 border-gray-200 text-gray-700 hover:bg-white/80"}`}>
+            ? "bg-card/80 border-white/10 text-white/70 hover:bg-muted"
+            : "bg-white/80 border-border text-foreground hover:bg-white"}`}>
           <span className="mr-1.5 opacity-80">Window</span>
           <Select value={timeWindow} onValueChange={(val) => setTimeWindow(val as "24h" | "7d" | "30d")}>
             <SelectTrigger className={`h-auto border-0 bg-transparent dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent text-xs focus:ring-0 focus:ring-offset-0 p-0 w-auto shadow-none font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -434,8 +436,8 @@ export default function AdminDashboard() {
       <div className={`md:hidden absolute bottom-0 left-0 right-0 z-[1000] transition-transform duration-300 ${panelOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"}`}>
         
         <button onClick={() => setPanelOpen(!panelOpen)} className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-t-2xl border-t ${isDark
-            ? "bg-black/90 border-white/[0.08] text-white/70"
-            : "bg-white/90 border-black/[0.08] text-gray-600"}`}>
+            ? "bg-[#091829]/90 border-white/[0.08] text-white/70"
+            : "bg-white/90 border-border text-foreground"}`}>
           {panelOpen ? (<ChevronDown className="h-4 w-4"/>) : (<ChevronUp className="h-4 w-4"/>)}
           <span className="text-xs font-medium">
             {loading
@@ -443,7 +445,7 @@ export default function AdminDashboard() {
             : `${filteredClusters.length} hotspots · ${totalFiltered} reports`}
           </span>
         </button>
-        <div className={`h-[60vh] overflow-y-auto ${isDark ? "bg-black/90 backdrop-blur-xl" : "bg-white/90 backdrop-blur-xl"}`}>
+        <div style={{ backgroundColor: isDark ? "#091829" : "#ffffff" }} className={`h-[60vh] overflow-y-auto`}>
           <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={(i) => {
             handleClusterClick(i);
             setPanelOpen(false);
@@ -565,7 +567,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${stat.borderColor} ${isDark ? "bg-white/[0.02]" : "bg-white/60"}`}
+                className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${stat.borderColor} ${isDark ? "bg-card/50" : "bg-white/80"}`}
               >
                 {/* gradient accent background */}
                 <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-80 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none`} />

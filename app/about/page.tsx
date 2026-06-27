@@ -1,3 +1,4 @@
+"use client";
 import {
   Shield,
   Eye,
@@ -12,31 +13,28 @@ import {
   HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
-
-export const metadata = {
-  title: "About Us — SpeakUp Payatas",
-  description:
-    "Official institutional profile of the SpeakUp anonymous community reporting platform for Barangay Payatas-A.",
-};
+import { useTheme } from "@/components/theme-provider";
 
 export default function AboutPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <div className="flex flex-col h-screen overflow-y-auto bg-slate-50 dark:bg-[#0a0a0f] text-slate-800 dark:text-slate-200">
-      {/* Decorative top ambient blur blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none select-none" />
-      <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none select-none" />
+    <div className={`flex flex-col h-screen overflow-y-auto ${isDark ? "bg-[#0d1b2e] text-white" : "bg-[#f0f4f8] text-[#0f1f3d]"}`}>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none select-none" />
+      <div className="absolute top-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none select-none" />
 
       {/* Hero Header Section */}
-      <div className="relative border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#0a0a0f] pt-16 pb-12 md:pt-32 md:pb-16">
+      <div className={`relative border-b ${isDark ? "border-white/[0.06] bg-[#0d1b2e]" : "border-[#c8d6e8] bg-white"} pt-16 pb-12 md:pt-32 md:pb-16`}>
         <div className="max-w-5xl mx-auto w-full px-4 md:px-8 space-y-4 relative z-10">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold text-xs tracking-wider uppercase bg-indigo-500/10 w-fit px-3 py-1 rounded-full border border-indigo-500/15">
+          <div className={`flex items-center gap-2 font-semibold text-xs tracking-wider uppercase w-fit px-3 py-1 rounded-md border ${isDark ? "text-blue-400 bg-blue-500/10 border-blue-500/15" : "text-[#1a4fad] bg-[#e8f0fb] border-[#c8d6e8]"}`}>
             <Info className="h-3.5 w-3.5" />
-            Platform Information & Profile
+            Platform Information &amp; Profile
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight md:leading-tight text-slate-900 dark:text-white py-2">
+          <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight md:leading-tight py-2 ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
             About SPEAKUP
           </h1>
-          <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 max-w-3xl leading-relaxed">
+          <p className={`text-sm md:text-base max-w-3xl leading-relaxed ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>
             The official algorithm-based anonymous reporting platform developed
             for the residents of Barangay Payatas-A, built to support civic
             transparency and local governance.
@@ -48,14 +46,14 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Main Info */}
           <div className="lg:col-span-7 space-y-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-indigo-500">
+            <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
               Platform Overview
             </h2>
 
-            <div className="text-sm md:text-base leading-relaxed text-slate-600 dark:text-zinc-300 space-y-5">
+            <div className={`text-sm md:text-base leading-relaxed space-y-5 ${isDark ? "text-white/65" : "text-[#4a6080]"}`}>
               <p>
                 Welcome to{" "}
-                <strong className="font-semibold text-slate-900 dark:text-white">
+                <strong className={`font-semibold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                   SPEAKUP
                 </strong>
                 , an algorithm-based anonymous reporting platform developed to
@@ -92,48 +90,51 @@ export default function AboutPage() {
 
           {/* Quick Cards */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white/70 dark:bg-white/[0.02] backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 hover:border-indigo-500/20 group space-y-3">
+            {/* Mission */}
+            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-blue-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
                   <Target className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white">
+                <h3 className={`font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                   Mission
                 </h3>
               </div>
-              <p className="text-xs md:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className={`text-xs md:text-sm leading-relaxed ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
                 To provide a secure and user-friendly anonymous reporting
                 platform that empowers residents to voice community concerns
                 responsibly and efficiently.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white/70 dark:bg-white/[0.02] backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 hover:border-emerald-500/20 group space-y-3">
+            {/* Vision */}
+            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-emerald-500/20" : "bg-white border-[#c8d6e8] hover:border-emerald-500/30 hover:shadow-md"}`}>
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200/60 text-emerald-600"}`}>
                   <Eye className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white">
+                <h3 className={`font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                   Vision
                 </h3>
               </div>
-              <p className="text-xs md:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className={`text-xs md:text-sm leading-relaxed ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
                 To become a trusted digital platform that promotes safer, more
                 responsive, and more connected communities through transparent
                 and accessible reporting systems.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white/70 dark:bg-white/[0.02] backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 hover:border-indigo-500/20 group space-y-3">
+            {/* Developers */}
+            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-blue-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
                   <Users className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white">
+                <h3 className={`font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                   Developers
                 </h3>
               </div>
-              <p className="text-xs md:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className={`text-xs md:text-sm leading-relaxed ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
                 Developed by the researchers and developers of the SPEAKUP
                 system for Barangay Payatas-A community enhancement and
                 accountability support.
@@ -143,8 +144,8 @@ export default function AboutPage() {
         </div>
 
         {/* System Features */}
-        <div className="space-y-6 pt-8 border-t border-slate-200 dark:border-white/[0.06]">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-indigo-500">
+        <div className={`space-y-6 pt-8 border-t ${isDark ? "border-white/[0.06]" : "border-[#c8d6e8]"}`}>
+          <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
             Core System Features
           </h2>
 
@@ -173,16 +174,19 @@ export default function AboutPage() {
             ].map((item, idx) => (
               <div
                 key={idx}
-                className="flex gap-4 p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white/70 dark:bg-white/[0.01] backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 hover:border-indigo-500/10"
+                className={`flex gap-4 p-5 rounded-xl border shadow-sm transition-all duration-300 ${isDark
+                  ? "bg-[#112240] border-white/[0.07] hover:border-blue-500/10"
+                  : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/20 hover:shadow-md"
+                  }`}
               >
-                <div className="text-slate-400 dark:text-zinc-600 font-bold text-sm tracking-tight pt-0.5 select-none font-mono">
+                <div className={`font-bold text-sm tracking-tight pt-0.5 select-none font-mono shrink-0 ${isDark ? "text-white/25" : "text-[#4a6080]/50"}`}>
                   0{idx + 1}.
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h4 className={`text-sm font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
                     {item.label}
                   </h4>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                  <p className={`text-xs leading-relaxed ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>
                     {item.desc}
                   </p>
                 </div>
@@ -192,10 +196,13 @@ export default function AboutPage() {
         </div>
 
         {/* Return Button */}
-        <div className="flex justify-start pt-8 border-t border-slate-200 dark:border-white/[0.06]">
+        <div className={`flex justify-start pt-8 border-t ${isDark ? "border-white/[0.06]" : "border-[#c8d6e8]"}`}>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 border border-slate-300 dark:border-zinc-700 bg-white/50 dark:bg-white/[0.02] rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-900 transition-colors shadow-sm"
+            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 border rounded-lg transition-colors shadow-sm ${isDark
+              ? "border-white/[0.08] bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white"
+              : "border-[#c8d6e8] bg-white text-[#1e3a6e] hover:bg-[#e8f0fb] hover:text-[#0f2d5c]"
+              }`}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Return to Dashboard
