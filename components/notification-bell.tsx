@@ -114,8 +114,8 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const getIcon = (type: string) => {
         if (type === "high_priority") return <AlertTriangle className="h-3.5 w-3.5 text-red-400" />;
-        if (type === "status_update") return <RefreshCw className="h-3.5 w-3.5 text-blue-400" />;
-        return <FileWarning className="h-3.5 w-3.5 text-indigo-400" />;
+        if (type === "status_update") return <RefreshCw className="h-3.5 w-3.5 text-emerald-400" />;
+        return <FileWarning className="h-3.5 w-3.5 text-emerald-400" />;
     };
 
     return (
@@ -174,7 +174,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                         key={n.id}
                                         onClick={() => handleNotifClick(n)}
                                         className={`w-full text-left flex items-start gap-3 px-4 py-3 border-b transition-colors hover:bg-opacity-80 ${!n.read
-                                                ? isDark ? "bg-indigo-500/[0.08] border-white/[0.04] hover:bg-indigo-500/[0.12]" : "bg-indigo-50/60 border-gray-50 hover:bg-indigo-50"
+                                                ? isDark ? "bg-[#e6f4ea]0/[0.08] border-white/[0.04] hover:bg-[#e6f4ea]0/[0.12]" : "bg-[#e6f4ea]/60 border-gray-50 hover:bg-[#e6f4ea]"
                                                 : isDark ? "border-white/[0.04] hover:bg-white/[0.03]" : "border-gray-50 hover:bg-gray-50"
                                             }`}
                                     >
@@ -191,7 +191,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end gap-1 shrink-0">
-                                            {!n.read && <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1" />}
+                                            {!n.read && <span className="w-2 h-2 rounded-full bg-[#e6f4ea]0 mt-1" />}
                                             {n.report_id && <ExternalLink className={`h-3 w-3 ${isDark ? "text-white/20" : "text-gray-300"}`} />}
                                         </div>
                                     </button>
@@ -208,14 +208,14 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                     isDark ? "bg-[#0d0d12]/95 border-white/10 text-white shadow-black/50" : "bg-white/95 border-gray-200 text-gray-900 shadow-gray-200/50"
                 }`}>
                     <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1.5 rounded-xl bg-indigo-500/10 shrink-0 text-indigo-400">
+                        <div className="mt-0.5 p-1.5 rounded-xl bg-emerald-500/10 shrink-0 text-emerald-400">
                             {getIcon(activeToast.type)}
                         </div>
                         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => {
                             handleNotifClick(activeToast);
                             setActiveToast(null);
                         }}>
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500 mb-0.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500 mb-0.5">
                                 Bagong Ulat / New Alert
                             </p>
                             <h4 className="text-xs font-bold truncate">

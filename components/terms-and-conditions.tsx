@@ -40,8 +40,8 @@ export default function TermsAndConditions({ open, onClose }: TermsAndConditions
             >
                 <div className={`flex items-center justify-between px-5 py-4 border-b shrink-0 ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}>
                     <div className="flex items-center gap-2">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
-                            <ScrollText className={`h-4 w-4 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isDark ? "bg-[#e6f4ea]0/15" : "bg-[#e6f4ea]"}`}>
+                            <ScrollText className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <h2 id="terms-title" className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                             Terms & Conditions
@@ -157,8 +157,8 @@ export default function TermsAndConditions({ open, onClose }: TermsAndConditions
                         onClick={onClose}
                         className={`px-5 h-9 rounded-lg text-sm font-semibold transition-colors ${
                             isDark
-                                ? "bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30"
-                                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                                ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                                : "bg-[#047857] text-white hover:bg-emerald-700"
                         }`}
                     >
                         I understand

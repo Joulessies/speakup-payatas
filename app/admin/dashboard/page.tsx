@@ -86,18 +86,18 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-red-500/15" : "bg-red-50"}`}>
-                        <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-red-400" : "text-red-600"}`} />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-emerald-50"}`}>
+                        <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                     </div>
                     <div>
-                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Admin Dashboard
                         </h1>
-                        <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-slate-600"}`}>
+                        <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                             System overview and management.
                         </p>
                     </div>
@@ -106,32 +106,32 @@ export default function AdminDashboard() {
                 {/* Stats Grid */}
                 {loading ? (
                     <div className="flex items-center justify-center p-8">
-                        <Loader2 className="h-8 w-8 animate-spin opacity-50" />
+                        <Loader2 className="h-8 w-8 animate-spin opacity-50 text-emerald-500" />
                     </div>
                 ) : stats ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <Link href="/admin/reports" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
+                        <Link href="/admin/reports" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-[#06382b] border-emerald-500/20 hover:bg-emerald-500/10" : "bg-[#f4fbf7] border-emerald-200 hover:bg-emerald-100/60"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <FileWarning className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Total Reports</span>
+                                <FileWarning className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>Total Reports</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.totalReports}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{stats.totalReports}</p>
                         </Link>
-                        <Link href="/admin/users" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
+                        <Link href="/admin/users" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-[#06382b] border-emerald-500/20 hover:bg-emerald-500/10" : "bg-[#f4fbf7] border-emerald-200 hover:bg-emerald-100/60"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <Users className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Total Users</span>
+                                <Users className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>Total Users</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.totalUsers}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{stats.totalUsers}</p>
                         </Link>
-                        <Link href="/admin" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-slate-800 border-white/[0.07] hover:bg-white/[0.05]" : "bg-white border-slate-300 hover:bg-slate-200"}`}>
+                        <Link href="/admin" className={`p-4 rounded-2xl border transition-colors ${isDark ? "bg-[#06382b] border-emerald-500/20 hover:bg-emerald-500/10" : "bg-[#f4fbf7] border-emerald-200 hover:bg-emerald-100/60"}`}>
                             <div className="flex items-center gap-2 mb-2">
-                                <MapPin className={`h-4 w-4 ${isDark ? "text-white/40" : "text-slate-600"}`} />
-                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>Active Hotspots</span>
+                                <MapPin className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>Active Hotspots</span>
                             </div>
-                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{stats.activeHotspots}</p>
+                            <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{stats.activeHotspots}</p>
                         </Link>
-                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
+                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <CheckCircle2 className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                                 <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>Resolved</span>
@@ -179,17 +179,17 @@ export default function AdminDashboard() {
 
                 {/* Category Breakdown */}
                 {stats && Object.keys(stats.byCategory).length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-slate-800 border-white/[0.07]" : "bg-white border-slate-300"}`}>
-                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-slate-600"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                             Reports by Category
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {Object.entries(stats.byCategory).map(([category, count]) => (
-                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-white/[0.02]" : "bg-slate-50"}`}>
-                                    <span className={`text-[11px] ${isDark ? "text-white/60" : "text-slate-600"}`}>
+                                <div key={category} className={`p-3 rounded-xl border ${isDark ? "bg-emerald-500/5 border-emerald-500/10" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                                    <span className={`text-[11px] font-medium ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                         {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
                                     </span>
-                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{count}</p>
+                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{count}</p>
                                 </div>
                             ))}
                         </div>
@@ -202,16 +202,16 @@ export default function AdminDashboard() {
                         href="/admin"
                         className={`p-4 rounded-2xl border flex items-center gap-4 transition-colors ${
                             isDark
-                                ? "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20"
-                                : "bg-indigo-50 border-indigo-100 hover:bg-indigo-100"
+                                ? "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+                                : "bg-[#e6f4ea] border-emerald-200 hover:bg-emerald-100"
                         }`}
                     >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/20" : "bg-indigo-100"}`}>
-                            <MapPin className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                            <MapPin className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h3 className={`font-semibold ${isDark ? "text-indigo-300" : "text-indigo-700"}`}>Hotspot Map</h3>
-                            <p className={`text-xs ${isDark ? "text-indigo-400/70" : "text-indigo-600/70"}`}>View incident clusters</p>
+                            <h3 className={`font-semibold ${isDark ? "text-emerald-300" : "text-[#064e3b]"}`}>Hotspot Map</h3>
+                            <p className={`text-xs ${isDark ? "text-emerald-400/70" : "text-[#047857]/70"}`}>View incident clusters</p>
                         </div>
                     </Link>
                     <Link
@@ -219,54 +219,54 @@ export default function AdminDashboard() {
                         className={`p-4 rounded-2xl border flex items-center gap-4 transition-colors ${
                             isDark
                                 ? "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
-                                : "bg-emerald-50 border-emerald-100 hover:bg-emerald-100"
+                                : "bg-[#e6f4ea] border-emerald-200 hover:bg-emerald-100"
                         }`}
                     >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
                             <Shield className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                         </div>
                         <div>
-                            <h3 className={`font-semibold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Manage Reports</h3>
-                            <p className={`text-xs ${isDark ? "text-emerald-400/70" : "text-emerald-600/70"}`}>Verify and manage reports</p>
+                            <h3 className={`font-semibold ${isDark ? "text-emerald-300" : "text-[#064e3b]"}`}>Manage Reports</h3>
+                            <p className={`text-xs ${isDark ? "text-emerald-400/70" : "text-[#047857]/70"}`}>Verify and manage reports</p>
                         </div>
                     </Link>
                     <Link
                         href="/analytics"
                         className={`p-4 rounded-2xl border flex items-center gap-4 transition-colors ${
                             isDark
-                                ? "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20"
-                                : "bg-amber-50 border-amber-100 hover:bg-amber-100"
+                                ? "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+                                : "bg-[#e6f4ea] border-emerald-200 hover:bg-emerald-100"
                         }`}
                     >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/20" : "bg-amber-100"}`}>
-                            <BarChart3 className={`h-5 w-5 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                            <BarChart3 className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h3 className={`font-semibold ${isDark ? "text-amber-300" : "text-amber-700"}`}>Analytics</h3>
-                            <p className={`text-xs ${isDark ? "text-amber-400/70" : "text-amber-600/70"}`}>Detailed statistics</p>
+                            <h3 className={`font-semibold ${isDark ? "text-emerald-300" : "text-[#064e3b]"}`}>Analytics</h3>
+                            <p className={`text-xs ${isDark ? "text-emerald-400/70" : "text-[#047857]/70"}`}>Detailed statistics</p>
                         </div>
                     </Link>
                 </div>
 
                 {/* Recent Reports */}
                 {stats && stats.recentReports.length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-slate-800 border-white/[0.07]" : "bg-white border-slate-300"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-slate-600"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Recent Reports
                             </h2>
-                            <Link href="/admin/reports" className={`text-xs ${isDark ? "text-blue-400 hover:text-blue-300" : "text-[#1a4fad] hover:text-[#1544a0]"}`}>
+                            <Link href="/admin/reports" className={`text-xs font-semibold ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}>
                                 View all
                             </Link>
                         </div>
                         <div className="space-y-2">
                             {stats.recentReports.map((report) => (
-                                <div key={report.id} className={`p-3 rounded-xl flex items-center justify-between ${isDark ? "bg-white/[0.02]" : "bg-slate-50"}`}>
+                                <div key={report.id} className={`p-3 rounded-xl flex items-center justify-between border ${isDark ? "bg-emerald-500/5 border-emerald-500/10" : "bg-[#e6f4ea] border-emerald-200"}`}>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : "border-slate-300 text-slate-600"}>
+                                        <Badge variant="outline" className={isDark ? "border-emerald-500/30 text-emerald-300" : "border-emerald-300 text-[#047857]"}>
                                             {CATEGORY_LABELS[report.category as keyof typeof CATEGORY_LABELS] || report.category}
                                         </Badge>
-                                        <span className={`text-xs ${isDark ? "text-white/50" : "text-slate-600"}`}>
+                                        <span className={`text-xs ${isDark ? "text-white/70" : "text-[#064e3b]"}`}>
                                             {report.description?.slice(0, 40) || "No description"}...
                                         </span>
                                     </div>
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                                         report.verification_status === "valid" ? "bg-emerald-500/10 text-emerald-500"
                                         : report.verification_status === "spam" ? "bg-red-500/10 text-red-500"
                                         : report.verification_status === "duplicate" ? "bg-amber-500/10 text-amber-500"
-                                        : "bg-blue-500/10 text-blue-500"
+                                        : "bg-emerald-500/10 text-emerald-500"
                                     }`}>
                                         {report.verification_status}
                                     </Badge>

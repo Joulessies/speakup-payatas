@@ -15,7 +15,7 @@ interface TrendPoint {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-    flooding: "#60a5fa", fire: "#fb923c", crime: "#f87171",
+    flooding: "#059669", fire: "#fb923c", crime: "#f87171",
     infrastructure: "#fbbf24", health: "#f472b6",
     environmental: "#34d399", other: "#9ca3af",
 };
@@ -44,7 +44,7 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
                 <div className={`p-2 rounded-lg shadow-lg border text-xs font-sans ${isDark ? "bg-[#0a0a0f] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}>
                     <p className={`font-semibold mb-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>{label}</p>
                     <p className="font-bold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         {payload[0].value} reports
                     </p>
                 </div>
@@ -59,8 +59,8 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
                 <AreaChart data={formattedData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#059669" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <XAxis 
@@ -78,7 +78,7 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
                     <Area 
                         type="monotone" 
                         dataKey="count" 
-                        stroke="#6366f1" 
+                        stroke="#059669" 
                         strokeWidth={2.5}
                         fillOpacity={1} 
                         fill="url(#colorCount)" 
@@ -245,19 +245,19 @@ export default function StaffDashboard() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
-                            <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
+                            <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 Staff Dashboard
                             </h1>
-                            <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                 Overview of reports and verification status.
                             </p>
                         </div>
@@ -283,9 +283,9 @@ export default function StaffDashboard() {
                     </div>
                 ) : stats ? (
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
                             <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Total Reports</span>
-                            <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}>{stats.total}</p>
+                            <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-[#064e3b]"}`}>{stats.total}</p>
                         </div>
                         <div className={`p-4 rounded-2xl border ${isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-100"}`}>
                             <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-amber-400" : "text-amber-600"}`}>Unreviewed</span>
@@ -299,26 +299,26 @@ export default function StaffDashboard() {
                             <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-red-400" : "text-red-600"}`}>Spam</span>
                             <p className={`text-2xl font-bold mt-1 text-red-500`}>{stats.spam}</p>
                         </div>
-                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-blue-500/10 border-blue-500/20" : "bg-blue-50 border-blue-100"}`}>
-                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-blue-400" : "text-blue-600"}`}>Duplicate</span>
-                            <p className={`text-2xl font-bold mt-1 text-blue-500`}>{stats.duplicate}</p>
+                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-orange-500/10 border-orange-500/20" : "bg-orange-50 border-orange-100"}`}>
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-orange-400" : "text-orange-600"}`}>Duplicate</span>
+                            <p className={`text-2xl font-bold mt-1 text-orange-500`}>{stats.duplicate}</p>
                         </div>
                     </div>
                 ) : null}
 
                 {/* Category Breakdown */}
                 {stats && Object.keys(stats.byCategory).length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                             Reports by Category
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {Object.entries(stats.byCategory).map(([category, count]) => (
-                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-white/[0.02]" : "bg-gray-50"}`}>
-                                    <span className={`text-[11px] ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-emerald-500/5" : "bg-[#e6f4ea]"}`}>
+                                    <span className={`text-[11px] ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                         {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
                                     </span>
-                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{count}</p>
+                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{count}</p>
                                 </div>
                             ))}
                         </div>
@@ -328,12 +328,12 @@ export default function StaffDashboard() {
                 {/* Hotspot Map & Analytics Dashboard */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Hotspot Map Card */}
-                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                         <div className="mb-4">
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Active Hotspot Risk Map (Payatas-A)
                             </h2>
-                            <p className={`text-xs mt-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                            <p className={`text-xs mt-1 ${isDark ? "text-white/40" : "text-[#047857]/60"}`}>
                                 DBSCAN-clustered risk assessments based on local resident reports.
                             </p>
                         </div>
@@ -347,8 +347,8 @@ export default function StaffDashboard() {
                             />
                         </div>
                         {selectedCluster !== null && clusters[selectedCluster] && (
-                            <div className={`mt-3 p-3 rounded-xl border text-xs leading-relaxed ${isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-indigo-50/50 border-indigo-100"}`}>
-                                <h4 className="font-bold text-indigo-400">
+                            <div className={`mt-3 p-3 rounded-xl border text-xs leading-relaxed ${isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
+                                <h4 className="font-bold text-emerald-500">
                                     Cluster Details — {clusters[selectedCluster].count} reports
                                 </h4>
                                 <p className={`mt-1 ${isDark ? "text-white/70" : "text-gray-600"}`}>
@@ -364,14 +364,14 @@ export default function StaffDashboard() {
                     </div>
 
                     {/* Analytics Trend & Distribution */}
-                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col justify-between ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col justify-between ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                         <div>
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
-                                    <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                    <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                         Report Frequency Trend
                                     </h2>
-                                    <p className={`text-xs mt-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                                    <p className={`text-xs mt-1 ${isDark ? "text-white/40" : "text-[#047857]/60"}`}>
                                         Volume of reports submitted in the last 14 days.
                                     </p>
                                 </div>
@@ -385,8 +385,8 @@ export default function StaffDashboard() {
                             )}
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-dashed border-border/50">
-                            <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <div className="mt-6 pt-4 border-t border-dashed border-emerald-500/20">
+                            <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Primary Incident Types
                             </h3>
                             {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 ? (
@@ -399,9 +399,9 @@ export default function StaffDashboard() {
                                             return (
                                                 <div key={cat} className="flex items-center gap-3">
                                                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
-                                                    <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}</span>
-                                                    <div className={`w-20 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                                                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                                                    <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-[#064e3b]"}`}>{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}</span>
+                                                    <div className={`w-20 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-emerald-100"}`}>
+                                                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
                                                     </div>
                                                     <span className={`text-[10px] font-mono w-8 text-right ${isDark ? "text-white/45" : "text-gray-500"}`}>{pct}%</span>
                                                 </div>
@@ -421,16 +421,16 @@ export default function StaffDashboard() {
                         href="/staff"
                         className={`p-4 rounded-2xl border flex items-center gap-4 transition-colors ${
                             isDark
-                                ? "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20"
-                                : "bg-indigo-50 border-indigo-100 hover:bg-indigo-100"
+                                ? "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+                                : "bg-[#e6f4ea] border-emerald-200 hover:bg-emerald-100"
                         }`}
                     >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-indigo-500/20" : "bg-indigo-100"}`}>
-                            <FileWarning className={`h-5 w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                            <FileWarning className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h3 className={`font-semibold ${isDark ? "text-indigo-300" : "text-indigo-700"}`}>Verification Queue</h3>
-                            <p className={`text-xs ${isDark ? "text-indigo-400/70" : "text-indigo-600/70"}`}>Review and verify pending reports</p>
+                            <h3 className={`font-semibold ${isDark ? "text-emerald-300" : "text-[#064e3b]"}`}>Verification Queue</h3>
+                            <p className={`text-xs ${isDark ? "text-emerald-400/70" : "text-[#047857]/70"}`}>Review and verify pending reports</p>
                         </div>
                     </Link>
                     <Link

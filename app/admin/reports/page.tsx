@@ -57,6 +57,55 @@ export default function AdminReportsPage() {
         }
     };
 
+    const [adminNotes, setAdminNotes] = useState<{ id: string; author_id: string; author_role: string; content: string; created_at: string }[]>([]);
+    const [newAdminNote, setNewAdminNote] = useState("");
+    const [savingAdminNote, setSavingAdminNote] = useState(false);
+
+    const loadAdminNotes = async (reportId: string) => {
+        try {
+            const res = await fetch(`/api/reports/notes?report_id=${reportId}`);
+            const data = await res.json();
+            setAdminNotes(data.notes ?? []);
+        } catch {
+            setAdminNotes([]);
+        }
+    };
+
+    useEffect(() => {
+        const targetId = viewTarget?.id || editTarget?.id;
+        if (targetId) {
+            loadAdminNotes(targetId);
+        } else {
+            setAdminNotes([]);
+        }
+    }, [viewTarget, editTarget]);
+
+    const handleAddAdminNote = async (reportId: string) => {
+        if (!newAdminNote.trim()) return;
+        setSavingAdminNote(true);
+        try {
+            const res = await fetch("/api/reports/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    report_id: reportId,
+                    author: "Admin",
+                    author_role: "admin",
+                    content: newAdminNote.trim(),
+                })
+            });
+            if (res.ok) {
+                toast.success("Internal note added");
+                setNewAdminNote("");
+                loadAdminNotes(reportId);
+            }
+        } catch {
+            toast.error("Failed to add note");
+        } finally {
+            setSavingAdminNote(false);
+        }
+    };
+
     useEffect(() => {
         loadReports();
     }, []);
@@ -195,7 +244,7 @@ export default function AdminReportsPage() {
                                                 <div className="flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => setViewTarget(r)}
-                                                        className="p-2 rounded-lg transition-colors text-blue-500 hover:bg-blue-500/10"
+                                                        className="p-2 rounded-lg transition-colors text-emerald-500 hover:bg-emerald-500/10"
                                                         title="View Details"
                                                     >
                                                         <Eye className="h-4 w-4" />
@@ -265,7 +314,7 @@ export default function AdminReportsPage() {
                                                 key={p}
                                                 onClick={() => setCurrentPage(p)}
                                                 className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                                                    ? (isDark ? "bg-indigo-500 text-white" : "bg-indigo-500 text-white")
+                                                    ? (isDark ? "bg-[#e6f4ea]0 text-white" : "bg-[#e6f4ea]0 text-white")
                                                     : (isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700")
                                                     }`}
                                             >
@@ -332,8 +381,8 @@ export default function AdminReportsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className={`w-full max-w-2xl p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Eye className="h-5 w-5 text-blue-500" />
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <Eye className="h-5 w-5 text-emerald-500" />
                             </div>
                             <div>
                                 <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -408,6 +457,49 @@ export default function AdminReportsPage() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Internal Notes Section */}
+                            <div className="pt-3 border-t border-dashed border-border/50 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                        Internal Notes ({adminNotes.length})
+                                    </h3>
+                                    <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                        Staff & Admin Only
+                                    </span>
+                                </div>
+                                {adminNotes.length === 0 ? (
+                                    <p className={`text-xs italic ${isDark ? "text-white/40" : "text-gray-500"}`}>No internal notes added yet.</p>
+                                ) : (
+                                    <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                                        {adminNotes.map((n) => (
+                                            <div key={n.id} className={`p-2.5 rounded-xl border text-xs ${isDark ? "bg-white/[0.03] border-white/10 text-white/80" : "bg-gray-50 border-gray-200 text-gray-800"}`}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="font-semibold text-emerald-500 capitalize">{n.author_id} ({n.author_role})</span>
+                                                    <span className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>{new Date(n.created_at).toLocaleString()}</span>
+                                                </div>
+                                                <p>{n.content}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="flex gap-2 pt-1">
+                                    <input
+                                        type="text"
+                                        value={newAdminNote}
+                                        onChange={(e) => setNewAdminNote(e.target.value)}
+                                        placeholder="Add an internal note for staff..."
+                                        className={`flex-1 text-xs px-3 py-2 rounded-xl border outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                    />
+                                    <button
+                                        disabled={savingAdminNote || !newAdminNote.trim()}
+                                        onClick={() => handleAddAdminNote(viewTarget.id)}
+                                        className="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        Post Note
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div className="mt-6 flex gap-3">
                             <button
@@ -444,7 +536,7 @@ export default function AdminReportsPage() {
                                 <select
                                     value={editTarget.category}
                                     onChange={(e) => setEditTarget({ ...editTarget, category: e.target.value })}
-                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                 >
                                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                                         <option key={key} value={key}>{label}</option>
@@ -466,7 +558,7 @@ export default function AdminReportsPage() {
                                     <select
                                         value={editTarget.status}
                                         onChange={(e) => setEditTarget({ ...editTarget, status: e.target.value })}
-                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                     >
                                         <option value="pending">Pending</option>
                                         <option value="in_progress">In Progress</option>
@@ -479,7 +571,7 @@ export default function AdminReportsPage() {
                                     <select
                                         value={editTarget.verification_status}
                                         onChange={(e) => setEditTarget({ ...editTarget, verification_status: e.target.value })}
-                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                     >
                                         <option value="unreviewed">Unreviewed</option>
                                         <option value="valid">Valid</option>

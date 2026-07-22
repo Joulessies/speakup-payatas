@@ -80,72 +80,72 @@ export default function AccountSettingsPage() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-4xl mx-auto w-full px-4 py-8 space-y-8 pb-24">
                 {/* Header */}
                 <div>
-                    <h1 className={`text-3xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                    <h1 className={`text-3xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                         Account Settings
                     </h1>
-                    <p className={`text-sm mt-2 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                    <p className={`text-sm mt-2 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                         {profileLoading ? "Loading your profile…" : `Signed in as ${profile.role} · ${profile.username}`}
                     </p>
                 </div>
 
                 {/* Profile Information */}
                 <div className={`rounded-2xl border p-6 space-y-6 ${isDark 
-                    ? "bg-white/5 border-white/10" 
-                    : "bg-white border-gray-200"}`}>
+                    ? "bg-[#06382b] border-emerald-500/20" 
+                    : "bg-[#f4fbf7] border-emerald-200"}`}>
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark 
-                            ? "bg-indigo-500/20 text-indigo-400" 
-                            : "bg-indigo-100 text-indigo-600"}`}>
+                            ? "bg-emerald-500/20 text-emerald-400" 
+                            : "bg-[#e6f4ea] text-[#059669]"}`}>
                             <User className="h-5 w-5" />
                         </div>
-                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Profile Information
                         </h2>
                     </div>
 
                     {profileLoading ? (
                         <div className="flex items-center justify-center py-8">
-                            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+                            <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
                         </div>
                     ) : (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-emerald-300/80" : "text-[#047857]"}`}>
                                         Username
                                     </label>
                                     <input
                                         type="text"
                                         value={profile.username}
                                         disabled
-                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-60 cursor-not-allowed ${isDark
-                                            ? "bg-white/5 border-white/10 text-white"
-                                            : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-80 cursor-not-allowed ${isDark
+                                            ? "bg-emerald-500/5 border-emerald-500/20 text-white"
+                                            : "bg-white border-emerald-200 text-[#064e3b]"}`}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                                    <label className={`block text-sm font-medium mb-2 ${isDark ? "text-emerald-300/80" : "text-[#047857]"}`}>
                                         Role
                                     </label>
                                     <input
                                         type="text"
                                         value={profile.role}
                                         disabled
-                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-60 cursor-not-allowed capitalize ${isDark
-                                            ? "bg-white/5 border-white/10 text-white"
-                                            : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                        className={`w-full px-4 py-2 rounded-lg border outline-none opacity-80 cursor-not-allowed capitalize ${isDark
+                                            ? "bg-emerald-500/5 border-emerald-500/20 text-white"
+                                            : "bg-white border-emerald-200 text-[#064e3b]"}`}
                                     />
                                 </div>
                             </div>
 
-                            <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-indigo-500/[0.06] border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}>
-                                <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
-                                <p className={`text-xs leading-relaxed ${isDark ? "text-indigo-200/80" : "text-indigo-700"}`}>
+                            <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                                <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                                <p className={`text-xs leading-relaxed ${isDark ? "text-emerald-200/80" : "text-[#047857]"}`}>
                                     Admin and staff profiles are system accounts managed via server environment variables.
                                     To update credentials, modify the <code className="font-mono">ADMIN_EMAIL</code> / <code className="font-mono">STAFF_EMAIL</code> variables and restart the server.
                                 </p>
@@ -156,27 +156,27 @@ export default function AccountSettingsPage() {
 
                 {/* Security */}
                 <div className={`rounded-2xl border p-6 space-y-6 ${isDark
-                    ? "bg-white/5 border-white/10"
-                    : "bg-white border-gray-200"}`}>
+                    ? "bg-[#06382b] border-emerald-500/20"
+                    : "bg-[#f4fbf7] border-emerald-200"}`}>
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-amber-100 text-amber-600"}`}>
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-[#e6f4ea] text-[#059669]"}`}>
                             <Lock className="h-5 w-5" />
                         </div>
-                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Security
                         </h2>
                     </div>
 
-                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-amber-500/[0.06] border-amber-500/20" : "bg-amber-50 border-amber-200"}`}>
-                        <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
+                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                        <Info className={`h-4 w-4 mt-0.5 shrink-0 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         <div>
-                            <p className={`text-xs leading-relaxed ${isDark ? "text-amber-200/80" : "text-amber-700"}`}>
+                            <p className={`text-xs leading-relaxed ${isDark ? "text-emerald-200/80" : "text-[#047857]"}`}>
                                 Admin and staff passwords are managed through server environment variables for security.
                             </p>
-                            <p className={`text-xs leading-relaxed mt-1.5 ${isDark ? "text-amber-200/60" : "text-amber-600"}`}>
-                                To change your password, update the <code className="font-mono px-1 py-0.5 rounded bg-amber-500/10">ADMIN_PASSWORD</code> or <code className="font-mono px-1 py-0.5 rounded bg-amber-500/10">STAFF_PASSWORD</code> environment variable in your deployment configuration, then restart the server.
+                            <p className={`text-xs leading-relaxed mt-1.5 ${isDark ? "text-emerald-300/70" : "text-[#059669]"}`}>
+                                To change your password, update the <code className="font-mono px-1 py-0.5 rounded bg-emerald-500/10">ADMIN_PASSWORD</code> or <code className="font-mono px-1 py-0.5 rounded bg-emerald-500/10">STAFF_PASSWORD</code> environment variable in your deployment configuration, then restart the server.
                             </p>
                         </div>
                     </div>
@@ -184,30 +184,30 @@ export default function AccountSettingsPage() {
 
                 {/* Preferences */}
                 <div className={`rounded-2xl border p-6 space-y-6 ${isDark 
-                    ? "bg-white/5 border-white/10" 
-                    : "bg-white border-gray-200"}`}>
+                    ? "bg-[#06382b] border-emerald-500/20" 
+                    : "bg-[#f4fbf7] border-emerald-200"}`}>
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark 
-                            ? "bg-purple-500/20 text-purple-400" 
-                            : "bg-purple-100 text-purple-600"}`}>
+                            ? "bg-emerald-500/20 text-emerald-400" 
+                            : "bg-[#e6f4ea] text-[#059669]"}`}>
                             <Palette className="h-5 w-5" />
                         </div>
-                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Preferences
                         </h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-emerald-300/80" : "text-[#047857]"}`}>
                                 Theme
                             </label>
                             <select
                                 value={theme}
                                 onChange={() => toggleTheme()}
-                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                    ? "bg-white/5 border-white/10 text-white" 
-                                    : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${isDark 
+                                    ? "bg-emerald-500/5 border-emerald-500/20 text-white [&>option]:bg-[#04271e] [&>option]:text-white" 
+                                    : "bg-white border-emerald-200 text-[#064e3b] [&>option]:bg-white [&>option]:text-gray-900"}`}
                             >
                                 <option value="light">Light</option>
                                 <option value="dark">Dark</option>
@@ -215,15 +215,15 @@ export default function AccountSettingsPage() {
                         </div>
 
                         <div>
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                            <label className={`block text-sm font-medium mb-2 ${isDark ? "text-emerald-300/80" : "text-[#047857]"}`}>
                                 Language
                             </label>
                             <select
                                 value={locale}
                                 onChange={(e) => setLocale(e.target.value as "en" | "fil")}
-                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${isDark 
-                                    ? "bg-white/5 border-white/10 text-white" 
-                                    : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                                className={`w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${isDark 
+                                    ? "bg-emerald-500/5 border-emerald-500/20 text-white [&>option]:bg-[#04271e] [&>option]:text-white" 
+                                    : "bg-white border-emerald-200 text-[#064e3b] [&>option]:bg-white [&>option]:text-gray-900"}`}
                             >
                                 <option value="en">English</option>
                                 <option value="fil">Tagalog</option>

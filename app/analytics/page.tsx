@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
     }, []);
     if (loading) {
         return (<div className={`flex items-center justify-center h-full ${isDark ? "bg-background" : "bg-gray-50"}`}>
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500"/>
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500"/>
       </div>);
     }
     if (!data) {
@@ -198,7 +198,7 @@ export default function AnalyticsPage() {
                         {cat}
                       </span>
                       <div className={`flex-1 h-2 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                        <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${pct}%` }}/>
+                        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}/>
                       </div>
                       <span className={`text-xs font-mono w-14 text-right ${isDark ? "text-white/45" : "text-gray-500"}`}>
                         {count} ({pct}%)

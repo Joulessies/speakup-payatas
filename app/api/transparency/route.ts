@@ -80,10 +80,11 @@ export async function GET(request: Request) {
                 severity: r.severity,
                 status: r.status,
                 created_at: r.created_at,
-                resolved_at: r.action_history.find((a) => a.status === "resolved")?.created_at,
+                photo_url: r.photo_url,
+                resolved_at: r.action_history.find((a) => a.status === "resolved")?.created_at || r.created_at,
                 actions_taken: r.action_history
                     .filter((a) => a.actor !== "Resident" && a.actor !== "System")
-                    .map((a) => ({ status: a.status, note: a.note, date: a.created_at })),
+                    .map((a) => ({ status: a.status, note: a.note, date: a.created_at, photo_url: a.photo_url })),
                 feedback: {
                     count: entries.length,
                     average_rating: avg,

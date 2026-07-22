@@ -4,9 +4,11 @@ import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { translateCategory } from "@/lib/i18n";
-import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
+import PredictiveAnalytics from "./predictive-analytics";
+import BarangaySystemDashboard from "./barangay-system-dashboard";
 import type { ClusterResult } from "@/types";
 import {
   Select,
@@ -338,10 +340,10 @@ export default function AdminDashboard() {
 
       
       <aside 
-        style={{ backgroundColor: isDark ? "#091829" : "#ffffff" }}
+        style={{ backgroundColor: isDark ? "#04271e" : "#f4fbf7" }}
         className={`hidden md:flex flex-col w-80 relative z-10 border-r overflow-y-auto ${isDark
-            ? "border-white/[0.06]"
-            : "border-border"}`}>
+            ? "border-emerald-500/20"
+            : "border-emerald-200"}`}>
         <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={handleClusterClick} activeCategories={activeCategories} toggleCategory={toggleCategory} filterInView={filterInView} setFilterInView={setFilterInView} mapBounds={mapBounds} t={t} workflowReports={workflowReports} workflowLoading={workflowLoading} workflowSaving={workflowSaving} statusDrafts={statusDrafts} setStatusDrafts={setStatusDrafts} noteDrafts={noteDrafts} setNoteDrafts={setNoteDrafts} handleWorkflowUpdate={handleWorkflowUpdate} showHeatmap={showHeatmap}/>
       </aside>
 
@@ -382,8 +384,8 @@ export default function AdminDashboard() {
             setPlaybackRunning(false);
         }} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-xl transition-colors ${playbackEnabled
             ? isDark
-                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                : "bg-[#e6f4ea] text-[#047857] border border-emerald-200"
             : isDark
                 ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80"
                 : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80"}`}>
@@ -397,17 +399,17 @@ export default function AdminDashboard() {
           </button>)}
         <button onClick={() => setShowHeatmap(!showHeatmap)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium backdrop-blur-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98] ${showHeatmap
             ? isDark
-                ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-200 border border-indigo-400/30 shadow-indigo-500/10"
-                : "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border border-indigo-300 shadow-indigo-500/20"
+                ? "bg-gradient-to-r from-emerald-600/30 to-teal-600/30 text-emerald-200 border border-emerald-500/40 shadow-emerald-500/10"
+                : "bg-[#e6f4ea] text-[#047857] border border-emerald-300 shadow-emerald-500/20"
             : isDark
                 ? "bg-black/60 text-white/70 border border-white/10 hover:bg-black/80 hover:text-white hover:border-white/20"
                 : "bg-white/70 text-gray-700 border border-gray-200 hover:bg-white/90 hover:text-gray-900 hover:border-gray-300"}`}>
           <div className={`relative ${showHeatmap ? "animate-pulse" : ""}`}>
-            <Layers className={`h-4 w-4 ${showHeatmap ? "text-indigo-400" : ""}`} />
-            {showHeatmap && <div className="absolute -inset-1 bg-indigo-400 rounded-full blur-sm opacity-30 animate-ping"></div>}
+            <Layers className={`h-4 w-4 ${showHeatmap ? "text-emerald-400" : ""}`} />
+            {showHeatmap && <div className="absolute -inset-1 bg-emerald-400 rounded-full blur-sm opacity-30 animate-ping"></div>}
           </div>
           <span className="font-medium">{showHeatmap ? t.mapHeatmapActive : t.mapHeatmap}</span>
-          {showHeatmap && <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>}
+          {showHeatmap && <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>}
         </button>
       </div>
       {playbackEnabled && playbackFrames.length > 0 && (<div className={`hidden md:flex items-center gap-2 absolute top-16 right-4 z-[1000] rounded-xl border px-3 py-2 text-xs backdrop-blur-xl ${isDark
@@ -420,24 +422,24 @@ export default function AdminDashboard() {
       
       <button onClick={() => setShowHeatmap(!showHeatmap)} className={`md:hidden absolute top-4 right-4 z-[1000] flex items-center justify-center w-12 h-12 rounded-full shadow-lg backdrop-blur-xl transition-all duration-200 hover:shadow-xl transform hover:scale-105 active:scale-95 ${showHeatmap
             ? isDark
-                ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-200 border border-indigo-400/30 shadow-indigo-500/20"
-                : "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border border-indigo-300 shadow-indigo-500/30"
+                ? "bg-gradient-to-r from-emerald-600/30 to-teal-600/30 text-emerald-200 border border-emerald-500/40 shadow-emerald-500/20"
+                : "bg-[#e6f4ea] text-[#047857] border border-emerald-300 shadow-emerald-500/30"
             : isDark
                 ? "bg-black/60 text-white/60 border border-white/10 hover:bg-black/80 hover:text-white"
                 : "bg-white/60 text-gray-600 border border-gray-200 hover:bg-white/80 hover:text-gray-900"}`}>
         <div className={`relative ${showHeatmap ? "animate-pulse" : ""}`}>
-          <Layers className={`h-5 w-5 ${showHeatmap ? "text-indigo-400" : ""}`} />
-          {showHeatmap && <div className="absolute -inset-1 bg-indigo-400 rounded-full blur-sm opacity-30 animate-ping"></div>}
+          <Layers className={`h-5 w-5 ${showHeatmap ? "text-emerald-400" : ""}`} />
+          {showHeatmap && <div className="absolute -inset-1 bg-emerald-400 rounded-full blur-sm opacity-30 animate-ping"></div>}
         </div>
-        {showHeatmap && <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-400 rounded-full animate-pulse"></div>}
+        {showHeatmap && <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>}
       </button>
 
       
       <div className={`md:hidden absolute bottom-0 left-0 right-0 z-[1000] transition-transform duration-300 ${panelOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"}`}>
         
         <button onClick={() => setPanelOpen(!panelOpen)} className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-t-2xl border-t ${isDark
-            ? "bg-[#091829]/90 border-white/[0.08] text-white/70"
-            : "bg-white/90 border-border text-foreground"}`}>
+            ? "bg-[#04271e]/90 border-emerald-500/20 text-white/70"
+            : "bg-[#f4fbf7]/90 border-emerald-200 text-[#064e3b]"}`}>
           {panelOpen ? (<ChevronDown className="h-4 w-4"/>) : (<ChevronUp className="h-4 w-4"/>)}
           <span className="text-xs font-medium">
             {loading
@@ -445,7 +447,7 @@ export default function AdminDashboard() {
             : `${filteredClusters.length} hotspots · ${totalFiltered} reports`}
           </span>
         </button>
-        <div style={{ backgroundColor: isDark ? "#091829" : "#ffffff" }} className={`h-[60vh] overflow-y-auto`}>
+        <div style={{ backgroundColor: isDark ? "#04271e" : "#f4fbf7" }} className={`h-[60vh] overflow-y-auto`}>
           <SidebarContent isDark={isDark} loading={loading} totalReports={sourceTotalReports} totalFiltered={totalFiltered} noiseCount={sourceNoiseCount} clusters={filteredClusters} selectedCluster={selectedCluster} setSelectedCluster={(i) => {
             handleClusterClick(i);
             setPanelOpen(false);
@@ -515,7 +517,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         URL.revokeObjectURL(url);
     };
     return (<div className="flex flex-col gap-4 p-4 md:gap-5 md:p-5 pb-24 md:pb-24">
-      
+
       <div>
         <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
           {t.adminOverview}
@@ -530,12 +532,12 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                   value: totalReports,
                   icon: BarChart3,
                   gradient: isDark
-                    ? "from-indigo-500/15 via-indigo-500/5 to-transparent"
+                    ? "from-emerald-500/15 via-emerald-500/5 to-transparent"
                     : "from-indigo-50 via-indigo-50/50 to-transparent",
-                  iconBg: isDark ? "bg-indigo-500/15" : "bg-indigo-100",
-                  iconColor: isDark ? "text-indigo-400" : "text-indigo-600",
+                  iconBg: isDark ? "bg-[#e6f4ea]0/15" : "bg-emerald-100",
+                  iconColor: isDark ? "text-emerald-400" : "text-[#059669]",
                   accentDot: "bg-indigo-400",
-                  borderColor: isDark ? "border-indigo-500/20" : "border-indigo-200",
+                  borderColor: isDark ? "border-emerald-500/20" : "border-emerald-200",
                   valueSuffix: "total",
                 },
                 {
@@ -567,7 +569,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${stat.borderColor} ${isDark ? "bg-card/50" : "bg-white/80"}`}
+                className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl border overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${stat.borderColor} ${isDark ? "bg-[#06382b]/60" : "bg-white"}`}
               >
                 {/* gradient accent background */}
                 <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-80 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none`} />
@@ -579,14 +581,14 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                 </div>
                 {/* text content */}
                 <div className="relative z-[1] flex flex-col min-w-0">
-                  <span className={`text-xl font-extrabold tracking-tight leading-none ${isDark ? "text-white" : "text-gray-900"}`}>
+                  <span className={`text-xl font-extrabold tracking-tight leading-none ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                     {stat.value}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-[11px] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                    <span className={`text-[11px] font-semibold ${isDark ? "text-emerald-300/80" : "text-[#047857]"}`}>
                       {stat.label}
                     </span>
-                    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.06] text-white/35" : "bg-black/[0.04] text-gray-400"}`}>
+                    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${isDark ? "bg-emerald-500/20 text-emerald-300" : "bg-emerald-100 text-[#047857]"}`}>
                       {stat.valueSuffix}
                     </span>
                   </div>
@@ -604,8 +606,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         <div className="mb-2">
           <button type="button" onClick={() => setFilterInView((prev) => !prev)} className={`inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterInView
                 ? isDark
-                    ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                    : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "bg-[#e6f4ea] text-[#047857] border border-emerald-200"
                 : isDark
                     ? "bg-white/[0.03] text-white/55 border border-white/[0.08]"
                     : "bg-black/[0.02] text-gray-500 border border-black/[0.06]"}`}>
@@ -621,11 +623,11 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             const isActive = activeCategories.has(cat);
             return (<button key={cat} onClick={() => toggleCategory(cat)} className={`flex min-h-8 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${isActive
                     ? isDark
-                        ? "bg-white/10 text-white ring-1 ring-white/15"
-                        : "bg-gray-100 text-gray-900 ring-1 ring-gray-200"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : "bg-[#e6f4ea] text-[#047857] border border-emerald-300"
                     : isDark
-                        ? "bg-white/[0.03] text-white/45 hover:bg-white/[0.06]"
-                        : "bg-black/[0.02] text-gray-400 hover:bg-black/[0.05]"}`}>
+                        ? "bg-white/[0.03] text-white/55 hover:bg-emerald-500/10 border border-transparent"
+                        : "bg-white text-gray-700 border border-emerald-100 hover:bg-[#e6f4ea]"}`}>
                 {CATEGORY_ICONS[cat]}
                 {translateCategory(cat, t)}
               </button>);
@@ -648,18 +650,18 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
             const topCategory = Object.entries(cluster.category_breakdown).sort((a, b) => b[1] - a[1])[0];
             return (<button key={i} onClick={() => setSelectedCluster(isSelected ? null : i)} className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left border transition-all ${isSelected
                     ? isDark
-                        ? "bg-indigo-500/15 border-indigo-500/35 ring-1 ring-indigo-500/25"
-                        : "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200"
+                        ? "bg-emerald-500/20 border-emerald-500/40 ring-1 ring-emerald-500/30"
+                        : "bg-[#e6f4ea] border-emerald-300 ring-1 ring-emerald-300"
                     : isDark
-                        ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
-                        : "bg-black/[0.02] border-black/[0.05] hover:bg-black/[0.04]"}`}>
+                        ? "bg-white/[0.03] border-white/[0.06] hover:bg-emerald-500/10"
+                        : "bg-white border-emerald-100 hover:bg-[#e6f4ea]"}`}>
                 <div className="flex flex-col items-center gap-1 min-w-[40px]">
-                  <span className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  <span className={`text-lg font-bold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                     {cluster.count}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className={`w-1.5 h-1.5 rounded-full ${density.color}`}/>
-                    <span className={`text-[9px] font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                    <span className={`text-[9px] font-medium ${isDark ? "text-emerald-200/60" : "text-[#047857]"}`}>
                       {density.text}
                     </span>
                   </div>
@@ -667,15 +669,15 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
                     {topCategory && CATEGORY_ICONS[topCategory[0]]}
-                    <span className={`text-sm font-medium truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                    <span className={`text-sm font-medium truncate ${isDark ? "text-white/90" : "text-[#064e3b]"}`}>
                       {topCategory ? translateCategory(topCategory[0], t) : (t.catOther || "Mixed")}
                     </span>
                   </div>
-                  <span className={`block text-[10px] font-mono truncate ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                  <span className={`block text-[10px] font-mono truncate ${isDark ? "text-emerald-300/60" : "text-[#059669]"}`}>
                     {cluster.latitude.toFixed(5)}, {cluster.longitude.toFixed(5)}
                   </span>
                 </div>
-                <Badge variant="outline" className={`text-[10px] shrink-0 ${isDark ? "border-white/10 text-white/45" : "border-gray-200 text-gray-500"}`}>
+                <Badge variant="outline" className={`text-[10px] shrink-0 ${isDark ? "border-emerald-500/30 text-emerald-300" : "border-emerald-300 text-[#047857]"}`}>
                   {Object.keys(cluster.category_breakdown).length} type
                   {Object.keys(cluster.category_breakdown).length > 1 ? "s" : ""}
                 </Badge>
@@ -726,18 +728,18 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
 
       
       <div>
-        <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-4 flex items-center gap-2 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-          <div className={`w-2 h-2 rounded-full ${showHeatmap ? "bg-indigo-400 animate-pulse" : "bg-gray-400"}`}></div>
+        <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-4 flex items-center gap-2 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
+          <div className={`w-2 h-2 rounded-full ${showHeatmap ? "bg-emerald-400 animate-pulse" : "bg-gray-400"}`}></div>
           {t.adminDensityLegend}
-          {showHeatmap && <span className="text-[9px] font-normal text-indigo-400">(Active)</span>}
+          {showHeatmap && <span className="text-[9px] font-normal text-emerald-400">(Active)</span>}
         </h2>
         <div className={`grid grid-cols-2 gap-x-4 gap-y-2 p-3 rounded-xl border transition-all duration-200 ${showHeatmap
             ? isDark
-                ? "bg-indigo-500/5 border-indigo-400/20 shadow-indigo-500/10"
-                : "bg-indigo-50 border-indigo-200 shadow-indigo-500/20"
+                ? "bg-emerald-500/10 border-emerald-500/30 shadow-emerald-500/10"
+                : "bg-[#e6f4ea] border-emerald-200 shadow-emerald-500/20"
             : isDark
                 ? "bg-white/[0.02] border-white/[0.04]"
-                : "bg-black/[0.02] border-black/[0.04]"}`}>
+                : "bg-white border-emerald-100"}`}>
           {[
             { color: "bg-emerald-500", label: t.adminDensityLow, intensity: t.sevLow || "Low" },
             { color: "bg-amber-500", label: t.adminDensityMedium, intensity: t.sevModerate || "Medium" },
@@ -749,10 +751,10 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                 {showHeatmap && <div className={`absolute -inset-1 ${item.color} rounded-full blur-sm opacity-30 animate-pulse`}></div>}
               </div>
               <div className="flex flex-col">
-                <span className={`text-sm font-medium transition-colors duration-200 ${isDark ? "text-white/70" : "text-gray-600"} ${showHeatmap ? "text-white/90" : ""}`}>
+                <span className={`text-sm font-medium transition-colors duration-200 ${isDark ? "text-white/80" : "text-[#064e3b]"} ${showHeatmap ? "text-white" : ""}`}>
                   {item.intensity}
                 </span>
-                <span className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                <span className={`text-[10px] ${isDark ? "text-emerald-300/60" : "text-[#047857]"}`}>
                   {item.label}
                 </span>
               </div>
@@ -760,10 +762,10 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         </div>
         {showHeatmap && (
           <div className={`mt-3 p-3 rounded-xl border text-xs ${isDark
-            ? "bg-indigo-500/10 border-indigo-400/20 text-indigo-200"
-            : "bg-indigo-50 border-indigo-200 text-indigo-700"}`}>
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+            : "bg-[#e6f4ea] border-emerald-200 text-[#047857]"}`}>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
               <span className="font-medium">{t.mapHeatmapActive}</span>
             </div>
             <p className="text-[10px] opacity-80">{t.mapHeatmapHint}</p>
@@ -773,13 +775,23 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
 
       
       {clusters.length > 0 && (<button onClick={exportCSV} className={`mt-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-colors ${isDark
-                ? "bg-white/[0.06] border-white/10 text-white/75 hover:bg-white/10 hover:text-white"
-                : "bg-black/[0.04] border-black/10 text-gray-600 hover:bg-black/[0.08] hover:text-gray-900"}`}>
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20"
+                : "bg-[#e6f4ea] border-emerald-200 text-[#047857] hover:bg-emerald-100"}`}>
           <Download className="h-3.5 w-3.5"/>
           {t.adminExportCSV}
         </button>)}
 
       
+      <div>
+        <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-2 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+          <TrendingUp className="h-4 w-4 text-emerald-500" />
+          Spatial Hotspots & Category Trajectory Analysis
+        </h2>
+        <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+          <PredictiveAnalytics isDark={isDark} />
+        </div>
+      </div>
+
       <div>
         <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>
           Verification Queue

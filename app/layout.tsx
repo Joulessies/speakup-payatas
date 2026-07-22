@@ -20,6 +20,11 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: "SpeakUp Payatas (D2) — Anonymous Community Reporting",
     description: "Report incidents anonymously in Payatas, Quezon City (District 2). Works offline. Your identity stays private.",
+    icons: {
+        icon: "/payatas-logo.png",
+        shortcut: "/payatas-logo.png",
+        apple: "/payatas-logo.png",
+    },
 };
 
 // Determine if role should use sidebar (all roles now use sidebar for consistency)
@@ -40,12 +45,17 @@ export default async function RootLayout({ children }: Readonly<{
 
     return (
         <html lang="en" className={cn("h-full antialiased dark", inter.variable)} suppressHydrationWarning>
+            <head>
+                <link rel="icon" href="/payatas-logo.png" type="image/png" />
+                <link rel="shortcut icon" href="/payatas-logo.png" type="image/png" />
+                <link rel="apple-touch-icon" href="/payatas-logo.png" />
+            </head>
             <body className="h-dvh overflow-hidden flex flex-col md:flex-row font-sans">
                 <ThemeProvider>
                     <LanguageProvider>
                         {isLoggedIn && useSidebar && <SidebarNav />}
                         {isLoggedIn && !useSidebar && <NavBar />}
-                        <main className={`flex-1 min-h-0 ${isLoggedIn ? "overflow-hidden pb-14 md:pb-0" : "overflow-y-auto pb-0"}`}>
+                        <main className={`flex-1 min-h-0 h-full overflow-y-auto ${isLoggedIn ? "pb-14 md:pb-0" : "pb-0"}`}>
                             {children}
                         </main>
                         {isLoggedIn && useSidebar && <BottomNav />}

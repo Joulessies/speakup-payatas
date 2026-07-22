@@ -75,7 +75,7 @@ export default function MapsMissingKey({
                         href={anchorForCode(errorCode)}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block text-xs text-indigo-500 underline underline-offset-2 hover:text-indigo-400"
+                        className="inline-block text-xs text-emerald-500 underline underline-offset-2 hover:text-emerald-400"
                     >
                         Troubleshooting guide
                     </a>

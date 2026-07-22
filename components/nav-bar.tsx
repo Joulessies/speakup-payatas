@@ -101,22 +101,23 @@ export default function NavBar() {
     const navLinkClass = (href: string) => {
         const isActive = isActivePath(href);
         return `shrink-0 inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-lg text-sm font-medium leading-none transition-colors ${isActive
-            ? isDark ? "bg-blue-500/15 text-blue-300" : "bg-[#e8f0fb] text-[#1a4fad]"
-            : isDark ? "text-white/55 hover:text-white hover:bg-white/[0.06]" : "text-[#4a6080] hover:text-[#0f2d5c] hover:bg-[#e4eaf4]"}`;
+            ? isDark ? "bg-emerald-500/20 text-emerald-300" : "bg-emerald-50 text-[#059669]"
+            : isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-[#064e3b] hover:text-[#047857] hover:bg-[#e6f4ea]"}`;
     };
 
     const authActionClass = `inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md transition-colors ${isDark
-        ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-[#4a6080] hover:text-[#0f2d5c] hover:bg-[#e4eaf4]"}`;
+        ? "text-white/60 hover:text-white hover:bg-white/[0.08]" : "text-[#064e3b] hover:text-[#047857] hover:bg-[#e6f4ea]"}`;
 
-    const roleBadgeColor = session?.role === "admin" ? "bg-red-500/20 text-red-300" : session?.role === "staff" ? "bg-amber-500/20 text-amber-300" : "bg-blue-500/20 text-blue-300";
+    const roleBadgeColor = session?.role === "admin" ? "bg-red-500/20 text-red-300" : session?.role === "staff" ? "bg-amber-500/20 text-amber-300" : "bg-emerald-500/20 text-emerald-300";
 
     return (<>
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center justify-between gap-3 px-4 lg:px-6 h-14 border-b z-50 backdrop-blur-xl shadow-sm shrink-0 ${isDark ? "bg-[#0d1b2e]/80 border-white/[0.06]" : "bg-white/90 border-[#c8d6e8]"}`}>
+        <nav className={`hidden md:flex items-center justify-between gap-3 px-4 lg:px-6 h-14 border-b z-50 backdrop-blur-xl shadow-sm shrink-0 ${isDark ? "bg-[#04271e]/90 border-emerald-500/20" : "bg-white/95 border-emerald-200"}`}>
             <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-5">
                 <Link href="/" className="inline-flex shrink-0 items-center gap-2 leading-none">
-                    <ShieldCheck className={`h-[18px] w-[18px] shrink-0 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
-                    <span className={`hidden lg:inline text-base font-semibold tracking-tight leading-none ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>SpeakUp</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/payatas-logo.png" alt="Barangay Payatas Logo" className="h-6 w-6 object-contain shrink-0" />
+                    <span className={`hidden lg:inline text-base font-bold tracking-tight leading-none ${isDark ? "text-white" : "text-[#064e3b]"}`}>SpeakUp Payatas</span>
                 </Link>
                 <div className={`hidden lg:block w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
                 <div className="flex min-w-0 items-center gap-0.5">
@@ -194,13 +195,13 @@ export default function NavBar() {
                 {visibleMainNav.slice(0, 4).map((item) => {
                     const isActive = isActivePath(item.href);
                     return (
-                <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors active:scale-95 ${isActive ? isDark ? "text-blue-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
+                <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors active:scale-95 ${isActive ? isDark ? "text-emerald-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
                             <item.icon className={`h-[22px] w-[22px] ${isActive ? "scale-105" : ""} transition-transform`} />
                             <span className={`w-full truncate px-1 text-center text-[10px] font-semibold leading-none ${isActive ? "" : "opacity-70"}`}>{item.label}</span>
                         </Link>
                     );
                 })}
-                <button type="button" onClick={() => setMobileMoreOpen((prev) => !prev)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors ${mobileMoreOpen ? isDark ? "text-blue-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
+                <button type="button" onClick={() => setMobileMoreOpen((prev) => !prev)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors ${mobileMoreOpen ? isDark ? "text-emerald-400" : "text-[#1a4fad]" : isDark ? "text-white/35" : "text-[#4a6080]"}`}>
                     {mobileMoreOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
                     <span className={`w-full truncate px-1 text-center text-[10px] font-semibold leading-none ${mobileMoreOpen ? "" : "opacity-70"}`}>More</span>
                 </button>

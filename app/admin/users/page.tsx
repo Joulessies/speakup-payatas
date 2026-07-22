@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
                     </div>
                     <button
                         onClick={() => openModal()}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#059669] hover:bg-[#047857] transition-colors"
                     >
                         <Plus className="h-4 w-4" /> Add Staff
                     </button>
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                                                 )}
                                             </td>
                                             <td className="p-4">
-                                                <Badge variant="outline" className={`text-[10px] capitalize ${u.role === "admin" ? "text-red-500 border-red-500/20" : u.role === "staff" ? "text-blue-500 border-blue-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
+                                                <Badge variant="outline" className={`text-[10px] capitalize ${u.role === "admin" ? "text-red-500 border-red-500/20" : u.role === "staff" ? "text-emerald-500 border-emerald-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
                                                     {u.role}
                                                 </Badge>
                                             </td>
@@ -254,7 +254,7 @@ export default function AdminUsersPage() {
                                                 onClick={() => setCurrentPage(p)}
                                                 className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                                                     currentPage === p 
-                                                    ? (isDark ? "bg-indigo-500 text-white" : "bg-indigo-500 text-white") 
+                                                    ? (isDark ? "bg-emerald-500 text-white" : "bg-emerald-500 text-white") 
                                                     : (isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700")
                                                 }`}
                                             >
@@ -285,8 +285,8 @@ export default function AdminUsersPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
                         <div className="flex items-start gap-4 mb-8">
-                            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Plus className="h-5 w-5 text-indigo-500" />
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <Plus className="h-5 w-5 text-emerald-600" />
                             </div>
                             <div className="flex-1">
                                 <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -310,7 +310,7 @@ export default function AdminUsersPage() {
                                     readOnly={!!editingUser}
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all ${
                                         isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
                                     } ${editingUser ? "opacity-60 cursor-not-allowed" : ""}`}
                                 />
@@ -326,7 +326,7 @@ export default function AdminUsersPage() {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder="Min 6 characters"
-                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all ${
                                             isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
                                         }`}
                                     />
@@ -343,7 +343,7 @@ export default function AdminUsersPage() {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder="Leave blank to keep current"
-                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all ${
+                                        className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all ${
                                             isDark ? "bg-white/5 border-white/10 text-white placeholder-white/40" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500"
                                         }`}
                                     />
@@ -354,7 +354,7 @@ export default function AdminUsersPage() {
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "staff" | "user" })}
-                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat ${
+                                    className={`w-full px-4 py-3 text-sm rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat ${
                                         isDark
                                             ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#1a1a24] [&>option]:text-white"
                                             : "bg-gray-50 border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"
@@ -368,7 +368,7 @@ export default function AdminUsersPage() {
                             <div className="pt-4">
                                 <button
                                     onClick={handleSave}
-                                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#059669] hover:bg-[#047857] transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     Add Staff
                                 </button>

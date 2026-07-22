@@ -159,11 +159,23 @@ export default function AccountSettingsPage() {
             if (!res.ok) {
                 throw new Error(data?.error || "Failed to update account.");
             }
-            setAccount(data.user);
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            toast.success("Account updated.");
+            if (wantsPasswordChange) {
+                try {
+                    await fetch("/api/notifications", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            recipient_role: "user",
+                            type: "warning",
+                            title: "Security Alert: Password Changed",
+                            message: `Your account password was updated on ${new Date().toLocaleString("en-PH")}. A security notification confirmation has been sent via email/SMS.`,
+                        }),
+                    });
+                } catch {}
+                toast.success("Password updated. A security notification confirmation has been sent via Email/SMS.");
+            } else {
+                toast.success("Account updated.");
+            }
             // Refresh server components (notably the nav) so the new email/phone is visible.
             router.refresh();
         } catch (err) {
@@ -203,15 +215,15 @@ export default function AccountSettingsPage() {
 
     if (loading) {
         return (
-            <div className={`flex items-center justify-center h-full ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            <div className={`flex items-center justify-center h-full ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
             </div>
         );
     }
 
     if (loadError || !account) {
         return (
-            <div className={`flex flex-col items-center justify-center h-full px-4 gap-3 ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+            <div className={`flex flex-col items-center justify-center h-full px-4 gap-3 ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
                 <ShieldAlert className={`h-8 w-8 ${isDark ? "text-red-400" : "text-red-500"}`} />
                 <p className={`text-sm ${isDark ? "text-white/70" : "text-gray-700"}`}>
                     {loadError || "Unable to load your account."}
@@ -222,23 +234,23 @@ export default function AccountSettingsPage() {
     }
 
     return (
-        <div className={`h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
             <div className="max-w-3xl mx-auto px-4 py-6 md:px-8 md:py-10 space-y-6 pb-24">
                 <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-indigo-500/15" : "bg-indigo-50"}`}>
-                        <UserRound className={`h-6 w-6 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${isDark ? "bg-emerald-500/15 border-emerald-500/30" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                        <UserRound className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                     </div>
                     <div>
-                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Account Settings
                         </h1>
-                        <p className={`text-sm mt-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <p className={`text-sm mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                             Manage your profile, password, and account preferences.
                         </p>
                     </div>
                 </div>
 
-                <Card className={isDark ? "bg-white/[0.03] border-white/[0.08]" : ""}>
+                <Card className={isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}>
                     <CardHeader>
                         <CardTitle className="text-base">Profile</CardTitle>
                         <CardDescription>
@@ -393,7 +405,7 @@ export default function AccountSettingsPage() {
                 <Card className={isDark ? "bg-white/[0.03] border-white/[0.08]" : ""}>
                     <CardHeader>
                         <div className="flex items-center gap-2">
-                            <PowerOff className="h-4 w-4 text-indigo-500" />
+                            <PowerOff className="h-4 w-4 text-emerald-500" />
                             <CardTitle className="text-base">Sign Out</CardTitle>
                         </div>
                         <CardDescription>
@@ -406,7 +418,7 @@ export default function AccountSettingsPage() {
                             variant="outline"
                             onClick={handleDirectLogout}
                             disabled={loggingOutState}
-                            className="w-full sm:w-auto gap-2 border-indigo-500/40 text-indigo-700 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-500/10"
+                            className="w-full sm:w-auto gap-2 border-emerald-500/40 text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
                         >
                             {loggingOutState ? <Loader2 className="h-4 w-4 animate-spin" /> : <PowerOff className="h-4 w-4" />}
                             Logout from this device

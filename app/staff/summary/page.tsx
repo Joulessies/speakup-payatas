@@ -121,7 +121,7 @@ export default function StaffMonthlySummary() {
     };
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0a0a0f]" : "bg-gray-50"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-4xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -130,10 +130,10 @@ export default function StaffMonthlySummary() {
                             <BarChart3 className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                         </div>
                         <div>
-                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 Monthly Summary
                             </h1>
-                            <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                 Analytics for barangay meeting use.
                             </p>
                         </div>
@@ -142,8 +142,8 @@ export default function StaffMonthlySummary() {
                         onClick={exportToCSV}
                         disabled={loading || !data}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isDark
-                                ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                                ? "bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                : "bg-[#e6f4ea] text-[#047857] hover:bg-emerald-100"
                             }`}
                     >
                         <Download className="h-4 w-4" />
@@ -152,25 +152,25 @@ export default function StaffMonthlySummary() {
                 </div>
 
                 {/* Month Selector */}
-                <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
+                <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => changeMonth(-1)}
-                            className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+                            className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-emerald-500/10" : "hover:bg-[#e6f4ea]"}`}
                         >
-                            <ArrowLeft className={`h-5 w-5 ${isDark ? "text-white/60" : "text-gray-600"}`} />
+                            <ArrowLeft className={`h-5 w-5 ${isDark ? "text-emerald-300" : "text-[#059669]"}`} />
                         </button>
                         <div className="flex items-center gap-2">
-                            <Calendar className={`h-5 w-5 ${isDark ? "text-white/60" : "text-gray-600"}`} />
-                            <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <Calendar className={`h-5 w-5 ${isDark ? "text-emerald-300" : "text-[#059669]"}`} />
+                            <span className={`font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 {data?.month || currentMonth.toLocaleDateString("en-PH", { year: "numeric", month: "long" })}
                             </span>
                         </div>
                         <button
                             onClick={() => changeMonth(1)}
-                            className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+                            className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-emerald-500/10" : "hover:bg-[#e6f4ea]"}`}
                         >
-                            <ArrowRight className={`h-5 w-5 ${isDark ? "text-white/60" : "text-gray-600"}`} />
+                            <ArrowRight className={`h-5 w-5 ${isDark ? "text-emerald-300" : "text-[#059669]"}`} />
                         </button>
                     </div>
                 </div>
@@ -182,21 +182,21 @@ export default function StaffMonthlySummary() {
                 ) : data ? (
                     <>
                         {/* Total Reports */}
-                        <div className={`p-6 rounded-2xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"}`}>
+                        <div className={`p-6 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-100"}`}>
                             <div className="flex items-center gap-4">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-indigo-500/20" : "bg-indigo-100"}`}>
-                                    <TrendingUp className={`h-7 w-7 ${isDark ? "text-indigo-400" : "text-indigo-600"}`} />
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
+                                    <TrendingUp className={`h-7 w-7 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                                 </div>
                                 <div>
-                                    <p className={`text-sm ${isDark ? "text-indigo-300" : "text-indigo-700"}`}>Total Reports</p>
+                                    <p className={`text-sm ${isDark ? "text-emerald-300" : "text-[#047857]"}`}>Total Reports</p>
                                     <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{data.total}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Top Issues */}
-                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Top Issues
                             </h2>
                             {data.topIssues.length > 0 ? (
@@ -206,40 +206,40 @@ export default function StaffMonthlySummary() {
                                             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${idx === 0 ? (isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-700")
                                                     : idx === 1 ? (isDark ? "bg-gray-500/20 text-gray-400" : "bg-gray-200 text-gray-700")
                                                         : idx === 2 ? (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-700")
-                                                            : (isDark ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-600")
+                                                            : (isDark ? "bg-emerald-500/10 text-emerald-300" : "bg-emerald-100 text-emerald-600")
                                                 }`}>
                                                 {idx + 1}
                                             </span>
                                             <div className="flex-1">
-                                                <p className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}>
+                                                <p className={`text-sm font-medium ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                                     {CATEGORY_LABELS[issue.category as keyof typeof CATEGORY_LABELS] || issue.category}
                                                 </p>
                                             </div>
-                                            <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
+                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isDark ? "bg-emerald-500/10 text-emerald-300" : "bg-[#e6f4ea] text-[#047857]"}`}>
                                                 {issue.count} reports
-                                            </Badge>
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>No reports for this month.</p>
+                                <p className={`text-sm ${isDark ? "text-white/40" : "text-[#047857]/60"}`}>No reports for this month.</p>
                             )}
                         </div>
 
                         {/* Most Affected Areas */}
-                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Most Affected Areas
                             </h2>
                             {data.mostAffectedAreas.length > 0 ? (
                                 <div className="space-y-3">
                                     {data.mostAffectedAreas.map((area, idx) => (
                                         <div key={area.area} className="flex items-center gap-3">
-                                            <MapPin className={`h-4 w-4 ${isDark ? "text-white/40" : "text-gray-400"}`} />
+                                            <MapPin className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                                             <div className="flex-1">
-                                                <p className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{area.area}</p>
+                                                <p className={`text-sm font-medium ${isDark ? "text-white" : "text-[#064e3b]"}`}>{area.area}</p>
                                             </div>
-                                            <span className={`text-xs ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isDark ? "bg-emerald-500/10 text-emerald-300" : "bg-[#e6f4ea] text-[#047857]"}`}>
                                                 {area.count} reports
                                             </span>
                                         </div>
@@ -251,23 +251,23 @@ export default function StaffMonthlySummary() {
                         </div>
 
                         {/* Status Breakdown */}
-                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Status Breakdown
                             </h2>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {Object.entries(data.byStatus).map(([status, count]) => (
-                                    <div key={status} className={`p-3 rounded-xl ${isDark ? "bg-white/[0.02]" : "bg-gray-50"}`}>
-                                        <p className={`text-xs capitalize ${isDark ? "text-white/60" : "text-gray-600"}`}>{status.replace("_", " ")}</p>
-                                        <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{count}</p>
+                                    <div key={status} className={`p-3 rounded-xl border ${isDark ? "bg-emerald-500/5 border-emerald-500/10" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                                        <p className={`text-xs capitalize font-medium ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>{status.replace("_", " ")}</p>
+                                        <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{count}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div className={`p-8 text-center rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
-                        <p className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>No data available for this month.</p>
+                    <div className={`p-8 text-center rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                        <p className={`text-sm ${isDark ? "text-white/40" : "text-[#047857]/60"}`}>No data available for this month.</p>
                     </div>
                 )}
             </div>

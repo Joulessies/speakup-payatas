@@ -90,10 +90,10 @@ function MapInnerLoaded() {
 
       <GoogleMap mapContainerClassName="h-full w-full" center={PAYATAS_CENTER} zoom={15} options={googleMapPublicPageOptions(isDark)} onClick={() => setPopupIndex(null)}>
         <Polygon paths={boundaryPath} options={{
-                strokeColor: "#6366f1",
+                strokeColor: "#059669",
                 strokeWeight: 0,
                 strokeOpacity: 0,
-                fillColor: "#6366f1",
+                fillColor: "#059669",
                 fillOpacity: 0.05,
             }}/>
 

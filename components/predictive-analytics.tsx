@@ -229,7 +229,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                         return (
                             <div key={index} className="flex items-center justify-between gap-4 mt-1.5 font-medium">
                                 <span className={`flex items-center gap-1.5 ${isDark ? "text-white/80" : "text-gray-600"}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${isForecast ? "bg-rose-500" : "bg-indigo-500"}`}></span>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isForecast ? "bg-rose-500" : "bg-[#e6f4ea]0"}`}></span>
                                     {isForecast ? "Forecast" : "History"}
                                 </span>
                                 <span className="font-bold">{entry.value}</span>
@@ -280,7 +280,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                 <Card className={`md:col-span-7 overflow-hidden ${isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white border-gray-100"}`}>
                     <CardHeader className="pb-2">
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-indigo-500" />
+                            <TrendingUp className="h-4 w-4 text-emerald-500" />
                             <CardTitle className="text-sm font-semibold">18-Day Data Trend</CardTitle>
                         </div>
                         <CardDescription className="text-xs">
@@ -294,8 +294,8 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                                     <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <XAxis 
@@ -313,7 +313,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                                         <Area 
                                             type="monotone" 
                                             dataKey="historyCount" 
-                                            stroke="#6366f1" 
+                                            stroke="#059669" 
                                             strokeWidth={2.5}
                                             fillOpacity={1} 
                                             fill="url(#histGrad)" 
@@ -352,7 +352,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                             </div>
                             <div className="flex flex-col items-center">
                                 <span className={isDark ? "text-white/30" : "text-gray-400"}>Forecast Start</span>
-                                <span className="font-semibold text-indigo-400">
+                                <span className="font-semibold text-emerald-400">
                                     {new Date(data.trend_data[data.trend_data.length - 1].date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
                                 </span>
                             </div>

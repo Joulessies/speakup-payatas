@@ -33,15 +33,15 @@ export default function LogoutConfirmDialog({ open, onCancel, onConfirm, loading
                 aria-modal="true"
                 aria-labelledby="logout-confirm-title"
                 className={`w-full max-w-sm rounded-2xl border shadow-2xl overflow-hidden ${
-                    isDark ? "bg-[#121318] border-white/10" : "bg-white border-gray-200"
+                    isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-white border-emerald-200"
                 }`}
             >
-                <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}>
+                <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-emerald-500/20" : "border-emerald-100"}`}>
                     <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isDark ? "bg-red-500/15" : "bg-red-50"}`}>
                             <LogOut className={`h-4 w-4 ${isDark ? "text-red-400" : "text-red-600"}`} />
                         </div>
-                        <h2 id="logout-confirm-title" className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h2 id="logout-confirm-title" className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                             Log out
                         </h2>
                     </div>
@@ -49,26 +49,26 @@ export default function LogoutConfirmDialog({ open, onCancel, onConfirm, loading
                         type="button"
                         onClick={onCancel}
                         disabled={loading}
-                        className={`p-1.5 rounded-lg ${isDark ? "text-white/50 hover:bg-white/[0.06]" : "text-gray-400 hover:bg-gray-100"}`}
+                        className={`p-1.5 rounded-lg transition-colors ${isDark ? "text-white/50 hover:bg-emerald-500/10" : "text-[#047857] hover:bg-[#e6f4ea]"}`}
                         aria-label="Close"
                     >
                         <X className="h-4 w-4" />
                     </button>
                 </div>
                 <div className="px-5 py-5">
-                    <p className={`text-sm ${isDark ? "text-white/75" : "text-gray-700"}`}>
+                    <p className={`text-sm ${isDark ? "text-white/75" : "text-[#064e3b]"}`}>
                         Are you sure you want to log out?
                     </p>
                 </div>
-                <div className={`flex items-center justify-end gap-2 px-5 py-4 border-t ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-100 bg-gray-50"}`}>
+                <div className={`flex items-center justify-end gap-2 px-5 py-4 border-t ${isDark ? "border-emerald-500/20 bg-emerald-500/5" : "border-emerald-100 bg-[#f4fbf7]"}`}>
                     <button
                         type="button"
                         onClick={onCancel}
                         disabled={loading}
                         className={`px-4 h-9 rounded-lg text-sm font-medium transition-colors ${
                             isDark
-                                ? "bg-white/[0.06] text-white/80 hover:bg-white/[0.1]"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                ? "bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                : "bg-[#e6f4ea] text-[#047857] hover:bg-emerald-100"
                         }`}
                     >
                         No

@@ -29,8 +29,8 @@ interface TrackedReport {
 }
 const STATUS_STEPS = [
   { key: "pending", mobileLabel: "Sub", icon: Send, color: "text-amber-400" },
-  { key: "verified", mobileLabel: "Ver", icon: Eye, color: "text-blue-400" },
-  { key: "in_progress", mobileLabel: "Prog", icon: Wrench, color: "text-blue-500" },
+  { key: "verified", mobileLabel: "Ver", icon: Eye, color: "text-emerald-400" },
+  { key: "in_progress", mobileLabel: "Prog", icon: Wrench, color: "text-emerald-500" },
   { key: "resolved", mobileLabel: "Done", icon: Shield, color: "text-green-400" },
 ];
 function getStatusIndex(status: string): number {
@@ -85,20 +85,12 @@ export default function TrackPage() {
   };
   const triggerSearch = useCallback(async (searchQuery: string) => {
     const normalizedQuery = normalizeInput(searchQuery);
-    if (!normalizedQuery)
-      return;
-    const looksLikeReceipt = normalizedQuery.toUpperCase().startsWith("SPK-");
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(normalizedQuery);
-    if (!looksLikeReceipt && !isUuid && normalizedQuery.length < 8) {
-      setSearchError(t.trackMinCharsError);
-      setReports(null);
-      return;
-    }
     setSearchError(null);
     setLastQuery(normalizedQuery);
     setLoading(true);
     try {
-      const res = await fetch(`/api/track?q=${encodeURIComponent(normalizedQuery)}`);
+      const myHash = await generateReporterHash(getDeviceId());
+      const res = await fetch(`/api/track?reporter_hash=${myHash}&q=${encodeURIComponent(normalizedQuery || "all")}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.error || "Track search failed");
@@ -138,12 +130,7 @@ export default function TrackPage() {
       setQueryInput(cleanId);
       triggerSearch(cleanId);
     } else {
-      (async () => {
-        const generated = await generateReporterHash(getDeviceId());
-        const prefix = generated.slice(0, 12);
-        setQueryInput(prefix);
-        triggerSearch(prefix);
-      })();
+      triggerSearch("");
     }
   }, [triggerSearch]);
   const handleUpvote = async (reportId: string) => {
@@ -161,27 +148,27 @@ export default function TrackPage() {
     catch { }
     setConfirming(null);
   };
-  return (<div className={`flex flex-1 flex-col items-center px-4 py-6 pb-24 md:py-12 overflow-y-auto ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"}`}>
+  return (<div className={`h-full w-full min-h-full overflow-y-auto flex flex-col items-center px-4 py-6 pb-32 md:py-10 ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
     <div className="w-full max-w-2xl">
 
       <div className="text-center mb-6">
-        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3 border ${isDark ? "bg-blue-500/10 border-blue-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
-          <Search className={`h-6 w-6 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3 border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
+          <Search className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
         </div>
-        <h1 className={`text-xl md:text-2xl font-bold tracking-tight mb-1 ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+        <h1 className={`text-xl md:text-2xl font-bold tracking-tight mb-1 ${isDark ? "text-white" : "text-[#064e3b]"}`}>
           {t.trackTitle}
         </h1>
-        <p className={`text-sm ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>
+        <p className={`text-sm ${isDark ? "text-white/60" : "text-[#047857]"}`}>
           {t.trackDescription}
         </p>
       </div>
 
 
-      <Card className={`mb-6 ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
+      <Card className={`mb-6 ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
         <CardContent className="p-4 space-y-3">
           <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
-            <Input value={queryInput} onChange={(e) => setQueryInput(e.target.value)} placeholder={t.trackPlaceholder} className={`font-mono text-sm ${isDark ? "bg-white/[0.06] border-white/10 text-white placeholder:text-white/30" : "bg-white border-[#c8d6e8]"}`} />
-            <Button type="submit" disabled={loading || !normalizeInput(queryInput)} className={`w-full shrink-0 sm:w-auto ${isDark ? "bg-blue-600 hover:bg-blue-700" : "bg-[#1a4fad] hover:bg-[#1544a0]"} text-white`}>
+            <Input value={queryInput} onChange={(e) => setQueryInput(e.target.value)} placeholder={t.trackPlaceholder} className={`font-mono text-sm ${isDark ? "bg-white/[0.06] border-white/10 text-white placeholder:text-white/30" : "bg-white border-emerald-200"}`} />
+            <Button type="submit" disabled={loading || !normalizeInput(queryInput)} className="w-full shrink-0 sm:w-auto bg-[#059669] hover:bg-[#047857] text-white">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.trackSearch}
             </Button>
           </form>

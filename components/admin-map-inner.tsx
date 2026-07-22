@@ -152,10 +152,10 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
   const selected = selectedCluster !== null ? clusters[selectedCluster] : null;
   return (<GoogleMap mapContainerClassName="h-full w-full" center={PAYATAS_CENTER} zoom={15} options={googleMapAdminOptions(isDark)} onLoad={setMapInstance} onUnmount={() => setMapInstance(null)}>
     <Polygon paths={boundaryPath} options={{
-      strokeColor: isDark ? "#6366f1" : "#4f46e5",
+      strokeColor: isDark ? "#059669" : "#4f46e5",
       strokeWeight: 0,
       strokeOpacity: 0,
-      fillColor: isDark ? "#6366f1" : "#4f46e5",
+      fillColor: isDark ? "#059669" : "#4f46e5",
       fillOpacity: isDark ? 0.05 : 0.08,
     }} />
 
@@ -200,9 +200,9 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
               </div>
             </div>
           </div>
-          <div className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl border ${isDark ? "bg-indigo-500/15 border-indigo-500/30" : "bg-indigo-50 border-indigo-200"}`}>
-            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-indigo-400" : "text-indigo-600/80"}`}>{t.mapScore}</span>
-            <span className={`text-xl font-black ${isDark ? "text-indigo-300" : "text-indigo-700"} leading-none mt-0.5`}>
+          <div className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl border ${isDark ? "bg-[#e6f4ea]0/15 border-emerald-500/30" : "bg-[#e6f4ea] border-emerald-200"}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-emerald-400" : "text-[#059669]/80"}`}>{t.mapScore}</span>
+            <span className={`text-xl font-black ${isDark ? "text-emerald-300" : "text-[#047857]"} leading-none mt-0.5`}>
               {Math.round(selected.weighted_score ?? selected.count)}
             </span>
           </div>
@@ -223,13 +223,13 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
                              cat === 'infrastructure' ? Wrench :
                              cat === 'health' ? HeartPulse :
                              cat === 'environmental' ? Leaf : CircleHelp;
-                const iconColor = cat === 'flooding' ? 'text-blue-500' :
+                const iconColor = cat === 'flooding' ? 'text-emerald-500' :
                                   cat === 'fire' ? 'text-orange-500' :
                                   cat === 'crime' ? 'text-red-500' :
                                   cat === 'infrastructure' ? 'text-amber-500' :
                                   cat === 'health' ? 'text-pink-500' :
                                   cat === 'environmental' ? 'text-emerald-500' : 'text-gray-500';
-                const bgLight = cat === 'flooding' ? 'bg-blue-50' :
+                const bgLight = cat === 'flooding' ? 'bg-[#e6f4ea]' :
                                 cat === 'fire' ? 'bg-orange-50' :
                                 cat === 'crime' ? 'bg-red-50' :
                                 cat === 'infrastructure' ? 'bg-amber-50' :
@@ -286,7 +286,7 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
               href={`https://waze.com/ul?ll=${selected.latitude}%2C${selected.longitude}&navigate=yes`}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-500/20 transition-all duration-200 active:scale-95"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#e6f4ea]0 hover:bg-[#047857] text-white text-xs font-semibold rounded-lg shadow-sm shadow-emerald-500/20 transition-all duration-200 active:scale-95"
             >
               <Navigation className="w-3.5 h-3.5" />
               {t.mapNavigate}

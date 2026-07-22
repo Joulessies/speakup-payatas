@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, LocateFixed, Camera, X, HelpCircle, ExternalLink, AlertCircle, } from "lucide-react";
+import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, LocateFixed, Camera, X, HelpCircle, ExternalLink, AlertCircle, Upload, Image as ImageIcon, } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "@/lib/db";
 import { generateReporterHash, getDeviceId } from "@/lib/crypto";
@@ -36,6 +36,7 @@ export default function ReportForm() {
     const { t } = useLanguage();
     const isDark = theme === "dark";
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
     const [online, setOnline] = useState(true);
     const [gpsLoading, setGpsLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -146,13 +147,13 @@ export default function ReportForm() {
         icon: React.ReactNode;
         color: string;
     }[] = [
-            { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5" />, color: "text-blue-400" },
+            { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5" />, color: "text-emerald-400" },
             { key: "fire_hazard", label: translateCategory("fire_hazard", t), icon: <Flame className="h-5 w-5" />, color: "text-orange-400" },
             { key: "safety_concern", label: translateCategory("safety_concern", t), icon: <ShieldAlert className="h-5 w-5" />, color: "text-red-400" },
             { key: "infrastructure", label: translateCategory("infrastructure", t), icon: <Wrench className="h-5 w-5" />, color: "text-amber-400" },
             { key: "sanitation_health", label: translateCategory("sanitation_health", t), icon: <HeartPulse className="h-5 w-5" />, color: "text-pink-400" },
             { key: "environmental", label: translateCategory("environmental", t), icon: <Leaf className="h-5 w-5" />, color: "text-emerald-400" },
-            { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-indigo-400" },
+            { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-emerald-400" },
             { key: "other", label: translateCategory("other", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-gray-400" },
         ];
     const SEVERITY_CONFIG = [
@@ -531,22 +532,19 @@ export default function ReportForm() {
             </div>)}
         </CardHeader>
 
-        <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 md:px-5 md:pb-5">
-            {submitted ? (<div className="flex flex-col items-center gap-3 py-10 text-center">
-                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
-                    <CheckCircle2 className="h-8 w-8 text-green-500" />
-                </div>
-                <p className="text-lg font-semibold">{t.reportSubmitted}</p>
-                <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                    {online ? t.reportSentSecurely : t.reportSavedOffline}
-                </p>
-                {receiptId && (<div className={`w-full max-w-xs rounded-lg px-3 py-2 text-left ${isDark ? "bg-white/[0.06]" : "bg-black/[0.03]"}`}>
-                    <p className={`text-[11px] uppercase tracking-wide ${isDark ? "text-white/50" : "text-gray-500"}`}>{t.reportReceiptLabel}</p>
-                    <p className="font-mono text-sm">{receiptId}</p>
-                    <p className={`text-[11px] ${isDark ? "text-white/45" : "text-gray-500"}`}>{t.reportReceiptHint}</p>
-                </div>)}
-            </div>) : (<form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pb-1">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 md:px-5 md:pb-5 space-y-4">
+            {error && (<Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+            </Alert>)}
 
+            {submitted && receiptId && (<Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <AlertDescription className="text-xs font-mono">
+                    {t.reportSubmittedReceipt} <strong className="text-emerald-200">{receiptId}</strong>
+                </AlertDescription>
+            </Alert>)}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                     <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
                         {t.reportWhatHappened}
@@ -554,8 +552,8 @@ export default function ReportForm() {
                     <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
                         {CATEGORIES.map((cat) => {
                             const isSelected = category === cat.key;
-                            return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
-                                ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-indigo-50 ring-1 ring-indigo-200"
+                            return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isSelected
+                                ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-emerald-50 ring-1 ring-emerald-300"
                                 : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
                                 <span className={isSelected ? cat.color : isDark ? "text-white/40" : "text-gray-400"}>
                                     {cat.icon}
@@ -587,18 +585,25 @@ export default function ReportForm() {
                         Accepted formats: JPG, PNG, GIF • Max file size: 5MB • Images are automatically compressed for faster upload
                     </p>
                     <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
+                    <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                     {photoPreview ? (<div className="relative w-full h-32 rounded-xl overflow-hidden">
                         <img src={photoPreview} alt="Evidence" className="w-full h-full object-cover" />
                         <button type="button" aria-label="Remove selected photo" onClick={() => setPhotoPreview(null)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                             <X className="h-4 w-4" />
                         </button>
-                        <button type="button" aria-label="Change selected photo" onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                        <button type="button" aria-label="Change selected photo" onClick={() => galleryInputRef.current?.click()} className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                             {t.reportChangePhoto}
                         </button>
-                    </div>) : (<Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={() => fileInputRef.current?.click()}>
-                        <Camera className="h-4 w-4" />
-                        {t.reportAddPhoto}
-                    </Button>)}
+                    </div>) : (<div className="grid grid-cols-2 gap-2">
+                        <Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-xs sm:text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={() => fileInputRef.current?.click()}>
+                            <Camera className="h-4 w-4 text-emerald-500" />
+                            Take Photo
+                        </Button>
+                        <Button type="button" variant="outline" className={`w-full min-h-11 gap-2 rounded-xl text-xs sm:text-sm ${isDark ? "border-white/10 text-white/70 hover:bg-white/[0.06]" : "border-black/10 text-gray-600 hover:bg-black/[0.03]"}`} onClick={() => galleryInputRef.current?.click()}>
+                            <Upload className="h-4 w-4 text-emerald-500" />
+                            Upload Image / Gallery
+                        </Button>
+                    </div>)}
                 </div>
 
 
@@ -609,7 +614,7 @@ export default function ReportForm() {
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                         {SEVERITY_CONFIG.map((s) => {
                             const isSelected = severity === s.value;
-                            return (<button key={s.value} type="button" aria-label={`Severity ${s.label}`} onClick={() => setSeverity(s.value)} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${isSelected
+                            return (<button key={s.value} type="button" aria-label={`Severity ${s.label}`} onClick={() => setSeverity(s.value)} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isSelected
                                 ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-gray-100 ring-1 ring-gray-200"
                                 : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
                                 <span className={`w-2.5 h-2.5 rounded-full ${s.color} ${isSelected ? "opacity-100 scale-110" : "opacity-40"} transition-all`} />
@@ -630,7 +635,7 @@ export default function ReportForm() {
                         <button
                             type="button"
                             onClick={() => setShowGpsHelp(true)}
-                            className={`flex items-center gap-1 text-[11px] font-medium underline-offset-2 hover:underline ${isDark ? "text-indigo-300" : "text-indigo-600"}`}
+                            className={`flex items-center gap-1 text-[11px] font-medium underline-offset-2 hover:underline ${isDark ? "text-emerald-300" : "text-[#059669]"}`}
                         >
                             <HelpCircle className="h-3 w-3" />
                             {t.locationHelpButtonLabel}
@@ -704,7 +709,7 @@ export default function ReportForm() {
                         {locationAccuracy > POOR_ACCURACY_THRESHOLD_METERS ? ` — ${t.reportRetryForBetterAccuracy}` : ""}
                     </p>)}
                     {hasMapPicker && (gpsPermission === "denied" || platform?.isInAppWebView || platform?.isSecureContext === false) && latitude === null && longitude === null && (
-                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-800"}`}>
+                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" : "bg-[#e6f4ea] border-emerald-200 text-indigo-800"}`}>
                             <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                             <p className="text-[11px] leading-snug font-medium">{t.locationMapFallbackCallout}</p>
                         </div>
@@ -729,11 +734,11 @@ export default function ReportForm() {
                     ⚠️ False reporting or repeated spam will result in automated account suspension (1st offense: 24h, 2nd: 3 days, 3rd: permanent deletion notice) under our community standards.
                 </div>
 
-                <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold" disabled={submitting}>
+                <Button type="submit" className="w-full min-h-11 gap-2 rounded-xl text-sm font-semibold bg-[#059669] hover:bg-[#047857] text-white shadow-sm" disabled={submitting}>
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : online ? <Send className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
                     {submitting ? t.reportSubmitting : online ? t.reportSubmit : t.reportSaveOffline}
                 </Button>
-            </form>)}
+            </form>
         </CardContent>
         <GpsHelpDialog open={showGpsHelp} onClose={() => setShowGpsHelp(false)} platform={platform} />
     </Card>);

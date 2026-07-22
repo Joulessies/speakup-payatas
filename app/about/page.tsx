@@ -21,13 +21,13 @@ export default function AboutPage() {
 
   return (
     <div className={`flex flex-col h-screen overflow-y-auto ${isDark ? "bg-[#0d1b2e] text-white" : "bg-[#f0f4f8] text-[#0f1f3d]"}`}>
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none select-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none select-none" />
       <div className="absolute top-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none select-none" />
 
       {/* Hero Header Section */}
       <div className={`relative border-b ${isDark ? "border-white/[0.06] bg-[#0d1b2e]" : "border-[#c8d6e8] bg-white"} pt-16 pb-12 md:pt-32 md:pb-16`}>
         <div className="max-w-5xl mx-auto w-full px-4 md:px-8 space-y-4 relative z-10">
-          <div className={`flex items-center gap-2 font-semibold text-xs tracking-wider uppercase w-fit px-3 py-1 rounded-md border ${isDark ? "text-blue-400 bg-blue-500/10 border-blue-500/15" : "text-[#1a4fad] bg-[#e8f0fb] border-[#c8d6e8]"}`}>
+          <div className={`flex items-center gap-2 font-semibold text-xs tracking-wider uppercase w-fit px-3 py-1 rounded-md border ${isDark ? "text-emerald-400 bg-emerald-500/10 border-blue-500/15" : "text-[#1a4fad] bg-[#e8f0fb] border-[#c8d6e8]"}`}>
             <Info className="h-3.5 w-3.5" />
             Platform Information &amp; Profile
           </div>
@@ -46,7 +46,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Main Info */}
           <div className="lg:col-span-7 space-y-6">
-            <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
+            <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-emerald-400" : "text-[#1a4fad]"}`}>
               Platform Overview
             </h2>
 
@@ -91,9 +91,9 @@ export default function AboutPage() {
           {/* Quick Cards */}
           <div className="lg:col-span-5 space-y-4">
             {/* Mission */}
-            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-blue-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
+            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-emerald-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
               <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
+                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
                   <Target className="h-5 w-5" />
                 </div>
                 <h3 className={`font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
@@ -125,9 +125,9 @@ export default function AboutPage() {
             </div>
 
             {/* Developers */}
-            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-blue-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
+            <div className={`p-6 rounded-xl border shadow-sm transition-all duration-300 group space-y-3 ${isDark ? "bg-[#112240] border-white/[0.07] hover:border-emerald-500/20" : "bg-white border-[#c8d6e8] hover:border-[#1a4fad]/30 hover:shadow-md"}`}>
               <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
+                <div className={`p-2 rounded-lg border group-hover:scale-110 transition-transform duration-300 ${isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-[#e8f0fb] border-[#c8d6e8] text-[#1a4fad]"}`}>
                   <Users className="h-5 w-5" />
                 </div>
                 <h3 className={`font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
@@ -145,7 +145,7 @@ export default function AboutPage() {
 
         {/* System Features */}
         <div className={`space-y-6 pt-8 border-t ${isDark ? "border-white/[0.06]" : "border-[#c8d6e8]"}`}>
-          <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
+          <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-emerald-400" : "text-[#1a4fad]"}`}>
             Core System Features
           </h2>
 

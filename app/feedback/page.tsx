@@ -54,7 +54,7 @@ export default function FeedbackPage() {
                     </p>
                     <button
                         onClick={() => { setSubmitted(false); setRating(0); setComment(""); }}
-                        className={`mt-4 text-sm font-semibold ${isDark ? "text-blue-400 hover:text-blue-300" : "text-[#1a4fad] hover:text-[#1544a0]"}`}
+                        className={`mt-4 text-sm font-semibold ${isDark ? "text-emerald-400 hover:text-blue-300" : "text-[#1a4fad] hover:text-[#1544a0]"}`}
                     >
                         Submit another response
                     </button>
@@ -67,8 +67,8 @@ export default function FeedbackPage() {
         <div className={`flex flex-col h-full p-6 overflow-y-auto ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"}`}>
             <div className={`max-w-md w-full mx-auto p-6 md:p-8 rounded-xl border shadow-lg ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
                 <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${isDark ? "bg-blue-500/15 border-blue-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
-                        <MessageSquare className={`h-5 w-5 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${isDark ? "bg-blue-500/15 border-emerald-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
+                        <MessageSquare className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-[#1a4fad]"}`} />
                     </div>
                     <div>
                         <h1 className={`text-lg font-bold tracking-tight ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>

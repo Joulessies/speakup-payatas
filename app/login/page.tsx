@@ -418,19 +418,18 @@ export default function LoginPage() {
     };
 
     return (
-        <div className={`flex flex-col items-center justify-start min-h-full w-full px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"}`}>
+        <div className={`flex flex-col items-center justify-start min-h-full w-full px-3 py-4 sm:px-5 sm:py-6 lg:py-8 ${isDark ? "bg-[#04271e]" : "bg-[#f0fdf4]"}`}>
             <div className="w-full max-w-5xl space-y-4">
                 <div className="flex justify-end">
                     <ThemeToggle className={isDark ? "bg-white/[0.04] hover:bg-white/10" : "bg-black/[0.04] hover:bg-black/10"} />
                 </div>
-                <Card className={`overflow-hidden rounded-xl shadow-lg sm:rounded-2xl ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
+                <Card className={`overflow-hidden rounded-xl shadow-lg sm:rounded-2xl ${isDark ? "bg-[#06382b] border-emerald-500/30" : "bg-white border-emerald-300"}`}>
                     <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1.35fr] lg:items-stretch">
-                        <div className={`order-1 w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-7 lg:p-8 ${isDark ? "bg-[#0d1b2e]" : "bg-white"}`}>
+                        <div className={`order-1 w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-7 lg:p-8 ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
                             <CardHeader className="px-0 pt-0 pb-5 sm:pb-6">
                                 <div className="flex items-center justify-center mb-3">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${isDark ? "bg-blue-500/15 border-blue-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
-                                        <ShieldCheck className={`h-6 w-6 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
-                                    </div>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src="/payatas-logo.png" alt="Barangay Payatas Logo" className="w-16 h-16 object-contain drop-shadow-md" />
                                 </div>
                                 <div className="text-center">
                                     <CardTitle className={`text-2xl sm:text-3xl leading-tight font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
@@ -445,37 +444,7 @@ export default function LoginPage() {
                             </CardHeader>
 
                             <CardContent className="px-0 pb-0">
-                                <div className={`mb-4 grid ${mode === "register" ? "grid-cols-1" : "grid-cols-2"} gap-1.5 rounded-lg p-1 ${isDark ? "bg-white/[0.05]" : "bg-[#e4eaf4]"}`}>
-                                    <button
-                                        type="button"
-                                        className={`h-9 rounded-md text-sm font-semibold transition-colors ${method === "password" ? isDark ? "bg-white/10 text-white shadow" : "bg-white text-[#0f1f3d] shadow-sm" : isDark ? "text-white/50 hover:text-white/70" : "text-[#4a6080] hover:text-[#0f2d5c]"}`}
-                                        onClick={() => {
-                                            setMethod("password");
-                                            setError(null);
-                                            setOtp("");
-                                            setOtpSent(false);
-                                            setEmailOtpPhone("");
-                                            setOtpEmail("");
-                                        }}
-                                    >
-                                        Password
-                                    </button>
-                                    {mode !== "register" && (
-                                        <button
-                                            type="button"
-                                            className={`h-9 rounded-md text-sm font-semibold transition-colors ${method === "email_otp" ? isDark ? "bg-white/10 text-white shadow" : "bg-white text-[#0f1f3d] shadow-sm" : isDark ? "text-white/50 hover:text-white/70" : "text-[#4a6080] hover:text-[#0f2d5c]"}`}
-                                            onClick={() => {
-                                                setMethod("email_otp");
-                                                setError(null);
-                                                setOtp("");
-                                                setOtpSent(false);
-                                                setOtpEmail("");
-                                            }}
-                                        >
-                                            Email OTP
-                                        </button>
-                                    )}
-                                </div>
+
                                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                                     {method === "password" && (
                                         <div className="space-y-1.5">
@@ -565,7 +534,7 @@ export default function LoginPage() {
                                                     suppressHydrationWarning
                                                     onClick={sendEmailOtp}
                                                     disabled={otpResendTimer > 0 || sendingOtp}
-                                                    className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                                    className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                                 >
                                                     {sendingOtp ? "Sending…" : "Resend code"}
                                                 </button>
@@ -625,7 +594,7 @@ export default function LoginPage() {
                                                 id="agree-terms"
                                                 checked={agreedToTerms}
                                                 onCheckedChange={(checked: boolean | "indeterminate") => setAgreedToTerms(checked === true)}
-                                                className={`mt-0.5 ${isDark ? "border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500" : ""}`}
+                                                className={`mt-0.5 ${isDark ? "border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" : ""}`}
                                             />
                                             <label htmlFor="agree-terms" className={`text-xs leading-relaxed cursor-pointer ${isDark ? "text-white/60" : "text-gray-600"}`}>
                                                 I agree to the{" "}
@@ -633,7 +602,7 @@ export default function LoginPage() {
                                                     type="button"
                                                     suppressHydrationWarning
                                                     onClick={() => setShowTerms(true)}
-                                                    className={`underline underline-offset-2 font-medium ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                                    className={`underline underline-offset-2 font-medium ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                                 >
                                                     Terms & Conditions
                                                 </button>
@@ -648,7 +617,7 @@ export default function LoginPage() {
                                                     id="remember"
                                                     checked={rememberMe}
                                                     onCheckedChange={(checked: boolean | "indeterminate") => setRememberMe(checked === true)}
-                                                    className={isDark ? "border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500" : ""}
+                                                    className={isDark ? "border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" : ""}
                                                 />
                                                 <label htmlFor="remember" className={`text-xs cursor-pointer ${isDark ? "text-white/60" : "text-gray-600"}`}>
                                                     Remember me
@@ -658,7 +627,7 @@ export default function LoginPage() {
                                                 type="button"
                                                 suppressHydrationWarning
                                                 onClick={() => setShowForgotPassword(true)}
-                                                className={`text-xs underline underline-offset-2 transition-colors ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                                className={`text-xs underline underline-offset-2 transition-colors ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                             >
                                                 Forgot password?
                                             </button>
@@ -839,7 +808,7 @@ export default function LoginPage() {
                                                     setForgotLoading(false);
                                                 }
                                             }}
-                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                         >
                                             {forgotLoading ? "Sending…" : "Resend code"}
                                         </button>

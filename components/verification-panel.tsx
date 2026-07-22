@@ -13,8 +13,8 @@ import StatusUpdateDialog, { type StaffStatus } from "@/components/status-update
 
 const STATUS_OPTIONS = [
     { value: "pending", label: "Pending", color: "text-amber-500" },
-    { value: "verified", label: "Verified", color: "text-blue-500" },
-    { value: "in_progress", label: "In Progress", color: "text-indigo-500" },
+    { value: "verified", label: "Verified", color: "text-emerald-500" },
+    { value: "in_progress", label: "In Progress", color: "text-emerald-500" },
     { value: "resolved", label: "Resolved", color: "text-emerald-500" },
 ];
 
@@ -128,8 +128,17 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     };
 
     const applyFilters = (reportsToFilter: Report[], query: string, catFilter: string, sort: string, resetPage: boolean = true) => {
-        // Always honor the active verification_status tab so reports correctly leave the list after being marked.
-        let filtered = reportsToFilter.filter((r) => r.verification_status === filter);
+        // Exclude resolved and rejected complaints from verification queues (Staff 1.1)
+        // Apply 7-day limit for unreviewed queue (Staff 1)
+        let filtered = reportsToFilter.filter((r) => {
+            if (r.status === "resolved" || r.status === "rejected") return false;
+            if (filter === "unreviewed") {
+                const reportTime = new Date(r.created_at || r.submitted_at || Date.now()).getTime();
+                const isOlderThan7Days = (Date.now() - reportTime) > 7 * 24 * 60 * 60 * 1000;
+                if (isOlderThan7Days) return false;
+            }
+            return r.verification_status === filter;
+        });
 
         // Search filter
         if (query.trim()) {
@@ -232,6 +241,44 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                 description: message
             });
             console.error("Verification error:", error);
+        } finally {
+            setSaving(null);
+        }
+    };
+
+    const handleRejectReport = async (reportId: string) => {
+        setSaving(reportId);
+        try {
+            const res = await fetch("/api/reports", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    report_id: reportId,
+                    status: "rejected",
+                    verification_status: "spam",
+                    actor: role === "admin" ? "Admin" : "Staff",
+                    note: "Report rejected by verification team.",
+                }),
+            });
+            if (res.ok) {
+                toast.success("Report rejected & removed from queue", {
+                    description: "User notification dispatched."
+                });
+                fetch("/api/notifications", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        recipient_role: "user",
+                        type: "warning",
+                        title: "Report Status Update: Rejected",
+                        message: `Your report (ID: ${reportId.slice(0, 8)}) was reviewed and rejected.`,
+                        report_id: reportId,
+                    })
+                }).catch(() => {});
+            }
+            await loadReports();
+        } catch {
+            toast.error("Failed to reject report");
         } finally {
             setSaving(null);
         }
@@ -498,7 +545,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                             {(searchQuery || categoryFilter !== "all") && (
                                 <button
                                     onClick={() => { setSearchQuery(""); setCategoryFilter("all"); }}
-                                    className={`text-xs ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                    className={`text-xs ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                 >
                                     Clear filters
                                 </button>
@@ -510,8 +557,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
 
             {/* Bulk Actions Toolbar */}
             {selectedReports.size > 0 && filter === "unreviewed" && (
-                <div className={`flex items-center gap-2 p-3 rounded-xl border ${isDark ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-100"}`}>
-                    <span className={`text-sm font-semibold ${isDark ? "text-indigo-300" : "text-indigo-700"}`}>
+                <div className={`flex items-center gap-2 p-3 rounded-xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-100"}`}>
+                    <span className={`text-sm font-semibold ${isDark ? "text-emerald-300" : "text-[#047857]"}`}>
                         {selectedReports.size} selected
                     </span>
                     <div className="flex-1" />
@@ -573,7 +620,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                 {filter === "unreviewed" && filteredReports.length > 0 && (
                     <button
                         onClick={selectAll}
-                        className={`text-xs ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                        className={`text-xs ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                     >
                         {selectedReports.size === filteredReports.length ? "Deselect all" : "Select all"}
                     </button>
@@ -596,7 +643,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                             ? (rawCat as ReportCategory)
                             : "other";
                         const isSelected = selectedReports.has(report.id);
-                        return (<div key={report.id} className={`rounded-xl border p-4 transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-100 bg-white"} ${isSelected ? (isDark ? "ring-1 ring-indigo-500/50" : "ring-1 ring-indigo-300") : ""}`}>
+                        return (<div key={report.id} className={`rounded-xl border p-4 transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-100 bg-white"} ${isSelected ? (isDark ? "ring-1 ring-emerald-500/50" : "ring-1 ring-emerald-300") : ""}`}>
                             <div className="flex items-start gap-3">
                                 {/* Selection Checkbox */}
                                 {filter === "unreviewed" && (
@@ -604,7 +651,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         onClick={() => toggleSelectReport(report.id)}
                                         className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
                                             isSelected
-                                                ? "bg-indigo-500 border-indigo-500 text-white"
+                                                ? "bg-[#e6f4ea]0 border-emerald-500 text-white"
                                                 : isDark
                                                 ? "border-white/30 hover:border-white/50"
                                                 : "border-gray-300 hover:border-gray-400"
@@ -643,7 +690,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         )}
                                         <button
                                             onClick={() => setDetailModal(report)}
-                                            className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                            className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                         >
                                             <Eye className="h-3 w-3" /> View Details
                                         </button>
@@ -692,6 +739,14 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                     >
                                         <Copy className="h-3.5 w-3.5" /> Duplicate
                                     </button>
+                                    <button
+                                        onClick={() => handleRejectReport(report.id)}
+                                        disabled={saving === report.id}
+                                        className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                                        title="Reject report and notify user"
+                                    >
+                                        <X className="h-3.5 w-3.5 text-red-400" /> Reject
+                                    </button>
                                 </div>
                             )}
 
@@ -712,8 +767,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                         className={`px-2.5 py-1 rounded-md text-[10px] font-medium flex items-center gap-1 transition-colors ${
                                                             isCurrentStatus
                                                                 ? isDark
-                                                                    ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                                                                    : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                                                    : "bg-[#e6f4ea] text-[#047857] border border-emerald-200"
                                                                 : isDark
                                                                 ? "bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white/70"
                                                                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
@@ -732,7 +787,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                             {filter !== "unreviewed" && (
                                 <div className="mt-3 pt-3 border-t border-dashed border-border/50 flex items-center justify-between gap-4">
                                     <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                        Currently marked as <strong className="capitalize text-indigo-400">{report.verification_status}</strong>
+                                        Currently marked as <strong className="capitalize text-emerald-400">{report.verification_status}</strong>
                                     </span>
                                     <button
                                         onClick={() => handleVerify(report.id, "unreviewed")}
@@ -763,7 +818,20 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                 </Select>
                               </div>)}
 
-                            <div className="mt-3 pt-3 border-t border-border/50">
+                            <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                                {report.action_history && report.action_history.filter(a => a.note).length > 0 && (
+                                    <div className="space-y-1.5 mb-2">
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider block ${isDark ? "text-emerald-400" : "text-[#059669]"}`}>
+                                            📝 Internal Notes ({report.action_history.filter(a => a.note).length}):
+                                        </span>
+                                        {report.action_history.filter(a => a.note).map((a, idx) => (
+                                            <div key={idx} className={`p-2 rounded-lg text-xs border ${isDark ? "bg-white/[0.03] border-white/10 text-white/80" : "bg-emerald-50/60 border-emerald-100 text-[#064e3b]"}`}>
+                                                <span className="font-semibold">{a.actor}:</span> {a.note}
+                                                <span className={`block text-[9px] mt-0.5 ${isDark ? "text-white/40" : "text-gray-400"}`}>{new Date(a.created_at).toLocaleString()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 {expandedNote === report.id ? (
                                     <div className="flex items-start gap-2">
                                         <textarea
@@ -776,7 +844,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                             <button
                                                 onClick={() => handleAddNote(report.id)}
                                                 disabled={saving === `note_${report.id}` || !notes[report.id]?.trim()}
-                                                className="h-7 px-3 text-[10px] font-medium rounded bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50"
+                                                className="h-7 px-3 text-[10px] font-medium rounded bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
                                             >
                                                 {saving === `note_${report.id}` ? "Saving" : "Save"}
                                             </button>
@@ -791,7 +859,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                 ) : (
                                     <button
                                         onClick={() => setExpandedNote(report.id)}
-                                        className={`flex items-center gap-1.5 text-[10px] font-medium transition-colors ${isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"}`}
+                                        className={`flex items-center gap-1.5 text-[10px] font-medium transition-colors ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                     >
                                         <MessageSquare className="h-3 w-3" /> Add Internal Note
                                     </button>
@@ -839,7 +907,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                     onClick={() => goToPage(pageNum)}
                                     className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
                                         isActive
-                                            ? isDark ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
+                                            ? isDark ? "bg-[#e6f4ea]0 text-white" : "bg-[#047857] text-white"
                                             : isDark ? "text-white/70 hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
                                     }`}
                                 >
@@ -923,13 +991,13 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                 ${detailModal.verification_status === "valid" ? "bg-emerald-500/10 text-emerald-500" : ""}
                                                 ${detailModal.verification_status === "spam" ? "bg-red-500/10 text-red-500" : ""}
                                                 ${detailModal.verification_status === "duplicate" ? "bg-amber-500/10 text-amber-500" : ""}
-                                                ${detailModal.verification_status === "unreviewed" ? "bg-blue-500/10 text-blue-500" : ""}
+                                                ${detailModal.verification_status === "unreviewed" ? "bg-emerald-500/10 text-emerald-500" : ""}
                                             `}>
                                                 {detailModal.verification_status}
                                             </Badge>
                                             <Badge className={`
                                                 ${detailModal.status === "resolved" ? "bg-emerald-500/10 text-emerald-500" : ""}
-                                                ${detailModal.status === "in_progress" ? "bg-indigo-500/10 text-indigo-500" : ""}
+                                                ${detailModal.status === "in_progress" ? "bg-emerald-500/10 text-emerald-500" : ""}
                                                 ${detailModal.status === "pending" ? "bg-amber-500/10 text-amber-500" : ""}
                                             `}>
                                                 {detailModal.status.replace("_", " ")}
@@ -1053,13 +1121,13 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                 key={note.id}
                                                 className={`p-2.5 rounded-xl border text-xs ${
                                                     note.author_role === "admin"
-                                                        ? isDark ? "bg-indigo-500/5 border-indigo-500/20" : "bg-indigo-50/50 border-indigo-100"
+                                                        ? isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[#e6f4ea]/50 border-emerald-100"
                                                         : isDark ? "bg-white/[0.02] border-white/5" : "bg-gray-50 border-gray-100"
                                                 }`}
                                             >
                                                 <div className="flex items-center justify-between mb-1">
                                                     <span className={`font-semibold capitalize flex items-center gap-1.5 ${
-                                                        note.author_role === "admin" ? "text-indigo-400" : "text-gray-400"
+                                                        note.author_role === "admin" ? "text-emerald-400" : "text-gray-400"
                                                     }`}>
                                                         {note.author_id}
                                                         <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 capitalize">
@@ -1081,7 +1149,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         value={newDetailNote}
                                         onChange={(e) => setNewDetailNote(e.target.value)}
                                         placeholder={`Add a note to ${role === "admin" ? "staff" : "admin"}...`}
-                                        className={`flex-1 min-h-[44px] max-h-[120px] text-xs p-2 rounded-xl resize-none outline-none focus:ring-1 focus:ring-indigo-500/30 ${
+                                        className={`flex-1 min-h-[44px] max-h-[120px] text-xs p-2 rounded-xl resize-none outline-none focus:ring-1 focus:ring-emerald-500/30 ${
                                             isDark ? "bg-white/[0.03] border-white/10 text-white placeholder-white/30" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
                                         }`}
                                     />
@@ -1110,7 +1178,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                 setSavingDetailNote(false);
                                             }
                                         }}
-                                        className="self-end h-9 px-4 rounded-xl text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 transition-all shrink-0"
+                                        className="self-end h-9 px-4 rounded-xl text-xs font-semibold text-white bg-[#e6f4ea]0 hover:bg-[#047857] disabled:opacity-50 transition-all shrink-0"
                                     >
                                         {savingDetailNote ? "Saving" : "Send Note"}
                                     </button>
@@ -1157,8 +1225,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                                                         isCurrentStatus
                                                             ? isDark
-                                                                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                                                                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                                                : "bg-[#e6f4ea] text-[#047857] border border-emerald-200"
                                                             : isDark
                                                             ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1]"
                                                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"

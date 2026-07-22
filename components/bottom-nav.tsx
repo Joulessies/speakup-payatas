@@ -106,8 +106,8 @@ export default function BottomNav() {
         <div
             className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${
                 isDark
-                    ? "bg-[#0d1b2e] border-white/[0.08]"
-                    : "bg-white border-[#c8d6e8]"
+                    ? "bg-[#04271e] border-emerald-500/20"
+                    : "bg-white border-emerald-200"
             }`}
         >
             <div className="flex items-center justify-around py-1">
@@ -120,17 +120,17 @@ export default function BottomNav() {
                             className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[52px] ${
                                 active
                                     ? isDark
-                                        ? "text-blue-400"
-                                        : "text-[#1a4fad]"
+                                        ? "text-emerald-400"
+                                        : "text-[#059669]"
                                     : isDark
                                     ? "text-white/40 hover:text-white/70"
-                                    : "text-[#4a6080] hover:text-[#0f2d5c]"
+                                    : "text-[#064e3b] hover:text-[#047857]"
                             }`}
                         >
                             {active && (
                                 <span
                                     className={`absolute top-0 left-3 right-3 h-0.5 rounded-b-full ${
-                                        isDark ? "bg-blue-400" : "bg-[#1a4fad]"
+                                        isDark ? "bg-emerald-400" : "bg-[#059669]"
                                     }`}
                                 />
                             )}
@@ -147,7 +147,7 @@ export default function BottomNav() {
                     className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[52px] ${
                         isActive(session.role === "admin" ? "/admin/settings" : "/account")
                             ? isDark
-                                ? "text-blue-400"
+                                ? "text-emerald-400"
                                 : "text-[#1a4fad]"
                             : isDark
                             ? "text-white/40 hover:text-white/70"

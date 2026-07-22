@@ -27,9 +27,9 @@ export default function ReportPage() {
                 <div className="flex flex-col gap-1.5 mb-3 sm:mb-4 lg:mb-6">
                   <div className="flex items-center gap-2.5">
                     <div className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl backdrop-blur-sm border ${isDark
-                    ? "bg-indigo-500/20 border-indigo-500/30"
-                    : "bg-indigo-500/10 border-indigo-500/20"}`}>
-                      <ShieldCheck className={`h-4 w-4 md:h-5 md:w-5 ${isDark ? "text-indigo-400" : "text-indigo-600"}`}/>
+                    ? "bg-emerald-500/20 border-emerald-500/30"
+                    : "bg-emerald-500/10 border-emerald-500/20"}`}>
+                      <ShieldCheck className={`h-4 w-4 md:h-5 md:w-5 ${isDark ? "text-emerald-400" : "text-[#059669]"}`}/>
                     </div>
                     <h1 className={`text-lg md:text-xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
                       SpeakUp Payatas

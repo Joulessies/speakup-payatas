@@ -20,9 +20,9 @@ interface AnalyticsData {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-    flooding: "#0ea5e9", fire: "#ef4444", crime: "#f97316",
+    flooding: "#059669", fire: "#ef4444", crime: "#f97316",
     infrastructure: "#eab308", health: "#ec4899",
-    environmental: "#22c55e", other: "#94a3b8",
+    environmental: "#34d399", other: "#94a3b8",
 };
 
 function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
@@ -44,7 +44,7 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
                     <p className={`font-semibold mb-2 pb-2 border-b ${isDark ? "text-white/60 border-white/10" : "text-gray-500 border-gray-100"}`}>{label}</p>
                     <div className="flex items-center justify-between gap-4 mt-1.5 font-medium">
                         <span className={`flex items-center gap-1.5 ${isDark ? "text-white/80" : "text-gray-600"}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             Reports
                         </span>
                         <span className="font-bold">{payload[0].value}</span>
@@ -61,26 +61,26 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
                 <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#1a56db" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="#1a56db" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#059669" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <XAxis
                         dataKey="formattedDate"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 10, fill: isDark ? "rgba(200,217,245,0.4)" : "rgba(74,96,128,0.7)" }}
+                        tick={{ fontSize: 10, fill: isDark ? "rgba(167,243,208,0.6)" : "rgba(4,78,59,0.6)" }}
                         dy={5}
                         minTickGap={20}
                     />
                     <RechartsTooltip
                         content={<CustomTooltip />}
-                        cursor={{ stroke: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(26,79,173,0.08)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                        cursor={{ stroke: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(5,150,105,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
                     />
                     <Area
                         type="monotone"
                         dataKey="count"
-                        stroke="#1a56db"
+                        stroke="#059669"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#colorCount)"
@@ -140,24 +140,24 @@ export default function UserDashboard() {
         : null;
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"}`}>
+        <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
             <div className="max-w-4xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${isDark ? "bg-blue-500/15 border-blue-500/20" : "bg-[#e8f0fb] border-[#c8d6e8]"}`}>
-                            <LayoutDashboard className={`h-5 w-5 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${isDark ? "bg-emerald-500/15 border-emerald-500/30" : "bg-[#e6f4ea] border-emerald-200"}`}>
+                            <LayoutDashboard className={`h-5 w-5 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 My Dashboard
                             </h1>
-                            <p className={`text-sm mt-0.5 ${isDark ? "text-white/45" : "text-[#4a6080]"}`}>
+                            <p className={`text-sm mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                 Community updates and your report overview
                             </p>
                         </div>
                     </div>
-                    <Link href="/report" className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a4fad] hover:bg-[#1544a0] transition-colors">
+                    <Link href="/report" className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#059669] hover:bg-[#047857] transition-colors shadow-sm">
                         <FileWarning className="h-4 w-4" /> New Report
                     </Link>
                 </div>
@@ -165,30 +165,30 @@ export default function UserDashboard() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
                     {[
-                        { label: "My Reports", value: statsLoading ? "…" : reportCount?.total ?? 0, color: isDark ? "text-white" : "text-[#0f1f3d]", accent: isDark ? "border-l-white/20" : "border-l-[#1a4fad]" },
+                        { label: "My Reports", value: statsLoading ? "…" : reportCount?.total ?? 0, color: isDark ? "text-white" : "text-[#064e3b]", accent: "border-l-emerald-500" },
                         { label: "In Progress", value: statsLoading ? "…" : reportCount?.pending ?? 0, color: "text-amber-500", accent: "border-l-amber-500" },
-                        { label: "Resolved", value: statsLoading ? "…" : reportCount?.resolved ?? 0, color: "text-emerald-500", accent: "border-l-emerald-500" },
+                        { label: "Resolved", value: statsLoading ? "…" : reportCount?.resolved ?? 0, color: "text-emerald-400", accent: "border-l-emerald-500" },
                     ].map((s) => (
-                        <div key={s.label} className={`p-4 rounded-lg border border-l-4 ${s.accent} ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-white/40" : "text-[#4a6080]"}`}>{s.label}</span>
+                        <div key={s.label} className={`p-4 rounded-lg border border-l-4 ${s.accent} ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>{s.label}</span>
                             <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
                         </div>
                     ))}
                 </div>
 
                 {/* Transparency Board */}
-                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
-                    <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-dashed border-[#c8d6e8]/50">
-                        <Eye className={`h-4 w-4 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                    <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-dashed border-emerald-500/20">
+                        <Eye className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         <div>
-                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 Transparency Board
                             </h2>
-                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-[#4a6080]"}`}>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                 Resolved community reports — click any card to view details
                             </p>
                         </div>
-                        <Link href="/transparency" className={`ml-auto text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${isDark ? "text-blue-400 hover:bg-blue-500/10" : "text-[#1a4fad] hover:bg-[#e8f0fb]"}`}>
+                        <Link href="/transparency" className={`ml-auto text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#059669] hover:bg-[#e6f4ea]"}`}>
                             View all
                         </Link>
                     </div>
@@ -198,16 +198,16 @@ export default function UserDashboard() {
                 </div>
 
                 {/* Predictive Analytics */}
-                <div className={`rounded-lg border overflow-hidden p-5 ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
+                <div className={`rounded-lg border overflow-hidden p-5 ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-blue-500/15" : "bg-[#e8f0fb]"}`}>
-                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`} />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
+                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
-                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 Community Trend Analysis
                             </h2>
-                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-[#4a6080]"}`}>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                 Algorithm-based spatial analysis & trend forecasting for Payatas-A
                             </p>
                         </div>
@@ -216,16 +216,16 @@ export default function UserDashboard() {
                 </div>
 
                 {/* Community Analytics */}
-                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}`}>
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[#c8d6e8]/50">
+                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                    <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-emerald-500/20" : "border-emerald-100"}`}>
                         <div className="flex items-center gap-3">
                             <TrendingUp className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
                             <div>
-                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                     Community Analytics
                                 </h2>
                                 {topCategory && (
-                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/45" : "text-[#4a6080]"}`}>
+                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
                                         Top issue: <span className="font-medium capitalize">{topCategory[0]}</span> ({topCategory[1]} reports)
                                     </p>
                                 )}
@@ -234,7 +234,7 @@ export default function UserDashboard() {
                     </div>
                     <div className="px-5 pb-5 space-y-4 pt-4">
                         <div>
-                            <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-[#4a6080]"}`}>
+                            <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Report trend — last 14 days
                             </p>
                             {analyticsLoading ? (
@@ -245,7 +245,7 @@ export default function UserDashboard() {
                         </div>
                         {analytics && Object.keys(analytics.category_distribution ?? {}).length > 0 && (
                             <div>
-                                <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/40" : "text-[#4a6080]"}`}>Category breakdown</p>
+                                <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>Category breakdown</p>
                                 <div className="space-y-2.5">
                                     {Object.entries(analytics.category_distribution)
                                         .sort((a, b) => b[1] - a[1])
@@ -255,11 +255,11 @@ export default function UserDashboard() {
                                             return (
                                                 <div key={cat} className="flex items-center gap-3">
                                                     <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#94a3b8" }} />
-                                                    <span className={`text-xs capitalize flex-1 truncate font-medium ${isDark ? "text-white/70" : "text-[#1e3a6e]"}`}>{cat}</span>
-                                                    <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-[#dce5f0]"}`}>
-                                                        <div className="h-full rounded-full bg-[#1a56db]" style={{ width: `${pct}%` }} />
+                                                    <span className={`text-xs capitalize flex-1 truncate font-medium ${isDark ? "text-white/70" : "text-[#064e3b]"}`}>{cat}</span>
+                                                    <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-emerald-100"}`}>
+                                                        <div className="h-full rounded-full bg-[#059669]" style={{ width: `${pct}%` }} />
                                                     </div>
-                                                    <span className={`text-[10px] font-mono w-10 text-right ${isDark ? "text-white/40" : "text-[#4a6080]"}`}>{pct}%</span>
+                                                    <span className={`text-[10px] font-mono w-10 text-right ${isDark ? "text-white/40" : "text-[#047857]"}`}>{pct}%</span>
                                                 </div>
                                             );
                                         })}

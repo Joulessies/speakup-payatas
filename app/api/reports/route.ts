@@ -25,15 +25,19 @@ async function addNotification(params: {
   message: string;
   report_id?: string;
 }) {
-  await getSupabaseAdmin().from("notifications").insert({
-    recipient_hash: params.recipient_hash,
-    recipient_role: params.recipient_role,
-    type: params.type,
-    title: params.title,
-    message: params.message,
-    report_id: params.report_id,
-    read: false,
-  });
+  try {
+    await getSupabaseAdmin().from("notifications").insert({
+      recipient_hash: params.recipient_hash,
+      recipient_role: params.recipient_role,
+      type: params.type,
+      title: params.title,
+      message: params.message,
+      report_id: params.report_id,
+      read: false,
+    });
+  } catch {
+    // Fail-safe
+  }
 }
 
 async function isBlocked(reporterHash: string): Promise<boolean> {

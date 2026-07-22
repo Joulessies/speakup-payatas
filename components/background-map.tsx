@@ -38,10 +38,10 @@ function BackgroundMapLoaded() {
             styles: mapStylesForTheme(isDark),
         }}>
       <Polygon paths={boundaryPath} options={{
-            strokeColor: isDark ? "#6366f1" : "#4f46e5",
+            strokeColor: isDark ? "#059669" : "#4f46e5",
             strokeWeight: 0,
             strokeOpacity: 0,
-            fillColor: isDark ? "#6366f1" : "#4f46e5",
+            fillColor: isDark ? "#059669" : "#4f46e5",
             fillOpacity: isDark ? 0.06 : 0.08,
         }}/>
     </GoogleMap>);

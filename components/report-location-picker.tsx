@@ -122,10 +122,10 @@ function ReportLocationPickerLoaded({ latitude, longitude, isDark, outsideBounda
             onLocationChange(ll.lat(), ll.lng());
         }}>
         <Polygon paths={boundaryPath} options={{
-                strokeColor: "#6366f1",
+                strokeColor: "#059669",
                 strokeWeight: 0,
                 strokeOpacity: 0,
-                fillColor: "#6366f1",
+                fillColor: "#059669",
                 fillOpacity: 0.06,
             }}/>
         {showMarker && map && (<DraggableAdvancedMarker map={map} latitude={latitude} longitude={longitude} onDragEnd={handleMarkerDragEnd}/>)}

@@ -25,7 +25,9 @@ interface ResolvedReport {
     longitude: number;
     created_at: string;
     resolved_at: string;
-    actions_taken: { status: string; note: string; date: string }[];
+    photo_url?: string;
+    resolution_photo_url?: string;
+    actions_taken: { status: string; note: string; date: string; photo_url?: string }[];
     feedback?: FeedbackSummary;
 }
 
@@ -93,7 +95,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
-                            className={`bg-transparent font-medium outline-none ${isDark ? "text-white" : "text-gray-900"}`}
+                            className={`bg-transparent font-medium outline-none ${isDark ? "text-white [&>option]:bg-[#0d1b2e] [&>option]:text-white" : "text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                         >
                             <option value="all">All Categories</option>
                             {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -153,6 +155,18 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                 <p className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>
                                     {r.description || <span className="italic opacity-50">No description provided</span>}
                                 </p>
+                                {(r.resolution_photo_url || r.photo_url) && (
+                                    <div className="mt-2 rounded-xl overflow-hidden border border-emerald-500/30 max-h-40">
+                                        <img
+                                            src={r.resolution_photo_url || r.photo_url}
+                                            alt="Responder proof / resolution photo"
+                                            className="w-full h-36 object-cover"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = "none";
+                                            }}
+                                        />
+                                    </div>
+                                )}
                                 <div className="flex flex-wrap items-center gap-3 mt-2">
                                     <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
                                         <Calendar className="h-3 w-3" />
@@ -166,7 +180,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                     )}
                                 </div>
                                 {embedded && (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-blue-400" : "text-[#1a4fad]"}`}>
+                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-[#1a4fad]"}`}>
                                         <ArrowRight className="h-3 w-3" /> View details
                                     </span>
                                 )}
@@ -178,11 +192,19 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                     {r.actions_taken && r.actions_taken.length > 0 && (
                                         <div>
                                             <p className={`text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>Actions taken:</p>
-                                            <ul className={`space-y-1 text-xs ${isDark ? "text-white/50" : "text-gray-600"}`}>
+                                            <ul className={`space-y-2 text-xs ${isDark ? "text-white/50" : "text-gray-600"}`}>
                                                 {r.actions_taken.slice(-3).map((a, i) => (
-                                                    <li key={i} className={`flex items-start gap-2 px-2 py-1 rounded-lg ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                                                        <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
-                                                        {a.note}
+                                                    <li key={i} className={`flex flex-col gap-1.5 p-2 rounded-lg ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
+                                                        <div className="flex items-start gap-2">
+                                                            <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
+                                                            <span>{a.note}</span>
+                                                        </div>
+                                                        {a.photo_url && (
+                                                            <div className="mt-1">
+                                                                <span className="text-[10px] text-emerald-500 font-medium block mb-1">📷 Responder Photo / Proof:</span>
+                                                                <img src={a.photo_url} alt="Responder proof" className="h-28 w-full object-cover rounded-lg border border-emerald-500/20" />
+                                                            </div>
+                                                        )}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -234,7 +256,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                 <div className="text-center pt-1">
                     <button
                         onClick={() => router.push("/transparency")}
-                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-blue-400 hover:bg-blue-500/10" : "text-[#1a4fad] hover:bg-[#e8f0fb]"}`}
+                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#1a4fad] hover:bg-[#e8f0fb]"}`}
                     >
                         View all {reports.length} resolved reports →
                     </button>

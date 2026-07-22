@@ -66,10 +66,10 @@ export default function GpsHelpDialog({ open, onClose, platform }: GpsHelpDialog
                     <div className="flex items-center gap-3 min-w-0">
                         <div
                             className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${
-                                isDark ? "bg-indigo-500/15" : "bg-indigo-50"
+                                isDark ? "bg-[#e6f4ea]0/15" : "bg-[#e6f4ea]"
                             }`}
                         >
-                            <MapPin className={`h-4 w-4 ${isDark ? "text-indigo-300" : "text-indigo-600"}`} />
+                            <MapPin className={`h-4 w-4 ${isDark ? "text-emerald-300" : "text-[#059669]"}`} />
                         </div>
                         <div className="min-w-0">
                             <h2 id="gps-help-title" className="text-base font-semibold truncate">
@@ -139,8 +139,8 @@ export default function GpsHelpDialog({ open, onClose, platform }: GpsHelpDialog
                                 className={`rounded-xl border p-3 ${
                                     isMapFallback
                                         ? isDark
-                                            ? "bg-indigo-500/10 border-indigo-500/30"
-                                            : "bg-indigo-50 border-indigo-200"
+                                            ? "bg-emerald-500/10 border-emerald-500/30"
+                                            : "bg-[#e6f4ea] border-emerald-200"
                                         : isDark
                                             ? "bg-white/[0.03] border-white/10"
                                             : "bg-gray-50 border-gray-200"
@@ -150,7 +150,7 @@ export default function GpsHelpDialog({ open, onClose, platform }: GpsHelpDialog
                                     {isMapFallback ? (
                                         <MapPin
                                             className={`h-4 w-4 shrink-0 ${
-                                                isDark ? "text-indigo-300" : "text-indigo-600"
+                                                isDark ? "text-emerald-300" : "text-[#059669]"
                                             }`}
                                         />
                                     ) : (
@@ -180,11 +180,11 @@ export default function GpsHelpDialog({ open, onClose, platform }: GpsHelpDialog
                                                 className={`shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
                                                     isMapFallback
                                                         ? isDark
-                                                            ? "bg-indigo-500/30 text-indigo-200"
-                                                            : "bg-indigo-200 text-indigo-800"
+                                                            ? "bg-emerald-500/30 text-emerald-200"
+                                                            : "bg-emerald-200 text-indigo-800"
                                                         : isDark
-                                                            ? "bg-indigo-500/20 text-indigo-300"
-                                                            : "bg-indigo-100 text-indigo-700"
+                                                            ? "bg-emerald-500/20 text-emerald-300"
+                                                            : "bg-emerald-100 text-[#047857]"
                                                 }`}
                                             >
                                                 {si + 1}
