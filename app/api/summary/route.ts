@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeActionHistory } from "@/lib/server-db";
+import { normalizeActionHistory, type DbReport } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import DBSCAN from "density-clustering";
 
@@ -24,7 +24,7 @@ export async function GET() {
             
         if (error) throw new Error(error.message);
         
-        const monthReports = (data ?? []).map(r => ({
+        const monthReports = ((data as DbReport[]) ?? []).map(r => ({
             ...r,
             action_history: normalizeActionHistory(r.action_history)
         }));

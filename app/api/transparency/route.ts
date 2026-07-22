@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeActionHistory } from "@/lib/server-db";
+import { normalizeActionHistory, type DbReport } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 function serverErrorResponse(err: unknown) {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         const { data, error } = await query;
         if (error) throw new Error(error.message);
 
-        const filteredResolved = (data ?? []).map((r) => ({
+        const filteredResolved = ((data as DbReport[]) ?? []).map((r) => ({
             ...r,
             action_history: normalizeActionHistory(r.action_history),
         }));

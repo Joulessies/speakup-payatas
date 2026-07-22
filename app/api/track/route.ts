@@ -16,13 +16,6 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
         }
         
-        // Build a safe OR filter.
-        // In PostgREST's .or() string, ilike wildcards must be provided as
-        // `column.ilike.*value*` — the % sign is the SQL wildcard but the
-        // Supabase JS SDK .or() helper expects the raw filter string where
-        // the percent sign must be included literally (not URL-encoded).
-        // We use a single .or() with three arms, but wrap each ilike value
-        // in quotes so the filter parser doesn't choke on the % character.
         const prefix = `${query}%`;
         const { data, error } = await getSupabaseAdmin()
             .from("reports")

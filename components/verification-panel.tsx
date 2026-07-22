@@ -418,7 +418,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                 {["unreviewed", "valid", "spam", "duplicate"].map((f) => (
                     <button
                         key={f}
-                        onClick={() => setFilter(f as any)}
+                        onClick={() => setFilter(f as "unreviewed" | "valid" | "spam" | "duplicate")}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
                             filter === f ? (isDark ? "bg-white/10 text-white" : "bg-white shadow text-gray-900") : (isDark ? "text-white/50 hover:text-white/80" : "text-gray-500 hover:text-gray-900")
                         }`}
@@ -484,7 +484,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-xs ${isDark ? "text-white/60" : "text-gray-600"}`}>Sort by:</span>
-                                <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                                <Select value={sortBy} onValueChange={(v) => setSortBy(v as "newest" | "oldest" | "severity")}>
                                     <SelectTrigger className={`w-[130px] text-xs ${isDark ? "bg-white/5 border-white/10" : ""}`}>
                                         <SelectValue />
                                     </SelectTrigger>

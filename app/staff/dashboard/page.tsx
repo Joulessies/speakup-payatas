@@ -109,6 +109,19 @@ interface SummaryStats {
     byCategory: Record<string, number>;
 }
 
+interface ClusterData {
+    latitude: number;
+    longitude: number;
+    count: number;
+    category_breakdown: Record<string, number>;
+}
+
+interface AnalyticsData {
+    total_reports: number;
+    trend_data: TrendPoint[];
+    category_distribution: Record<string, number>;
+}
+
 export default function StaffDashboard() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
@@ -118,10 +131,10 @@ export default function StaffDashboard() {
     const [exporting, setExporting] = useState(false);
 
     // Map and analytics states
-    const [clusters, setClusters] = useState<any[]>([]);
+    const [clusters, setClusters] = useState<ClusterData[]>([]);
     const [heatPoints, setHeatPoints] = useState<any[]>([]);
     const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
-    const [analytics, setAnalytics] = useState<any | null>(null);
+    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
     useEffect(() => {

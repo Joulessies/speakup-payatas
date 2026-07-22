@@ -2,7 +2,7 @@
 
 import { useJsApiLoader } from "@react-google-maps/api";
 
-const libraries = ["visualization"] as any;
+const libraries: ("visualization" | "places" | "drawing" | "geometry")[] = ["visualization"];
 
 export function usePayatasGoogleMapsLoader() {
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
