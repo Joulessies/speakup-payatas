@@ -17,7 +17,7 @@ export default function QRPage() {
     };
 
     return (
-        <div className={`flex-1 overflow-y-auto ${isDark ? "bg-[#0d1b2e]" : "bg-[#f0f4f8]"} print:bg-white`}>
+        <div className={`flex-1 overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"} print:bg-white`}>
             <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:py-12 print:p-0 print:max-w-none">
                 
                 {/* Control Panel */}

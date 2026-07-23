@@ -4,10 +4,9 @@ import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { translateCategory } from "@/lib/i18n";
-import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, TrendingUp } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
-import PredictiveAnalytics from "./predictive-analytics";
 import BarangaySystemDashboard from "./barangay-system-dashboard";
 import type { ClusterResult } from "@/types";
 import {
@@ -782,15 +781,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
         </button>)}
 
       
-      <div>
-        <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-2 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-          <TrendingUp className="h-4 w-4 text-emerald-500" />
-          Spatial Hotspots & Category Trajectory Analysis
-        </h2>
-        <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
-          <PredictiveAnalytics isDark={isDark} />
-        </div>
-      </div>
+
 
       <div>
         <h2 className={`text-[11px] font-semibold uppercase tracking-wider mb-3 ${isDark ? "text-white/45" : "text-gray-500"}`}>

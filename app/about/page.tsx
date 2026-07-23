@@ -20,18 +20,14 @@ export default function AboutPage() {
   const isDark = theme === "dark";
 
   return (
-    <div className={`flex flex-col h-screen overflow-y-auto ${isDark ? "bg-[#0d1b2e] text-white" : "bg-[#f0f4f8] text-[#0f1f3d]"}`}>
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none select-none" />
-      <div className="absolute top-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none select-none" />
-
-      {/* Hero Header Section */}
-      <div className={`relative border-b ${isDark ? "border-white/[0.06] bg-[#0d1b2e]" : "border-[#c8d6e8] bg-white"} pt-16 pb-12 md:pt-32 md:pb-16`}>
+    <div className={`flex flex-col h-screen overflow-y-auto ${isDark ? "bg-[#04271e] text-white" : "bg-[#f4fbf7] text-[#064e3b]"}`}>
+      <div className={`relative border-b ${isDark ? "border-emerald-500/20 bg-[#04271e]" : "border-emerald-200 bg-[#f4fbf7]"} pt-16 pb-12 md:pt-32 md:pb-16`}>
         <div className="max-w-5xl mx-auto w-full px-4 md:px-8 space-y-4 relative z-10">
-          <div className={`flex items-center gap-2 font-semibold text-xs tracking-wider uppercase w-fit px-3 py-1 rounded-md border ${isDark ? "text-emerald-400 bg-emerald-500/10 border-blue-500/15" : "text-[#1a4fad] bg-[#e8f0fb] border-[#c8d6e8]"}`}>
+          <div className={`flex items-center gap-2 font-semibold text-xs tracking-wider uppercase w-fit px-3 py-1 rounded-md border ${isDark ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-[#059669] bg-[#e6f4ea] border-emerald-200"}`}>
             <Info className="h-3.5 w-3.5" />
             Platform Information &amp; Profile
           </div>
-          <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight md:leading-tight py-2 ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
+          <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight md:leading-tight py-2 ${isDark ? "text-white" : "text-[#064e3b]"}`}>
             About SPEAKUP
           </h1>
           <p className={`text-sm md:text-base max-w-3xl leading-relaxed ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>

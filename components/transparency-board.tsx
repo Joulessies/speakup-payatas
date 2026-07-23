@@ -89,13 +89,13 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
         <div className="space-y-4">
             {!embedded && (
                 <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border ${isDark ? "bg-white/[0.03] border-white/10 text-white/70" : "bg-white border-[#c8d6e8] text-[#1e3a6e]"}`}>
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border ${isDark ? "bg-[#06382b] border-emerald-500/30 text-white/90" : "bg-white border-emerald-200 text-[#064e3b]"}`}>
                         <Search className="h-4 w-4 opacity-50" />
                         <span>Filter by category:</span>
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
-                            className={`bg-transparent font-medium outline-none ${isDark ? "text-white [&>option]:bg-[#0d1b2e] [&>option]:text-white" : "text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
+                            className={`bg-transparent font-medium outline-none ${isDark ? "text-white [&>option]:bg-[#04271e] [&>option]:text-white" : "text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                         >
                             <option value="all">All Categories</option>
                             {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -114,9 +114,9 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin opacity-50" /></div>
+                <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin opacity-50 text-emerald-500" /></div>
             ) : displayReports.length === 0 ? (
-                <div className={`p-8 text-center text-sm rounded-xl border border-dashed ${isDark ? "border-white/10 text-white/40" : "border-[#c8d6e8] text-[#4a6080]"}`}>
+                <div className={`p-8 text-center text-sm rounded-xl border border-dashed ${isDark ? "border-emerald-500/20 text-white/60" : "border-emerald-200 text-[#047857]"}`}>
                     {embedded ? "No resolved reports yet." : "No resolved reports found for this filter."}
                 </div>
             ) : (
@@ -126,12 +126,12 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                             key={r.id}
                             className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
                                 isDark
-                                    ? "bg-[#112240] border-white/[0.07] hover:bg-[#1a2f50] hover:border-white/[0.12]"
-                                    : "bg-white border-[#c8d6e8] shadow-sm hover:shadow-md hover:border-[#aec3de]"
-                            } ${expandedId === r.id ? "ring-1 ring-blue-500/30" : ""}`}
+                                    ? "bg-[#06382b] border-emerald-500/30 hover:bg-[#084837] hover:border-emerald-400/50"
+                                    : "bg-white border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-300"
+                            } ${expandedId === r.id ? "ring-1 ring-emerald-500/40" : ""}`}
                             onClick={() => handleCardClick(r.id)}
                         >
-                            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-[#f0f4f8] border-[#c8d6e8]"}`}>
+                            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? "bg-[#042d22] border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                     <span className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>
@@ -180,7 +180,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                     )}
                                 </div>
                                 {embedded && (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-[#1a4fad]"}`}>
+                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-[#059669]"}`}>
                                         <ArrowRight className="h-3 w-3" /> View details
                                     </span>
                                 )}
@@ -188,13 +188,13 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
 
                             {/* Expanded detail (non-embedded) */}
                             {!embedded && expandedId === r.id && (
-                                <div className={`border-t px-4 py-3 space-y-3 ${isDark ? "border-white/[0.06]" : "border-gray-100"}`} onClick={(e) => e.stopPropagation()}>
+                                <div className={`border-t px-4 py-3 space-y-3 ${isDark ? "border-emerald-500/20" : "border-gray-100"}`} onClick={(e) => e.stopPropagation()}>
                                     {r.actions_taken && r.actions_taken.length > 0 && (
                                         <div>
                                             <p className={`text-xs font-medium mb-1 ${isDark ? "text-white/60" : "text-gray-600"}`}>Actions taken:</p>
                                             <ul className={`space-y-2 text-xs ${isDark ? "text-white/50" : "text-gray-600"}`}>
                                                 {r.actions_taken.slice(-3).map((a, i) => (
-                                                    <li key={i} className={`flex flex-col gap-1.5 p-2 rounded-lg ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
+                                                    <li key={i} className={`flex flex-col gap-1.5 p-2 rounded-lg ${isDark ? "bg-emerald-500/5 border border-emerald-500/10" : "bg-gray-50"}`}>
                                                         <div className="flex items-start gap-2">
                                                             <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
                                                             <span>{a.note}</span>
@@ -227,7 +227,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                             {r.feedback.entries.length > 0 && (
                                                 <ul className="space-y-1.5">
                                                     {r.feedback.entries.slice(0, 3).map((entry, i) => (
-                                                        <li key={i} className={`rounded-md px-2 py-1.5 ${isDark ? "bg-white/[0.03]" : "bg-white/70"}`}>
+                                                        <li key={i} className={`rounded-md px-2 py-1.5 ${isDark ? "bg-[#042d22]" : "bg-white/70"}`}>
                                                             <div className="flex items-center justify-between gap-2">
                                                                 <StarRow rating={entry.rating} size={11} />
                                                                 <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>
@@ -256,7 +256,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                 <div className="text-center pt-1">
                     <button
                         onClick={() => router.push("/transparency")}
-                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#1a4fad] hover:bg-[#e8f0fb]"}`}
+                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#059669] hover:bg-[#e6f4ea]"}`}
                     >
                         View all {reports.length} resolved reports →
                     </button>

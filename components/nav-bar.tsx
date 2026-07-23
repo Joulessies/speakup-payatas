@@ -159,7 +159,7 @@ export default function NavBar() {
         </nav>
 
         {/* Mobile nav */}
-        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl ${isDark ? "bg-[#0d1b2e]/90 border-white/[0.08]" : "bg-white/90 border-[#c8d6e8]"}`}>
+        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl ${isDark ? "bg-[#04271e]/90 border-emerald-500/20" : "bg-white/90 border-emerald-200"}`}>
             {mobileMoreOpen && (
                 <div className={`mx-3 mb-2 mt-2 rounded-xl border p-2 ${isDark ? "bg-black/90 border-white/[0.08]" : "bg-white/95 border-black/[0.08]"}`}>
                     <div className="grid grid-cols-2 gap-2">
