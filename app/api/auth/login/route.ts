@@ -122,7 +122,14 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
             }
 
-            const row = await getUserByEmail(email);
+            let row = await getUserByEmail(email);
+            if (!row) {
+                const cleanedPhone = email.replace(/\D/g, "").slice(-10);
+                if (/^\d{10}$/.test(cleanedPhone)) {
+                    row = await getUserByPhoneLast10(cleanedPhone);
+                }
+            }
+
             if (row?.suspended_until) {
                 const suspendedUntil = new Date(row.suspended_until);
                 if (suspendedUntil.getTime() > Date.now()) {

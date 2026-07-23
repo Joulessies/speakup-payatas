@@ -29,6 +29,7 @@ import {
     QrCode,
     Info,
     TrendingUp,
+    Settings,
 } from "lucide-react";
 
 interface NavItem {
@@ -234,29 +235,50 @@ export default function SidebarNav() {
                     {session && (
                         <div className={`rounded-lg border border-white/10 bg-white/[0.05] ${collapsed ? "p-2" : "p-2.5"}`}>
                             <div className={`flex items-center gap-2.5 ${collapsed ? "flex-col" : "mb-2"}`}>
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-300 shrink-0">
+                                <Link
+                                    href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                    title="Account Settings"
+                                    className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-colors shrink-0"
+                                >
                                     <UserRound className="h-3.5 w-3.5" />
-                                </div>
+                                </Link>
                                 {!collapsed && (
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-semibold text-white truncate">
+                                        <Link
+                                            href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                            title="Account Settings"
+                                            className="text-xs font-semibold text-white hover:underline truncate block"
+                                        >
                                             {session.username}
-                                        </p>
+                                        </Link>
                                     </div>
                                 )}
                                 {!collapsed && (
                                     <NotificationBell role={session.role} reporterHash={session.reporter_hash} />
                                 )}
                             </div>
-                            <button
-                                onClick={() => setShowLogoutConfirm(true)}
-                                title={collapsed ? "Logout" : undefined}
-                                className={`flex items-center justify-center gap-1.5 py-1 rounded-md text-[11px] font-medium transition-colors text-white/50 hover:text-white hover:bg-white/10 ${collapsed ? "w-full px-2" : "w-full"
+                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/10">
+                                <Link
+                                    href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                    title={collapsed ? "Settings" : undefined}
+                                    className={`flex items-center justify-center gap-1.5 py-1 rounded-md text-[11px] font-medium transition-colors text-white/70 hover:text-white hover:bg-white/10 ${
+                                        collapsed ? "w-full px-2" : "flex-1"
                                     }`}
-                            >
-                                <LogOut className="h-3 w-3" />
-                                {!collapsed && "LogOut"}
-                            </button>
+                                >
+                                    <Settings className="h-3 w-3" />
+                                    {!collapsed && "Settings"}
+                                </Link>
+                                <button
+                                    onClick={() => setShowLogoutConfirm(true)}
+                                    title={collapsed ? "Logout" : undefined}
+                                    className={`flex items-center justify-center gap-1.5 py-1 rounded-md text-[11px] font-medium transition-colors text-white/50 hover:text-white hover:bg-white/10 ${
+                                        collapsed ? "w-full px-2" : "flex-1"
+                                    }`}
+                                >
+                                    <LogOut className="h-3 w-3" />
+                                    {!collapsed && "LogOut"}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

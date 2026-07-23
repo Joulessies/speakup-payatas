@@ -69,6 +69,15 @@ export default function LoginPage() {
     const [forgotResendTimer, setForgotResendTimer] = useState(0);
 
     const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+    const isValidPhoneInput = (value: string) => {
+        const digits = value.replace(/\D/g, "");
+        return digits.length === 10 || (digits.length === 11 && digits.startsWith("0")) || (digits.length === 12 && digits.startsWith("63"));
+    };
+    const isValidEmailOrPhone = (value: string) => {
+        const trimmed = value.trim();
+        if (mode === "register") return isValidEmail(trimmed);
+        return isValidEmail(trimmed) || isValidPhoneInput(trimmed);
+    };
     // Tailwind classes for invalid input fields (red border + soft ring).
     const errorRing = "border-red-500 ring-1 ring-red-500/30 focus-visible:ring-red-500/40";
     const inputClass = (hasError: boolean) => {
@@ -86,7 +95,7 @@ export default function LoginPage() {
         const normOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
         setFieldErrors((prev) => {
             const next = { ...prev };
-            if (next.email && isValidEmail(email.trim())) delete next.email;
+            if (next.email && isValidEmailOrPhone(email.trim())) delete next.email;
             if (next.password) {
                 const ok = mode === "register" ? validatePassword(password).isValid : password.trim().length >= 6;
                 if (ok) delete next.password;
@@ -99,8 +108,6 @@ export default function LoginPage() {
         });
     }, [email, password, confirmPassword, registerPhone, emailOtpPhone, otp, mode, submitAttempted]);
 
-    // Validate password in real-time during registration and password reset.
-    // We always run it (even on empty strings) so the requirement checklist is visible up-front.
     useEffect(() => {
         if (mode === "register" || showForgotPassword) {
             const pwd = showForgotPassword ? newPassword : password;
@@ -360,7 +367,7 @@ export default function LoginPage() {
 
         // Collect every invalid field first so the form can highlight all of them at once.
         const nextErrors: typeof fieldErrors = {};
-        if (!isValidEmail(email.trim())) nextErrors.email = true;
+        if (!isValidEmailOrPhone(email.trim())) nextErrors.email = true;
         if (password.trim().length < 6) nextErrors.password = true;
         if (mode === "register") {
             const validation = validatePassword(password);
@@ -446,32 +453,76 @@ export default function LoginPage() {
                             <CardContent className="px-0 pb-0">
 
                                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                                    {method === "password" && (
-                                        <div className="space-y-1.5">
-                                            <label className={`text-xs font-semibold ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Email</label>
-                                            <div className="relative">
-                                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" aria-invalid={fieldErrors.email ? true : undefined} className={inputClass(Boolean(fieldErrors.email))} type="email" />
-                                            </div>
-                                            {fieldErrors.email && (
-                                                <p className="text-[11px] text-red-500">Enter a valid email address.</p>
-                                            )}
+                                    {/* Login Method Switcher Tabs */}
+                                    {mode === "login" && (
+                                        <div className={`flex rounded-xl p-1 border mb-3 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-100 border-gray-200"}`}>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMethod("password"); setError(null); }}
+                                                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${method === "password" ? (isDark ? "bg-emerald-600 text-white shadow" : "bg-white text-emerald-900 shadow") : (isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800")}`}
+                                            >
+                                                Password Login
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMethod("email_otp"); setError(null); }}
+                                                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${method === "email_otp" ? (isDark ? "bg-emerald-600 text-white shadow" : "bg-white text-emerald-900 shadow") : (isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800")}`}
+                                            >
+                                                Mobile OTP Login
+                                            </button>
                                         </div>
                                     )}
-                                    {method === "email_otp" && (
-                                        <div className="space-y-1.5">
-                                            <label className={`text-xs font-semibold ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
-                                            <div className="relative">
-                                                <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                <Input value={emailOtpPhone} onChange={(e) => setEmailOtpPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" aria-invalid={fieldErrors.emailOtpPhone ? true : undefined} className={inputClass(Boolean(fieldErrors.emailOtpPhone))} />
-                                            </div>
-                                            {fieldErrors.emailOtpPhone && (
-                                                <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number.</p>
-                                            )}
-                                        </div>
-                                    )}
+
                                     {method === "password" && (
                                         <>
+                                            {/* Email or Mobile Number Field for Login / Email for Register */}
+                                            <div className="space-y-1.5">
+                                                <label className={`text-xs font-semibold ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>
+                                                    Email address
+                                                </label>
+                                                <div className="relative">
+                                                    <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                    <Input
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        placeholder="you@example.com"
+                                                        autoComplete="username"
+                                                        aria-invalid={fieldErrors.email ? true : undefined}
+                                                        className={inputClass(Boolean(fieldErrors.email))}
+                                                        type="text"
+                                                    />
+                                                </div>
+                                                {fieldErrors.email && (
+                                                    <p className="text-[11px] text-red-500">
+                                                        Enter a valid email address or 10-digit PH mobile number.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Registration Mobile Number Field */}
+                                            {mode === "register" && (
+                                                <div className="space-y-1.5">
+                                                    <label className={`text-xs font-semibold ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
+                                                    <div className="relative">
+                                                        <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                        <Input
+                                                            value={registerPhone}
+                                                            onChange={(e) => setRegisterPhone(e.target.value)}
+                                                            placeholder="09171234567"
+                                                            autoComplete="tel"
+                                                            aria-invalid={fieldErrors.phone ? true : undefined}
+                                                            className={inputClass(Boolean(fieldErrors.phone))}
+                                                        />
+                                                    </div>
+                                                    {fieldErrors.phone ? (
+                                                        <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number (e.g., 09171234567).</p>
+                                                    ) : (
+                                                        <p className={`text-[11px] ${isDark ? "text-white/40" : "text-[#8a8377]"}`}>Saved to your profile for SMS and contact. Must be unique.</p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Password Field */}
                                             <div className="space-y-1.5">
                                                 <label className={`text-xs font-semibold ${fieldErrors.password ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Password</label>
                                                 <div className="relative">
@@ -487,59 +538,62 @@ export default function LoginPage() {
                                                     </p>
                                                 )}
                                             </div>
+
+                                            {/* Confirm Password Field (Register mode only) */}
                                             {mode === "register" && (
-                                                <>
-                                                    <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Confirm Password</label>
-                                                        <div className="relative">
-                                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                            <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" autoComplete="new-password" aria-invalid={fieldErrors.confirmPassword ? true : undefined} className={inputClassPwd(Boolean(fieldErrors.confirmPassword))} />
-                                                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-[#7a756a] hover:text-[#4d4941] hover:bg-[#f3efdf]"}`}>
-                                                                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                                            </button>
-                                                        </div>
-                                                        {fieldErrors.confirmPassword && (
-                                                            <p className="text-[11px] text-red-500">Passwords do not match.</p>
-                                                        )}
+                                                <div className="space-y-1.5">
+                                                    <label className={`text-xs font-semibold ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Confirm Password</label>
+                                                    <div className="relative">
+                                                        <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.confirmPassword ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                        <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" autoComplete="new-password" aria-invalid={fieldErrors.confirmPassword ? true : undefined} className={inputClassPwd(Boolean(fieldErrors.confirmPassword))} />
+                                                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-[#7a756a] hover:text-[#4d4941] hover:bg-[#f3efdf]"}`}>
+                                                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        </button>
                                                     </div>
-                                                    <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
-                                                        <div className="relative">
-                                                            <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.phone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
-                                                            <Input value={registerPhone} onChange={(e) => setRegisterPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" aria-invalid={fieldErrors.phone ? true : undefined} className={inputClass(Boolean(fieldErrors.phone))} />
-                                                        </div>
-                                                        {fieldErrors.phone ? (
-                                                            <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number (e.g., 09171234567).</p>
-                                                        ) : (
-                                                            <p className={`text-[11px] ${isDark ? "text-white/40" : "text-[#8a8377]"}`}>Saved to your profile for SMS and contact. Must be unique.</p>
-                                                        )}
-                                                    </div>
-                                                </>
+                                                    {fieldErrors.confirmPassword && (
+                                                        <p className="text-[11px] text-red-500">Passwords do not match.</p>
+                                                    )}
+                                                </div>
                                             )}
                                         </>
                                     )}
 
-                                    {method === "email_otp" && otpSent && (
-                                        <div className="space-y-3">
+                                    {method === "email_otp" && (
+                                        <>
                                             <div className="space-y-1.5">
-                                                <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
-                                                <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                <label className={`text-xs font-semibold ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
+                                                <div className="relative">
+                                                    <Smartphone className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
+                                                    <Input value={emailOtpPhone} onChange={(e) => setEmailOtpPhone(e.target.value)} placeholder="09171234567" autoComplete="tel" aria-invalid={fieldErrors.emailOtpPhone ? true : undefined} className={inputClass(Boolean(fieldErrors.emailOtpPhone))} />
+                                                </div>
+                                                {fieldErrors.emailOtpPhone && (
+                                                    <p className="text-[11px] text-red-500">Enter a valid 10-digit PH mobile number.</p>
+                                                )}
                                             </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                                    {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    suppressHydrationWarning
-                                                    onClick={sendEmailOtp}
-                                                    disabled={otpResendTimer > 0 || sendingOtp}
-                                                    className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
-                                                >
-                                                    {sendingOtp ? "Sending…" : "Resend code"}
-                                                </button>
-                                            </div>
-                                        </div>
+
+                                            {otpSent && (
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1.5">
+                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
+                                                        <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                                            {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            suppressHydrationWarning
+                                                            onClick={sendEmailOtp}
+                                                            disabled={otpResendTimer > 0 || sendingOtp}
+                                                            className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
+                                                        >
+                                                            {sendingOtp ? "Sending…" : "Resend code"}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {mode === "register" && method === "password" && passwordValidation && (
@@ -555,8 +609,8 @@ export default function LoginPage() {
                                                     <div
                                                         key={i}
                                                         className={`h-1 flex-1 rounded-full ${i <= passwordValidation.score
-                                                                ? getPasswordStrengthBg(passwordValidation.strength)
-                                                                : isDark ? "bg-white/10" : "bg-gray-200"
+                                                            ? getPasswordStrengthBg(passwordValidation.strength)
+                                                            : isDark ? "bg-white/10" : "bg-gray-200"
                                                             }`}
                                                     />
                                                 ))}
@@ -566,8 +620,8 @@ export default function LoginPage() {
                                                     <li
                                                         key={rule.id}
                                                         className={`text-[11px] flex items-center gap-1.5 transition-colors ${rule.met
-                                                                ? "text-emerald-500"
-                                                                : isDark ? "text-white/45" : "text-gray-500"
+                                                            ? "text-emerald-500"
+                                                            : isDark ? "text-white/45" : "text-gray-500"
                                                             }`}
                                                     >
                                                         {rule.met ? (
@@ -685,7 +739,7 @@ export default function LoginPage() {
                         </div>
                         <div
                             className="order-2 relative min-h-[200px] sm:min-h-[240px] md:min-h-[280px] lg:min-h-[min(520px,70vh)] xl:min-h-[620px]"
-                            style={{ 
+                            style={{
                                 backgroundImage: 'linear-gradient(rgba(13, 27, 46, 0.4), rgba(13, 27, 46, 0.8)), url("https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/860Roads_Payatas_Bagong_Silangan_Quezon_City_Landmarks_45.jpg/1280px-860Roads_Payatas_Bagong_Silangan_Quezon_City_Landmarks_45.jpg")',
                                 backgroundSize: "cover",
                                 backgroundPosition: "center"
@@ -874,8 +928,8 @@ export default function LoginPage() {
                                                     <div
                                                         key={i}
                                                         className={`h-1 flex-1 rounded-full ${i <= passwordValidation.score
-                                                                ? getPasswordStrengthBg(passwordValidation.strength)
-                                                                : isDark ? "bg-white/10" : "bg-gray-200"
+                                                            ? getPasswordStrengthBg(passwordValidation.strength)
+                                                            : isDark ? "bg-white/10" : "bg-gray-200"
                                                             }`}
                                                     />
                                                 ))}
@@ -885,8 +939,8 @@ export default function LoginPage() {
                                                     <li
                                                         key={rule.id}
                                                         className={`text-[11px] flex items-center gap-1.5 ${rule.met
-                                                                ? "text-emerald-500"
-                                                                : isDark ? "text-white/45" : "text-gray-500"
+                                                            ? "text-emerald-500"
+                                                            : isDark ? "text-white/45" : "text-gray-500"
                                                             }`}
                                                     >
                                                         {rule.met ? (
