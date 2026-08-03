@@ -139,7 +139,7 @@ export default function NavBar() {
                     ))}
                     <div className={`w-px h-5 mx-1 ${isDark ? "bg-white/10" : "bg-black/10"}`} />
                 </div>
-                {session && <NotificationBell role={session.role} reporterHash={reporterHash} />}
+                <NotificationBell role={session?.role || "user"} reporterHash={reporterHash} />
                 {session && (
                     <div className={`inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg border ${isDark ? "bg-white/[0.04] border-white/[0.08]" : "bg-black/[0.02] border-black/[0.06]"}`}>
                         <span className={`w-5 h-5 rounded-full inline-flex items-center justify-center ${isDark ? "bg-white/[0.08] text-white/70" : "bg-black/[0.06] text-gray-700"}`}>
@@ -183,7 +183,7 @@ export default function NavBar() {
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
-                    {session && <NotificationBell role={session.role} reporterHash={reporterHash} />}
+                    <NotificationBell role={session?.role || "user"} reporterHash={reporterHash} />
                     {session ? (
                         <button type="button" onClick={() => setShowLogoutConfirm(true)} className={authActionClass}><LogOut className="h-3.5 w-3.5" />Logout</button>
                     ) : (

@@ -1178,7 +1178,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                                 setSavingDetailNote(false);
                                             }
                                         }}
-                                        className="self-end h-9 px-4 rounded-xl text-xs font-semibold text-white bg-[#e6f4ea]0 hover:bg-[#047857] disabled:opacity-50 transition-all shrink-0"
+                                        className="self-end h-9 px-4 rounded-xl text-xs font-semibold text-white bg-[#059669] hover:bg-[#047857] disabled:opacity-50 transition-all shrink-0"
                                     >
                                         {savingDetailNote ? "Saving" : "Send Note"}
                                     </button>
@@ -1205,6 +1205,14 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                     >
                                         <ShieldAlert className="h-4 w-4" />
                                         Mark as Spam
+                                    </button>
+                                    <button
+                                        onClick={() => { handleRejectReport(detailModal.id); setDetailModal(null); }}
+                                        disabled={saving === detailModal.id}
+                                        className="flex-1 flex items-center justify-center gap-2 h-10 text-sm font-medium rounded-xl bg-zinc-800/80 text-white hover:bg-red-700 transition-colors"
+                                    >
+                                        <X className="h-4 w-4 text-red-400" />
+                                        Reject Report
                                     </button>
                                 </>
                             )}

@@ -89,8 +89,8 @@ export default function TrackPage() {
     setLastQuery(normalizedQuery);
     setLoading(true);
     try {
-      const myHash = await generateReporterHash(getDeviceId());
-      const res = await fetch(`/api/track?reporter_hash=${myHash}&q=${encodeURIComponent(normalizedQuery || "all")}`);
+      const url = `/api/track?q=${encodeURIComponent(normalizedQuery || "all")}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.error || "Track search failed");

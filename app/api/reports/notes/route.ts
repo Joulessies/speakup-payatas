@@ -73,6 +73,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Missing report_id" }, { status: 400 });
         }
 
+        let dbNotes: NoteItem[] = [];
         try {
             const { data, error } = await getSupabaseAdmin()
                 .from("internal_notes")
@@ -80,15 +81,28 @@ export async function GET(request: Request) {
                 .eq("report_id", report_id)
                 .order("created_at", { ascending: false });
             
-            if (!error && data && data.length > 0) {
-                return NextResponse.json({ notes: data });
+            if (!error && data) {
+                dbNotes = data as NoteItem[];
             }
         } catch {
-            // Memory fallback below
+            // Memory store fallback
         }
 
-        const fallbackNotes = memoryNotesStore.get(report_id) ?? [];
-        return NextResponse.json({ notes: fallbackNotes });
+        const memNotes = memoryNotesStore.get(report_id) ?? [];
+        
+        const combinedMap = new Map<string, NoteItem>();
+        for (const n of [...dbNotes, ...memNotes]) {
+            const key = n.id || `${n.content}_${n.created_at}`;
+            if (!combinedMap.has(key)) {
+                combinedMap.set(key, n);
+            }
+        }
+
+        const notes = Array.from(combinedMap.values()).sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        return NextResponse.json({ notes });
     } catch (err) {
         return configErrorResponse(err);
     }

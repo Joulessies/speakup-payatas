@@ -1,3 +1,11 @@
+import { NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
+
+function configErrorResponse(err: unknown) {
+    const message = err instanceof Error ? err.message : "Server configuration error";
+    return NextResponse.json({ error: message }, { status: 503 });
+}
+
 interface NotificationItem {
     id: string;
     recipient_hash?: string;

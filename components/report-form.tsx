@@ -26,6 +26,22 @@ const ReportLocationPicker = dynamic(() => import("@/components/report-location-
     loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30" />,
 });
 
+const getRandomPayatasLocation = () => {
+    const PAYATAS_AREAS = [
+        { lat: 14.7085, lng: 121.1070 }, // Lupang Pangako
+        { lat: 14.7080, lng: 121.0960 }, // Phase 1, Payatas A
+        { lat: 14.7060, lng: 121.1020 }, // Phase 2, Payatas B
+        { lat: 14.7020, lng: 121.1050 }, // Phase 4, Payatas B
+        { lat: 14.6970, lng: 121.0940 }, // Group Two
+        { lat: 14.6940, lng: 121.1020 }  // Sitio Damayan
+    ];
+    const randomArea = PAYATAS_AREAS[Math.floor(Math.random() * PAYATAS_AREAS.length)];
+    return {
+        lat: randomArea.lat + (Math.random() - 0.5) * 0.003,
+        lng: randomArea.lng + (Math.random() - 0.5) * 0.003,
+    };
+};
+
 export default function ReportForm() {
     const DRAFT_KEY = "speakup.report.draft.v1";
     const DRAFT_TOAST_KEY = "speakup.report.draft.toast-shown.v1";
@@ -411,17 +427,9 @@ export default function ReportForm() {
         if (PRESENTATION_MODE) {
             const isFarFromPayatas = Math.abs(latitude - 14.7055) > 0.04 || Math.abs(longitude - 121.0990) > 0.04;
             if (isFarFromPayatas) {
-                const PAYATAS_AREAS = [
-                    { lat: 14.7085, lng: 121.1070 }, // Lupang Pangako
-                    { lat: 14.7080, lng: 121.0960 }, // Phase 1, Payatas A
-                    { lat: 14.7060, lng: 121.1020 }, // Phase 2, Payatas B
-                    { lat: 14.7020, lng: 121.1050 }, // Phase 4, Payatas B
-                    { lat: 14.6970, lng: 121.0940 }, // Group Two
-                    { lat: 14.6940, lng: 121.1020 }  // Sitio Damayan
-                ];
-                const randomArea = PAYATAS_AREAS[Math.floor(Math.random() * PAYATAS_AREAS.length)];
-                finalLat = randomArea.lat + (Math.random() - 0.5) * 0.003;
-                finalLng = randomArea.lng + (Math.random() - 0.5) * 0.003;
+                const loc = getRandomPayatasLocation();
+                finalLat = loc.lat;
+                finalLng = loc.lng;
             }
         }
 

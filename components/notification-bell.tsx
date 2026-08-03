@@ -4,6 +4,8 @@ import { Bell, X, Check, AlertTriangle, FileWarning, RefreshCw, ExternalLink } f
 import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
 
+import { generateReporterHash, getDeviceId } from "@/lib/crypto";
+
 interface NotifItem {
     id: string;
     type: string;
@@ -28,10 +30,15 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const fetchNotifications = useCallback(async () => {
         try {
+            let activeHash = reporterHash;
+            if (!activeHash && typeof window !== "undefined") {
+                try {
+                    activeHash = await generateReporterHash(getDeviceId());
+                } catch {}
+            }
             const params = new URLSearchParams();
             if (role) params.set("role", role);
-            if (reporterHash) params.set("reporter_hash", reporterHash);
-            if (role === "user" && !reporterHash) return;
+            if (activeHash) params.set("reporter_hash", activeHash);
             const res = await fetch(`/api/notifications?${params.toString()}`);
             const data = await res.json();
             

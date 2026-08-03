@@ -44,9 +44,12 @@ function DraggableAdvancedMarker({
 }) {
     const markerRef = useRef<google.maps.Marker | null>(null);
     const onDragEndRef = useRef(onDragEnd);
-    onDragEndRef.current = onDragEnd;
     const posRef = useRef({ latitude, longitude });
-    posRef.current = { latitude, longitude };
+
+    useEffect(() => {
+        onDragEndRef.current = onDragEnd;
+        posRef.current = { latitude, longitude };
+    });
 
     useEffect(() => {
         if (!map)

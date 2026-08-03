@@ -81,6 +81,9 @@ export async function GET(request: Request) {
                 status: r.status,
                 created_at: r.created_at,
                 photo_url: r.photo_url,
+                resolution_photo_url: r.action_history
+                    .filter((a) => a.photo_url)
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.photo_url || null,
                 resolved_at: r.action_history.find((a) => a.status === "resolved")?.created_at || r.created_at,
                 actions_taken: r.action_history
                     .filter((a) => a.actor !== "Resident" && a.actor !== "System")

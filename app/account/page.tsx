@@ -276,7 +276,7 @@ export default function AccountSettingsPage() {
                                     </div>
                                     {!isEmailUser && (
                                         <p className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                            Your account uses a mobile number. Email can't be set here.
+                                            Your account uses a mobile number. Email can&apos;t be set here.
                                         </p>
                                     )}
                                 </div>

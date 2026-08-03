@@ -5,6 +5,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CATEGORY_LABELS } from "@/types";
+import PredictiveAnalytics from "@/components/predictive-analytics";
 
 interface AdminStats {
     totalReports: number;
@@ -176,6 +177,24 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 )}
+
+                {/* Predictive Analytics & Spatial Hotspots */}
+                <div className={`rounded-2xl border overflow-hidden p-5 ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
+                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                        </div>
+                        <div>
+                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
+                                Spatial Hotspot Risks & Trajectory Analytics
+                            </h2>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
+                                DBSCAN-clustered hotspot risks, trend forecasting & category trajectory for Payatas-A
+                            </p>
+                        </div>
+                    </div>
+                    <PredictiveAnalytics isDark={isDark} />
+                </div>
 
                 {/* Category Breakdown */}
                 {stats && Object.keys(stats.byCategory).length > 0 && (

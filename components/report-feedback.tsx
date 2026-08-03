@@ -121,7 +121,7 @@ export default function ReportFeedback({ reportId, defaultOpen = false }: Props)
         <div className={`rounded-xl border p-3 space-y-3 ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-gray-50 border-gray-100"}`}>
             <div className="flex items-center justify-between gap-2">
                 <p className={`text-xs font-semibold ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                    How satisfied are you with the barangay's response?
+                    How satisfied are you with the barangay&apos;s response?
                 </p>
                 {!defaultOpen && (
                     <button

@@ -18,6 +18,7 @@ export type DbReport = {
   admin_category?: string | null;
   is_flagged?: boolean | null;
   flag_reason?: string | null;
+  photo_url?: string | null;
   submitted_at?: string | null;
   created_at: string;
   action_history?: ReportAction[] | null;
@@ -45,7 +46,7 @@ export async function fetchReportsBase() {
   const { data, error } = await getSupabaseAdmin()
     .from("reports")
     .select(
-      "id, receipt_id, reporter_hash, category, description, latitude, longitude, severity, status, verification_status, verified_by, verified_at, ai_category, admin_category, is_flagged, flag_reason, submitted_at, created_at, action_history",
+      "id, receipt_id, reporter_hash, category, description, latitude, longitude, severity, status, verification_status, verified_by, verified_at, ai_category, admin_category, is_flagged, flag_reason, photo_url, submitted_at, created_at, action_history",
     );
 
   if (error) {

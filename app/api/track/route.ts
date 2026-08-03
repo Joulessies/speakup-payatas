@@ -26,39 +26,18 @@ export async function GET(request: Request) {
             .order("created_at", { ascending: false })
             .limit(100);
 
-        const isStaffOrAdmin = session?.role === "admin" || session?.role === "staff";
-
-        // For regular users & residents, restrict results strictly to their own account reports or receipt ID
-        if (!isStaffOrAdmin) {
-            if (reporterHash) {
-                // Scoped to reporter's hash
-                dbQuery = dbQuery.ilike("reporter_hash", `${reporterHash}%`);
-                if (query && query.toLowerCase() !== "all") {
-                    const prefix = `%${query}%`;
-                    dbQuery = dbQuery.or(`receipt_id.ilike.${prefix},category.ilike.${prefix},description.ilike.${prefix}`);
-                }
-            } else if (query && query.length >= 6) {
-                // Search by exact receipt_id or report ID if hash not passed
-                const prefix = `%${query}%`;
-                dbQuery = dbQuery.or(`receipt_id.ilike.${prefix},id.ilike.${prefix}`);
-            } else {
-                // No criteria provided for non-staff — return empty list to protect privacy
-                return NextResponse.json({ reports: [] });
-            }
-        } else {
-            // Staff / Admin search
-            if (query && query.toLowerCase() !== "all") {
-                const prefix = `%${query}%`;
-                dbQuery = dbQuery.or(
-                    [
-                        `id.ilike.${prefix}`,
-                        `reporter_hash.ilike.${prefix}`,
-                        `receipt_id.ilike.${prefix}`,
-                        `category.ilike.${prefix}`,
-                        `description.ilike.${prefix}`,
-                    ].join(",")
-                );
-            }
+        // Allow searching across all reports for all users (Report History is public)
+        if (query && query.toLowerCase() !== "all") {
+            const prefix = `%${query}%`;
+            dbQuery = dbQuery.or(
+                [
+                    `id.ilike.${prefix}`,
+                    `reporter_hash.ilike.${prefix}`,
+                    `receipt_id.ilike.${prefix}`,
+                    `category.ilike.${prefix}`,
+                    `description.ilike.${prefix}`,
+                ].join(",")
+            );
         }
 
         const { data, error } = await dbQuery;

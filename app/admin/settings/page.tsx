@@ -249,7 +249,7 @@ export default function AccountSettingsPage() {
 
                     <div className="space-y-4">
                         <p className={`text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>
-                            Logging out will end your current session and you'll need to login again to access your account.
+                            Logging out will end your current session and you&apos;ll need to login again to access your account.
                         </p>
                         
                         <div className={`p-4 rounded-lg border ${isDark 
@@ -262,7 +262,7 @@ export default function AccountSettingsPage() {
                                         Are you sure you want to logout?
                                     </p>
                                     <p className={`text-xs mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                        Make sure you've saved any important work before logging out.
+                                        Make sure you&apos;ve saved any important work before logging out.
                                     </p>
                                 </div>
                             </div>

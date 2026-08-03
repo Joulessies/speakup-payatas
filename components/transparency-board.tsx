@@ -179,6 +179,27 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                         </div>
                                     )}
                                 </div>
+                                {r.feedback && r.feedback.count > 0 && (
+                                    <div className={`mt-2 p-2.5 rounded-xl border text-xs ${isDark ? "bg-emerald-500/[0.08] border-emerald-500/20 text-emerald-200" : "bg-[#e6f4ea] border-emerald-200 text-[#064e3b]"}`}>
+                                        <div className="flex items-center justify-between gap-2 font-semibold">
+                                            <span className="flex items-center gap-1.5 text-[11px]">
+                                                <MessageSquare className="h-3.5 w-3.5 text-emerald-500" /> Complainant Feedback
+                                            </span>
+                                            {r.feedback.average_rating !== null && (
+                                                <div className="flex items-center gap-1 text-[11px]">
+                                                    <StarRow rating={r.feedback.average_rating} size={12} />
+                                                    <span>{r.feedback.average_rating.toFixed(1)}/5</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {r.feedback.entries[0]?.comment && (
+                                            <p className={`mt-1 text-[11px] italic line-clamp-2 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                &ldquo;{r.feedback.entries[0].comment}&rdquo;
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 {embedded && (
                                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-[#059669]"}`}>
                                         <ArrowRight className="h-3 w-3" /> View details
@@ -236,7 +257,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                                             </div>
                                                             {entry.comment && (
                                                                 <p className={`mt-1 text-[11px] leading-snug ${isDark ? "text-white/65" : "text-gray-700"}`}>
-                                                                    "{entry.comment}"
+                                                                    &quot;{entry.comment}&quot;
                                                                 </p>
                                                             )}
                                                         </li>
