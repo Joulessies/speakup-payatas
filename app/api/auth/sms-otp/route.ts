@@ -28,9 +28,11 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             message: mock
-                ? "OTP generated (mock mode — check the dev server terminal for the code)."
-                : "OTP sent.",
+                ? `OTP generated (Dev mock code: ${issued.code}).`
+                : "Verification code sent to your mobile number via SMS.",
             mock_sms: mock || undefined,
+            mock_code: mock ? issued.code : undefined,
+            hint: mock ? `Dev mode: Mock OTP code is [ ${issued.code} ] (or check server terminal).` : undefined,
         });
     } catch (e) {
         const msg = e instanceof Error ? e.message : "";

@@ -1,4 +1,6 @@
 import { sendMessageBirdSmsToPhLast10 } from "@/lib/messagebird-sms";
+import { sendTextbeltSms } from "@/lib/textbelt-sms";
+import { sendTextbeeSms } from "@/lib/textbee-sms";
 import { getSmsBackend, isMockSmsDelivery, logMockSms } from "@/lib/sms-provider";
 
 const SEMAPHORE_BASE_URL = "https://api.semaphore.co/api/v4";
@@ -24,7 +26,19 @@ export async function sendSemaphoreOtpSms(phoneLast10: string, code: string) {
         return;
     }
 
-    if (getSmsBackend() === "messagebird") {
+    const backend = getSmsBackend();
+
+    if (backend === "textbee") {
+        await sendTextbeeSms(phoneLast10, otpMessageBody(code));
+        return;
+    }
+
+    if (backend === "textbelt") {
+        await sendTextbeltSms(phoneLast10, otpMessageBody(code));
+        return;
+    }
+
+    if (backend === "messagebird") {
         await sendMessageBirdSmsToPhLast10(phoneLast10, otpMessageBody(code));
         return;
     }
@@ -35,19 +49,18 @@ export async function sendSemaphoreOtpSms(phoneLast10: string, code: string) {
     }
 
     const number = normalizeTo63(phoneLast10);
-    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim() || "SEMAPHORE";
-    const messageTemplate = process.env.SMS_OTP_MESSAGE?.trim()
-        || process.env.SEMAPHORE_OTP_MESSAGE?.trim()
-        || "Your SpeakUp Payatas OTP is {otp}. Valid for 5 minutes.";
+    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim();
+    const messageBody = otpMessageBody(code);
 
     const payload = new URLSearchParams();
     payload.set("apikey", apiKey);
     payload.set("number", number);
-    payload.set("message", messageTemplate);
-    payload.set("sendername", sendername);
-    payload.set("code", code);
+    payload.set("message", messageBody);
+    if (sendername) {
+        payload.set("sendername", sendername);
+    }
 
-    const res = await fetch(`${SEMAPHORE_BASE_URL}/otp`, {
+    const res = await fetch(`${SEMAPHORE_BASE_URL}/messages`, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -57,7 +70,20 @@ export async function sendSemaphoreOtpSms(phoneLast10: string, code: string) {
 
     const text = await res.text();
     if (!res.ok) {
-        throw new Error(`Semaphore request failed (${res.status}): ${text || "Unknown error"}`);
+        let cleanMsg = text;
+        try {
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed) && parsed[0]?.message) {
+                cleanMsg = parsed[0].message;
+            } else if (typeof parsed === "string") {
+                cleanMsg = parsed;
+            }
+        } catch { }
+
+        if (res.status === 403 && cleanMsg.toLowerCase().includes("not yet been approved")) {
+            throw new Error("Your Semaphore SMS account is pending approval. Please verify your email / phone on semaphore.co to enable sending.");
+        }
+        throw new Error(`Semaphore SMS failed (${res.status}): ${cleanMsg || "Unknown error"}`);
     }
 }
 
@@ -76,7 +102,19 @@ export async function sendSemaphoreTransactionalSms(phoneLast10: string, message
         return;
     }
 
-    if (getSmsBackend() === "messagebird") {
+    const backend = getSmsBackend();
+
+    if (backend === "textbee") {
+        await sendTextbeeSms(phoneLast10, message.trim());
+        return;
+    }
+
+    if (backend === "textbelt") {
+        await sendTextbeltSms(phoneLast10, message.trim());
+        return;
+    }
+
+    if (backend === "messagebird") {
         await sendMessageBirdSmsToPhLast10(phoneLast10, message.trim());
         return;
     }
@@ -87,13 +125,15 @@ export async function sendSemaphoreTransactionalSms(phoneLast10: string, message
     }
 
     const number = normalizeTo63(phoneLast10);
-    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim() || "SEMAPHORE";
+    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim();
 
     const payload = new URLSearchParams();
     payload.set("apikey", apiKey);
     payload.set("number", number);
     payload.set("message", message.trim());
-    payload.set("sendername", sendername);
+    if (sendername) {
+        payload.set("sendername", sendername);
+    }
 
     const res = await fetch(`${SEMAPHORE_BASE_URL}/messages`, {
         method: "POST",
@@ -105,6 +145,19 @@ export async function sendSemaphoreTransactionalSms(phoneLast10: string, message
 
     const text = await res.text();
     if (!res.ok) {
-        throw new Error(`Semaphore messages failed (${res.status}): ${text || "Unknown error"}`);
+        let cleanMsg = text;
+        try {
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed) && parsed[0]?.message) {
+                cleanMsg = parsed[0].message;
+            } else if (typeof parsed === "string") {
+                cleanMsg = parsed;
+            }
+        } catch { }
+
+        if (res.status === 403 && cleanMsg.toLowerCase().includes("not yet been approved")) {
+            throw new Error("Your Semaphore SMS account is pending approval. Please verify your email / phone on semaphore.co to enable sending.");
+        }
+        throw new Error(`Semaphore SMS failed (${res.status}): ${cleanMsg || "Unknown error"}`);
     }
 }

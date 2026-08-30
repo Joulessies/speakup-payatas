@@ -11,14 +11,14 @@ CREATE TABLE IF NOT EXISTS reports (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   reporter_hash TEXT        NOT NULL,
   category    TEXT          NOT NULL
-    CHECK (category IN ('flooding','fire','crime','infrastructure','health','environmental','other')),
+    CHECK (category IN ('drainage_flooding','fire_hazard','safety_concern','infrastructure','sanitation_health','noise_nuisance','environmental','other')),
   description TEXT,
   latitude    DOUBLE PRECISION NOT NULL,
   longitude   DOUBLE PRECISION NOT NULL,
   location    GEOGRAPHY(POINT, 4326),
   severity    INTEGER       DEFAULT 1 CHECK (severity BETWEEN 1 AND 5),
   status      TEXT          DEFAULT 'pending'
-    CHECK (status IN ('pending','verified','resolved')),
+    CHECK (status IN ('pending','verified','in_progress','resolved')),
   photo_url   TEXT,
   created_at  TIMESTAMPTZ   DEFAULT now(),
   synced_at   TIMESTAMPTZ

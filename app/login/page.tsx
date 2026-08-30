@@ -14,7 +14,7 @@ import { getSupabaseBrowser } from "@/lib/supabase";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
 
 type AuthMode = "login" | "register";
-type AuthMethod = "password" | "email_otp";
+type AuthMethod = "password" | "sms_otp" | "email_otp";
 type ForgotPasswordStep = "request" | "verify" | "reset" | "success";
 
 export default function LoginPage() {
@@ -43,6 +43,7 @@ export default function LoginPage() {
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotStep, setForgotStep] = useState<ForgotPasswordStep>("request");
     const [forgotEmail, setForgotEmail] = useState("");
+    const [maskedResetPhone, setMaskedResetPhone] = useState<string | null>(null);
     const [resetToken, setResetToken] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -132,123 +133,71 @@ export default function LoginPage() {
     }, [forgotResendTimer]);
     const normalizedRegisterPhone = registerPhone.replace(/\D/g, "").slice(-10);
     const normalizedEmailOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
-    const mapOtpSendError = (message: string) => {
-        const m = message.toLowerCase();
-        if (m.includes("signups not allowed for otp")) {
-            return "Email OTP is blocked in Supabase. Enable Email signups in Supabase Auth settings (Authentication -> Providers -> Email).";
-        }
-        return message;
-    };
 
-    const resolveEmailForOtp = async (): Promise<string | null> => {
-        try {
-            const phone = normalizedEmailOtpPhone;
-            if (phone.length !== 10) {
-                setError("Enter a valid PH mobile number (e.g., 09171234567).");
-                return null;
-            }
-            const res = await fetch("/api/auth/email-otp-target", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: mode, phone }),
-            });
-            const json = await res.json();
-            if (!res.ok || typeof json?.email !== "string") {
-                setError(typeof json?.error === "string" ? json.error : "Unable to find account email for this number.");
-                return null;
-            }
-            setOtpEmail(json.email);
-            return json.email;
-        } catch {
-            setError("Unable to find account email for this number.");
-            return null;
-        }
-    };
-
-    const sendEmailOtp = async () => {
+    const sendSmsOtp = async () => {
         setError(null);
-        const addr = await resolveEmailForOtp();
-        if (!addr) {
+        const phone = normalizedEmailOtpPhone;
+        if (phone.length !== 10) {
+            setError("Enter a valid 10-digit PH mobile number (e.g., 09171234567).");
             return;
         }
         try {
             setSendingOtp(true);
-            const supabase = getSupabaseBrowser();
-            const { error: otpErr } = await supabase.auth.signInWithOtp({
-                email: addr,
-                options: {
-                    shouldCreateUser: true,
-                },
+            const res = await fetch("/api/auth/sms-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone }),
             });
-            if (otpErr) {
-                setError(mapOtpSendError(otpErr.message || "Unable to send email OTP."));
-                return;
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to send SMS OTP.");
             }
             setOtpSent(true);
-            setOtpResendTimer(60); // 60-second cooldown
-        }
-        catch (e) {
-            setError(e instanceof Error ? e.message : "Unable to send email OTP.");
-        }
-        finally {
+            setOtpResendTimer(60);
+            if (data.hint || data.mock_code) {
+                setForgotHint(data.hint || `Dev mode: Mock OTP code is [ ${data.mock_code} ]`);
+            }
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Unable to send SMS OTP.");
+        } finally {
             setSendingOtp(false);
         }
     };
 
-    const submitEmailOtpLogin = async () => {
+    const submitSmsOtpLogin = async () => {
         setError(null);
-        const addr = otpEmail || await resolveEmailForOtp();
-        if (!addr) {
-            return;
-        }
-        if (!otpSent) {
-            setError("Request a code first.");
-            return;
-        }
-        if (normalizedEmailOtpPhone.length !== 10) {
-            setError("Enter a valid PH mobile number (e.g., 09171234567).");
+        const phone = normalizedEmailOtpPhone;
+        if (phone.length !== 10) {
+            setError("Enter a valid 10-digit PH mobile number (e.g., 09171234567).");
             return;
         }
         const token = otp.trim().replace(/\s/g, "");
-        if (!/^\d{6,8}$/.test(token)) {
-            setError("Enter the code from your email (6-8 digits).");
+        if (!/^\d{6}$/.test(token)) {
+            setError("Enter the 6-digit code sent to your mobile number.");
             return;
         }
         try {
             setVerifyingOtp(true);
-            const supabase = getSupabaseBrowser();
-            const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
-                email: addr,
-                token,
-                type: "email",
-            });
-            if (verifyErr || !verifyData.session?.access_token) {
-                setError(verifyErr?.message || "Invalid or expired code.");
-                return;
-            }
-            const res = await fetch("/api/auth/supabase-email", {
+            const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    method: "sms",
                     action: mode,
-                    accessToken: verifyData.session.access_token,
-                    phoneLast10: normalizedEmailOtpPhone,
+                    phone,
+                    otp: token,
                 }),
             });
-            const json = await res.json();
+            const data = await res.json();
             if (!res.ok) {
-                setError(typeof json?.error === "string" ? json.error : "Unable to complete sign-in.");
-                return;
+                throw new Error(data.error || "Invalid OTP code.");
             }
-            await supabase.auth.signOut().catch(() => { });
             const next = new URLSearchParams(window.location.search).get("next");
-            router.push(next || json.redirect_to || "/dashboard");
+            router.push(next || data.redirect_to || "/dashboard");
             router.refresh();
-        }
-        catch (e) {
+        } catch (e) {
             setError(e instanceof Error ? e.message : "Unable to verify code.");
-        }
-        finally {
+        } finally {
             setVerifyingOtp(false);
         }
     };
@@ -259,14 +208,15 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            if (!isValidEmail(forgotEmail)) {
-                throw new Error("Please enter a valid email address.");
+            const trimmed = forgotEmail.trim();
+            if (!isValidEmail(trimmed) && !isValidPhoneInput(trimmed)) {
+                throw new Error("Please enter a valid email address or 10-digit PH mobile number.");
             }
 
             const res = await fetch("/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: forgotEmail }),
+                body: JSON.stringify({ identifier: trimmed }),
             });
 
             const data = await res.json();
@@ -275,8 +225,11 @@ export default function LoginPage() {
             }
 
             setForgotSuccess(data.message || "Reset code sent to your registered mobile number.");
+            if (data.maskedPhone) {
+                setMaskedResetPhone(data.maskedPhone);
+            }
             if (data?.delivery?.mock) {
-                setForgotHint(data.delivery.hint || "SMS provider isn't configured — the code was only logged to the server console.");
+                setForgotHint(data.delivery.hint || `Dev mode: Mock OTP code is [ ${data.delivery?.mock_code} ]`);
             } else {
                 setForgotHint(null);
             }
@@ -295,8 +248,33 @@ export default function LoginPage() {
             setError("Please enter the 6-digit code from your SMS.");
             return;
         }
-        setForgotStep("reset");
+
+        setForgotLoading(true);
         setError(null);
+
+        try {
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "verify",
+                    identifier: forgotEmail.trim(),
+                    token: resetToken,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Invalid reset code.");
+            }
+
+            setForgotStep("reset");
+            setError(null);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Invalid reset code.");
+        } finally {
+            setForgotLoading(false);
+        }
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
@@ -318,7 +296,7 @@ export default function LoginPage() {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    email: forgotEmail,
+                    identifier: forgotEmail.trim(),
                     token: resetToken,
                     newPassword,
                 }),
@@ -341,6 +319,11 @@ export default function LoginPage() {
     const resetForgotPassword = () => {
         setShowForgotPassword(false);
         setForgotStep("request");
+        setMaskedResetPhone(null);
+        if (forgotStep === "success" && forgotEmail) {
+            setEmail(forgotEmail);
+            setMethod("password");
+        }
         setForgotEmail("");
         setResetToken("");
         setNewPassword("");
@@ -354,11 +337,11 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitAttempted(true);
-        if (method === "email_otp") {
+        if (method === "sms_otp" || method === "email_otp") {
             if (!otpSent) {
-                await sendEmailOtp();
+                await sendSmsOtp();
             } else {
-                await submitEmailOtpLogin();
+                await submitSmsOtpLogin();
             }
             return;
         }
@@ -444,8 +427,8 @@ export default function LoginPage() {
                                     </CardTitle>
                                 </div>
                                 <CardDescription className={`text-center text-xs sm:text-sm mt-1 px-1 ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
-                                    {method === "email_otp"
-                                        ? (mode === "register" ? "Register with mobile + email code" : "Sign in with mobile + email code")
+                                    {method === "sms_otp"
+                                        ? (mode === "register" ? "Register with mobile SMS code" : "Sign in with mobile SMS code")
                                         : (mode === "register" ? "Sign up with email and password" : "Sign in with your email and password")}
                                 </CardDescription>
                             </CardHeader>
@@ -465,8 +448,8 @@ export default function LoginPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => { setMethod("email_otp"); setError(null); }}
-                                                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${method === "email_otp" ? (isDark ? "bg-emerald-600 text-white shadow" : "bg-white text-emerald-900 shadow") : (isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800")}`}
+                                                onClick={() => { setMethod("sms_otp"); setError(null); }}
+                                                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${method === "sms_otp" ? (isDark ? "bg-emerald-600 text-white shadow" : "bg-white text-emerald-900 shadow") : (isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800")}`}
                                             >
                                                 Mobile OTP Login
                                             </button>
@@ -478,14 +461,14 @@ export default function LoginPage() {
                                             {/* Email or Mobile Number Field for Login / Email for Register */}
                                             <div className="space-y-1.5">
                                                 <label className={`text-xs font-semibold ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>
-                                                    Email address
+                                                    Email address or mobile number
                                                 </label>
                                                 <div className="relative">
                                                     <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${fieldErrors.email ? "text-red-500" : isDark ? "text-white/35" : "text-[#8e8778]"}`} />
                                                     <Input
                                                         value={email}
                                                         onChange={(e) => setEmail(e.target.value)}
-                                                        placeholder="you@example.com"
+                                                        placeholder="you@example.com or 09171234567"
                                                         autoComplete="username"
                                                         aria-invalid={fieldErrors.email ? true : undefined}
                                                         className={inputClass(Boolean(fieldErrors.email))}
@@ -558,7 +541,7 @@ export default function LoginPage() {
                                         </>
                                     )}
 
-                                    {method === "email_otp" && (
+                                    {method === "sms_otp" && (
                                         <>
                                             <div className="space-y-1.5">
                                                 <label className={`text-xs font-semibold ${fieldErrors.emailOtpPhone ? "text-red-500" : isDark ? "text-white/70" : "text-[#6b6558]"}`}>Mobile number (PH)</label>
@@ -574,21 +557,28 @@ export default function LoginPage() {
                                             {otpSent && (
                                                 <div className="space-y-3">
                                                     <div className="space-y-1.5">
-                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter code from email</label>
-                                                        <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-8 digits" inputMode="numeric" autoComplete="one-time-code" className={`h-12 rounded-full px-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`} />
+                                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-[#6b6558]"}`}>Enter 6-digit SMS code</label>
+                                                        <Input
+                                                            value={otp}
+                                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                                            placeholder="000000"
+                                                            inputMode="numeric"
+                                                            autoComplete="one-time-code"
+                                                            className={`h-12 rounded-lg px-4 font-mono tracking-[0.3em] text-center ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`}
+                                                        />
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                                            {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive it?"}
+                                                            {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive SMS?"}
                                                         </span>
                                                         <button
                                                             type="button"
                                                             suppressHydrationWarning
-                                                            onClick={sendEmailOtp}
+                                                            onClick={sendSmsOtp}
                                                             disabled={otpResendTimer > 0 || sendingOtp}
                                                             className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                                         >
-                                                            {sendingOtp ? "Sending…" : "Resend code"}
+                                                            {sendingOtp ? "Sending…" : "Resend SMS code"}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -702,7 +692,7 @@ export default function LoginPage() {
                                                 ? (loading || !email.trim() || !password.trim() || (mode === "register" && (!confirmPassword.trim() || normalizedRegisterPhone.length !== 10 || !agreedToTerms)))
                                                 : (!otpSent
                                                     ? (sendingOtp || normalizedEmailOtpPhone.length !== 10 || (mode === "register" && !agreedToTerms))
-                                                    : (verifyingOtp || normalizedEmailOtpPhone.length !== 10 || !/^\d{6,8}$/.test(otp.trim().replace(/\s/g, "")) || (mode === "register" && !agreedToTerms)))
+                                                    : (verifyingOtp || normalizedEmailOtpPhone.length !== 10 || otp.trim().length !== 6 || (mode === "register" && !agreedToTerms)))
                                         }
                                     >
                                         {method === "password"
@@ -722,7 +712,7 @@ export default function LoginPage() {
                                                 if (nextMode === "register") {
                                                     setMethod("password");
                                                 }
-                                                if (method === "email_otp") {
+                                                if (method === "sms_otp" || method === "email_otp") {
                                                     setOtp("");
                                                     setOtpSent(false);
                                                     setEmailOtpPhone("");
@@ -767,53 +757,64 @@ export default function LoginPage() {
 
             {/* Forgot Password Modal */}
             {showForgotPassword && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <Card className={`w-full max-w-md overflow-hidden ${isDark ? "bg-[#121318] border-white/10" : "bg-white border-gray-200"}`}>
-                        <CardHeader className="pb-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <button
-                                    type="button"
-                                    onClick={resetForgotPassword}
-                                    className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
-                                >
-                                    <ArrowLeft className={`h-4 w-4 ${isDark ? "text-white/60" : "text-gray-600"}`} />
-                                </button>
-                                <CardTitle className={`text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {forgotStep === "success" ? "Password Reset Complete" : "Reset Password"}
-                                </CardTitle>
-                            </div>
-                            <CardDescription className={isDark ? "text-white/60" : "text-gray-500"}>
-                                {forgotStep === "request" && "Enter your email to receive a reset code on your registered mobile number."}
-                                {forgotStep === "verify" && "Enter the 6-digit code sent to your mobile number."}
-                                {forgotStep === "reset" && "Create a new strong password for your account."}
-                                {forgotStep === "success" && forgotSuccess}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all animate-in fade-in duration-200">
+                    <Card className={`w-full max-w-md overflow-hidden rounded-2xl shadow-2xl border ${isDark ? "bg-[#121318] border-white/10" : "bg-white border-gray-200"}`}>
+                        {forgotStep !== "success" && (
+                            <CardHeader className="pb-3 pt-6 px-6">
+                                <div className="flex items-center gap-2.5 mb-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={resetForgotPassword}
+                                        className={`p-1.5 -ml-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/70 hover:text-white" : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"}`}
+                                        title="Back to Sign In"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </button>
+                                    <CardTitle className={`text-lg font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                                        {forgotStep === "request" && "Reset Your Password"}
+                                        {forgotStep === "verify" && "Verify SMS Code"}
+                                        {forgotStep === "reset" && "Create New Password"}
+                                    </CardTitle>
+                                </div>
+                                <CardDescription className={`text-xs leading-relaxed ${isDark ? "text-white/60" : "text-gray-500"}`}>
+                                    {forgotStep === "request" && "Enter your registered email address or mobile number to receive a 6-digit verification code."}
+                                    {forgotStep === "verify" && (maskedResetPhone ? `Enter the 6-digit code sent to ${maskedResetPhone}.` : "Enter the 6-digit code sent to your registered mobile number.")}
+                                    {forgotStep === "reset" && "Please enter a strong new password that meets the security requirements below."}
+                                </CardDescription>
+                            </CardHeader>
+                        )}
+
+                        <CardContent className={forgotStep === "success" ? "p-8" : "px-6 pb-6 pt-2"}>
                             {forgotStep === "request" && (
                                 <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Email address</label>
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>
+                                            Email address or Mobile number (PH)
+                                        </label>
                                         <div className="relative">
                                             <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
                                             <Input
                                                 value={forgotEmail}
                                                 onChange={(e) => setForgotEmail(e.target.value)}
-                                                placeholder="you@example.com"
-                                                type="email"
-                                                className={`h-12 rounded-full pl-11 pr-4 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                                placeholder="you@example.com or 09171234567"
+                                                type="text"
+                                                autoFocus
+                                                className={`h-12 rounded-xl pl-11 pr-4 ${isDark ? "bg-white/[0.04] border-white/10 focus-visible:border-emerald-500/50" : "bg-gray-50/50 border-gray-200 focus-visible:border-emerald-600"}`}
                                             />
                                         </div>
                                     </div>
+
                                     {error && (
-                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
-                                            {error}
+                                        <div className={`text-xs px-3.5 py-2.5 rounded-xl border flex items-start gap-2 ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>{error}</span>
                                         </div>
                                     )}
+
                                     <Button
                                         type="submit"
                                         disabled={forgotLoading || !forgotEmail.trim()}
-                                        className="w-full h-12 rounded-lg font-semibold"
+                                        className="w-full h-11 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all"
                                     >
                                         {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Code"}
                                     </Button>
@@ -823,7 +824,9 @@ export default function LoginPage() {
                             {forgotStep === "verify" && (
                                 <form onSubmit={handleVerifyResetToken} className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Reset Code (6 digits)</label>
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>
+                                            6-Digit Verification Code
+                                        </label>
                                         <div className="relative">
                                             <KeyRound className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
                                             <Input
@@ -831,63 +834,53 @@ export default function LoginPage() {
                                                 onChange={(e) => setResetToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                                 placeholder="000000"
                                                 inputMode="numeric"
-                                                className={`h-12 rounded-full pl-11 pr-4 text-center font-mono tracking-[0.3em] ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                                maxLength={6}
+                                                autoFocus
+                                                className={`h-12 rounded-xl pl-11 pr-4 text-center font-mono text-base tracking-[0.35em] ${isDark ? "bg-white/[0.04] border-white/10 focus-visible:border-emerald-500/50" : "bg-gray-50/50 border-gray-200 focus-visible:border-emerald-600"}`}
                                             />
                                         </div>
                                     </div>
+
                                     {/* Resend option with timer */}
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between pt-1">
                                         <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
                                             {forgotResendTimer > 0 ? `Resend available in ${forgotResendTimer}s` : "Didn't receive the SMS?"}
                                         </span>
                                         <button
                                             type="button"
                                             disabled={forgotResendTimer > 0 || forgotLoading}
-                                            onClick={async () => {
-                                                setError(null);
-                                                setForgotLoading(true);
-                                                try {
-                                                    const res = await fetch("/api/auth/forgot-password", {
-                                                        method: "POST",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({ email: forgotEmail }),
-                                                    });
-                                                    const data = await res.json();
-                                                    if (!res.ok) throw new Error(data.error || "Failed to resend.");
-                                                    setForgotSuccess(data.message || "Code resent.");
-                                                    setForgotResendTimer(60);
-                                                } catch (e) {
-                                                    setError(e instanceof Error ? e.message : "Failed to resend.");
-                                                } finally {
-                                                    setForgotLoading(false);
-                                                }
-                                            }}
+                                            onClick={handleForgotPasswordRequest}
                                             className={`text-xs font-semibold underline underline-offset-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"}`}
                                         >
                                             {forgotLoading ? "Sending…" : "Resend code"}
                                         </button>
                                     </div>
+
                                     {forgotSuccess && (
-                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-emerald-300 border-emerald-500/25 bg-emerald-500/10" : "text-emerald-700 border-emerald-200 bg-emerald-50"}`}>
+                                        <div className={`text-xs px-3.5 py-2.5 rounded-xl border ${isDark ? "text-emerald-300 border-emerald-500/25 bg-emerald-500/10" : "text-emerald-700 border-emerald-200 bg-emerald-50"}`}>
                                             {forgotSuccess}
                                         </div>
                                     )}
+
                                     {forgotHint && (
-                                        <div className={`text-[11px] px-3 py-2 rounded-xl border ${isDark ? "text-amber-300 border-amber-500/30 bg-amber-500/10" : "text-amber-800 border-amber-200 bg-amber-50"}`}>
+                                        <div className={`text-[11px] px-3.5 py-2.5 rounded-xl border ${isDark ? "text-amber-300 border-amber-500/30 bg-amber-500/10" : "text-amber-800 border-amber-200 bg-amber-50"}`}>
                                             <span className="font-semibold">Dev note:</span> {forgotHint}
                                         </div>
                                     )}
+
                                     {error && (
-                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
-                                            {error}
+                                        <div className={`text-xs px-3.5 py-2.5 rounded-xl border flex items-start gap-2 ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>{error}</span>
                                         </div>
                                     )}
+
                                     <Button
                                         type="submit"
-                                        disabled={resetToken.length !== 6}
-                                        className="w-full h-12 rounded-lg font-semibold"
+                                        disabled={resetToken.length !== 6 || forgotLoading}
+                                        className="w-full h-11 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all"
                                     >
-                                        Verify Code
+                                        {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Code"}
                                     </Button>
                                 </form>
                             )}
@@ -895,15 +888,16 @@ export default function LoginPage() {
                             {forgotStep === "reset" && (
                                 <form onSubmit={handleResetPassword} className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>New Password</label>
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>New Password</label>
                                         <div className="relative">
                                             <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
                                             <Input
                                                 value={newPassword}
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 type={showNewPassword ? "text" : "password"}
-                                                placeholder="Enter new password"
-                                                className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                                placeholder="Enter new strong password"
+                                                autoFocus
+                                                className={`h-11 rounded-xl pl-11 pr-12 ${isDark ? "bg-white/[0.04] border-white/10 focus-visible:border-emerald-500/50" : "bg-gray-50/50 border-gray-200 focus-visible:border-emerald-600"}`}
                                             />
                                             <button
                                                 type="button"
@@ -916,7 +910,7 @@ export default function LoginPage() {
                                     </div>
 
                                     {passwordValidation && (
-                                        <div className={`space-y-2.5 p-3 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <div className={`space-y-2.5 p-3.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                             <div className="flex items-center justify-between">
                                                 <span className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>Password requirements</span>
                                                 <span className={`text-xs font-semibold capitalize ${getPasswordStrengthColor(passwordValidation.strength, isDark)}`}>
@@ -927,7 +921,7 @@ export default function LoginPage() {
                                                 {[1, 2, 3, 4].map((i) => (
                                                     <div
                                                         key={i}
-                                                        className={`h-1 flex-1 rounded-full ${i <= passwordValidation.score
+                                                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= passwordValidation.score
                                                             ? getPasswordStrengthBg(passwordValidation.strength)
                                                             : isDark ? "bg-white/10" : "bg-gray-200"
                                                             }`}
@@ -939,14 +933,14 @@ export default function LoginPage() {
                                                     <li
                                                         key={rule.id}
                                                         className={`text-[11px] flex items-center gap-1.5 ${rule.met
-                                                            ? "text-emerald-500"
+                                                            ? "text-emerald-500 font-medium"
                                                             : isDark ? "text-white/45" : "text-gray-500"
                                                             }`}
                                                     >
                                                         {rule.met ? (
-                                                            <Check className="h-3.5 w-3.5" />
+                                                            <Check className="h-3.5 w-3.5 shrink-0" />
                                                         ) : (
-                                                            <XIcon className={`h-3.5 w-3.5 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+                                                            <XIcon className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
                                                         )}
                                                         <span>{rule.label}</span>
                                                     </li>
@@ -956,15 +950,15 @@ export default function LoginPage() {
                                     )}
 
                                     <div className="space-y-1.5">
-                                        <label className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>Confirm New Password</label>
+                                        <label className={`text-xs font-semibold ${isDark ? "text-white/75" : "text-gray-700"}`}>Confirm New Password</label>
                                         <div className="relative">
                                             <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? "text-white/35" : "text-gray-400"}`} />
                                             <Input
                                                 value={confirmNewPassword}
                                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                                                 type={showConfirmNewPassword ? "text" : "password"}
-                                                placeholder="Confirm new password"
-                                                className={`h-12 rounded-full pl-11 pr-12 ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-gray-200"}`}
+                                                placeholder="Re-type new password"
+                                                className={`h-11 rounded-xl pl-11 pr-12 ${isDark ? "bg-white/[0.04] border-white/10 focus-visible:border-emerald-500/50" : "bg-gray-50/50 border-gray-200 focus-visible:border-emerald-600"}`}
                                             />
                                             <button
                                                 type="button"
@@ -983,15 +977,16 @@ export default function LoginPage() {
                                     )}
 
                                     {error && (
-                                        <div className={`text-xs px-3 py-2 rounded-xl border ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
-                                            {error}
+                                        <div className={`text-xs px-3.5 py-2.5 rounded-xl border flex items-start gap-2 ${isDark ? "text-red-300 border-red-500/25 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                                            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>{error}</span>
                                         </div>
                                     )}
 
                                     <Button
                                         type="submit"
                                         disabled={forgotLoading || !passwordValidation?.isValid || newPassword !== confirmNewPassword}
-                                        className="w-full h-12 rounded-lg font-semibold"
+                                        className="w-full h-11 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all"
                                     >
                                         {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
                                     </Button>
@@ -999,19 +994,29 @@ export default function LoginPage() {
                             )}
 
                             {forgotStep === "success" && (
-                                <div className="space-y-4 text-center">
-                                    <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${isDark ? "bg-emerald-500/20" : "bg-emerald-100"}`}>
-                                        <CheckCircle className={`h-8 w-8 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+                                <div className="py-3 text-center space-y-5 animate-in zoom-in-95 duration-200">
+                                    <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
+                                        <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-25" />
+                                        <div className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${isDark ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-emerald-100 text-emerald-600 border border-emerald-200"}`}>
+                                            <CheckCircle className="h-9 w-9" />
+                                        </div>
                                     </div>
-                                    <p className={`text-sm ${isDark ? "text-white/70" : "text-gray-600"}`}>
-                                        Your password has been reset successfully. You can now sign in with your new password.
-                                    </p>
+
+                                    <div className="space-y-1.5">
+                                        <h3 className={`text-lg font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                                            Password Reset Complete
+                                        </h3>
+                                        <p className={`text-xs leading-relaxed max-w-xs mx-auto ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                                            Your password has been updated successfully. You can now sign in to your account with your new password.
+                                        </p>
+                                    </div>
+
                                     <Button
                                         type="button"
                                         onClick={resetForgotPassword}
-                                        className="w-full h-12 rounded-lg font-semibold"
+                                        className="w-full h-11 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all"
                                     >
-                                        Back to Sign In
+                                        Sign In Now
                                     </Button>
                                 </div>
                             )}
