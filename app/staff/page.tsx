@@ -2,7 +2,6 @@
 import { useTheme } from "@/components/theme-provider";
 import VerificationPanel from "@/components/verification-panel";
 import PredictiveAnalytics from "@/components/predictive-analytics";
-import BarangaySystemDashboard from "@/components/barangay-system-dashboard";
 import { ShieldCheck, TrendingUp } from "lucide-react";
 
 export default function StaffPage() {
@@ -26,8 +25,6 @@ export default function StaffPage() {
                         </p>
                     </div>
                 </div>
-
-                <BarangaySystemDashboard isDark={isDark} />
 
                 {/* Spatial Hotspot Risks, Community Trend & Category Trajectory */}
                 <div className={`p-4 md:p-6 rounded-2xl border shadow-xl ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>

@@ -7,7 +7,6 @@ import { translateCategory } from "@/lib/i18n";
 import { Loader2, ChevronUp, ChevronDown, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
-import BarangaySystemDashboard from "./barangay-system-dashboard";
 import type { ClusterResult } from "@/types";
 import {
   Select,
