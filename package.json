@@ -7,7 +7,8 @@
     "defender:exclude": "powershell -ExecutionPolicy Bypass -File scripts/add-windows-defender-exclusion.ps1",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "train:ai": "node scripts/sync_db_reports.js && python scripts/train_ai_model.py"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",

@@ -1,0 +1,727 @@
+{
+  "synced_at": "2026-10-15T15:45:43.503Z",
+  "total_fetched": 93,
+  "usable_training_samples": 90,
+  "reports": [
+    {
+      "id": "4d965325-ac95-4894-bf8d-e77d5369ad14",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "maingay",
+      "verification_status": "valid",
+      "created_at": "2026-10-06T03:28:52.689561+00:00"
+    },
+    {
+      "id": "7f7766eb-2b8d-4280-b541-c4f0c47bf21f",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "sirang kalsada",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:50:28.188053+00:00"
+    },
+    {
+      "id": "1d6aa23e-43ad-46ca-b15d-22da780829c2",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Tubo sira",
+      "verification_status": "valid",
+      "created_at": "2026-10-06T03:28:40.249315+00:00"
+    },
+    {
+      "id": "d3822668-76ad-4748-9f5b-f5ddfdd5cb92",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "mabaho",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:49:29.0625+00:00"
+    },
+    {
+      "id": "c550e243-15bf-4788-8b81-d9f46a6bbcf3",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:58:18.630345+00:00"
+    },
+    {
+      "id": "a35a0732-4ab2-48fe-a09f-9e3e4a84e6fb",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Ung poste dito parang babagsak pls pacheck po thanks",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:08:26.437005+00:00"
+    },
+    {
+      "id": "3c4c918c-ea81-4977-b8f5-8475d85f2d18",
+      "category": "other",
+      "admin_category": null,
+      "description": "many road bumps",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:14:17.278439+00:00"
+    },
+    {
+      "id": "9d7f8477-a2e4-41ed-8059-31ae672b1c86",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "neighbor using and old extention",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T08:26:25.147618+00:00"
+    },
+    {
+      "id": "4f975978-c4b1-4be6-885d-e445fa654090",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "drainage is blocked with debris",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T08:28:59.312886+00:00"
+    },
+    {
+      "id": "b4f23355-09cb-4e45-8741-cdf720b61cae",
+      "category": "other",
+      "admin_category": null,
+      "description": "Towing",
+      "verification_status": "valid",
+      "created_at": "2026-05-21T06:16:52.099188+00:00"
+    },
+    {
+      "id": "5ea35181-76f1-4a2f-b15d-151f656054d2",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "drainage is blocked with debris",
+      "verification_status": "valid",
+      "created_at": "2026-05-23T08:29:44.718068+00:00"
+    },
+    {
+      "id": "4e730410-9782-470e-b687-d859eacaaeae",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing sanitation_health.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-15T17:16:10.307+00:00"
+    },
+    {
+      "id": "e47fd73d-eaa8-4266-be6b-987e6f657f95",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing safety_concern.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T01:13:52.826+00:00"
+    },
+    {
+      "id": "1a8e322a-2046-4a4c-93d0-a348436eabe9",
+      "category": "other",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing other.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T10:54:12.702+00:00"
+    },
+    {
+      "id": "2884d991-49a0-4bc2-9033-a3949d0963af",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "Wire wire wire wire wire hazzard fire putok",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:16:47.070473+00:00"
+    },
+    {
+      "id": "4bb0bdba-76e3-476a-8e38-f3a38ec32cd7",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Sanitation sanitation sanitation sanitation hazzard",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:18:22.974327+00:00"
+    },
+    {
+      "id": "c355afd8-8320-4a6a-aabd-d30b7d03d76b",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Ang ingay kabilaan may karaoke",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:21:12.409875+00:00"
+    },
+    {
+      "id": "e0aa3b58-b517-4446-bdd7-f4c200d29616",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "illegal parking causing traffic",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:21:34.120208+00:00"
+    },
+    {
+      "id": "f76db7bc-480f-4db2-a8e5-2af2d120d9f3",
+      "category": "other",
+      "admin_category": null,
+      "description": "Traffic beb",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:22:31.064509+00:00"
+    },
+    {
+      "id": "eb7020bc-d5b6-4830-877f-c6134a68f2e9",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Sanitation hazzqrd garbage ",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:23:35.301802+00:00"
+    },
+    {
+      "id": "bf2b6620-6fae-4ce2-aeef-7f68abcd236f",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Safety concern, anonymous man",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:27:09.637987+00:00"
+    },
+    {
+      "id": "c117d5d7-169f-4141-ab95-cf4fd09e947e",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "May mga nagchichismisan kung saan saan ",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:27:35.876908+00:00"
+    },
+    {
+      "id": "5fe68cce-ab0d-4170-917c-02f984bca082",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "magulong wirings can cause sunog",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:28:34.660398+00:00"
+    },
+    {
+      "id": "9e158ad0-117d-4489-9787-18b264d0ce5d",
+      "category": "other",
+      "admin_category": null,
+      "description": "madaming asong pagala gala",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:30:49.78763+00:00"
+    },
+    {
+      "id": "fa0885dd-6402-4ba2-ac87-9c28d28f9da4",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "nakakaperwisyo andaming lubak",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:32:34.305403+00:00"
+    },
+    {
+      "id": "9dd689fe-e67c-4b7f-b30f-0899e4dd1931",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Noisy vendor, noise hazzard. Noisy noisy",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:35:36.220323+00:00"
+    },
+    {
+      "id": "9b573707-aa46-4705-acb8-0932fc6c3818",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "many people at night",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:35:59.638772+00:00"
+    },
+    {
+      "id": "d9603f6c-b531-4cf5-91b9-9b5be117116e",
+      "category": "other",
+      "admin_category": null,
+      "description": "illegal parking",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:54:53.36502+00:00"
+    },
+    {
+      "id": "1ba6c318-752e-4229-8741-894d0d17102d",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Walang ilawww ung daan hays",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:41:06.68341+00:00"
+    },
+    {
+      "id": "1075d18d-8e75-4635-8a2e-cbeeeb391eda",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing drainage_flooding.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T02:52:17.014+00:00"
+    },
+    {
+      "id": "e2e4d6c7-23b4-4a45-9fa4-f9045da701db",
+      "category": "other",
+      "admin_category": null,
+      "description": "Illegal parking, not vapid parking, pls fix",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:44:48.259985+00:00"
+    },
+    {
+      "id": "3457a6a6-78fc-4099-ad34-abcee025541b",
+      "category": "environmental",
+      "admin_category": null,
+      "description": "Blanlablablabalbalanakqqbqkwnwjbdnfnsnshw",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:47:13.739836+00:00"
+    },
+    {
+      "id": "fc19c0cc-00c2-4782-80ef-207279837e2d",
+      "category": "environmental",
+      "admin_category": null,
+      "description": "Dirty and occupied sidewalk cannot be used",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:51:00.270499+00:00"
+    },
+    {
+      "id": "7100f0f4-08c3-401e-84a9-a65c4ae7954a",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "causing traffic garbage",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:51:20.033191+00:00"
+    },
+    {
+      "id": "54862d14-5652-4dec-b92e-86ab493b02d7",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Blabak Ssd kaksneienwkenajwnwjjwuwwjjwnehwjwjjs",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-23T10:53:34.293872+00:00"
+    },
+    {
+      "id": "ae3df0e6-6b63-4183-8e2d-a73cdaa6c11b",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "dogs stool scattered ",
+      "verification_status": "valid",
+      "created_at": "2026-05-23T10:41:34.14166+00:00"
+    },
+    {
+      "id": "6bb1b6f7-b356-4922-8c36-310a961c727f",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "playing too loud music",
+      "verification_status": "valid",
+      "created_at": "2026-05-23T10:47:32.07652+00:00"
+    },
+    {
+      "id": "68111b0b-aaba-46e4-b266-adfce71d1bb7",
+      "category": "environmental",
+      "admin_category": null,
+      "description": "cutting trees",
+      "verification_status": "valid",
+      "created_at": "2026-05-23T10:45:00.450909+00:00"
+    },
+    {
+      "id": "6d28fad0-ed70-4794-9ce9-11c3cd25e60f",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Health hazzard dangerous fumes pls clean it",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-24T12:23:10.523859+00:00"
+    },
+    {
+      "id": "90652c57-c482-4333-b247-53f0adcb307d",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "music too loud",
+      "verification_status": "valid",
+      "created_at": "2026-05-25T15:29:52.419163+00:00"
+    },
+    {
+      "id": "12149287-8e4c-4e1c-ab68-42d49fb9ac02",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "puro basura yung kanal odits",
+      "verification_status": "valid",
+      "created_at": "2026-05-26T11:34:36.354888+00:00"
+    },
+    {
+      "id": "c301ee79-ddee-4bfa-8443-45968d0f3378",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "damages in wirings due past storms",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-27T17:47:11.771212+00:00"
+    },
+    {
+      "id": "4b036ab4-eeab-45ac-9834-c73b9e755c37",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "bejenwhqjqjwjqjwdnejwjwnsnqnwnananqnnqnq",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-27T17:57:11.953636+00:00"
+    },
+    {
+      "id": "0ebf83d7-a86f-4a44-8dee-8f7ab8f75bc4",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "damages in wirings due past storms",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-27T17:57:14.310875+00:00"
+    },
+    {
+      "id": "c61c2e54-da95-43a0-bff9-04e8c4118716",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "damages in wirings due past storms",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-27T17:57:48.543355+00:00"
+    },
+    {
+      "id": "9157c561-ebfa-4e81-bd2c-1220d448ec24",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing safety_concern.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T21:25:29.187+00:00"
+    },
+    {
+      "id": "24e340d8-32f1-4fa8-9c1c-dd84285e32e0",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Wirings wirings wirings haZard",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-27T18:01:19.589422+00:00"
+    },
+    {
+      "id": "5dbc9582-dbbd-42db-b5d7-6e281733e9a5",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "madaming aso sa highway",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-28T03:50:41.191008+00:00"
+    },
+    {
+      "id": "cdb0446a-9b00-4436-804a-118fb8e990c4",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "sobrang daming basura naka imbak dito sa everlasting st",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-28T05:28:42.616506+00:00"
+    },
+    {
+      "id": "6928e945-a1b0-42e2-91f4-30b14f0ba707",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "asdasdasd",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-28T05:39:02.502008+00:00"
+    },
+    {
+      "id": "60ba4723-56a0-44ba-87fa-6ca0da248ed5",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "asdasdasd",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-28T05:44:13.601368+00:00"
+    },
+    {
+      "id": "825ad8ea-b84e-49f5-bf00-85a4acc6797f",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "maingay",
+      "verification_status": "valid",
+      "created_at": "2026-10-06T06:53:38.086257+00:00"
+    },
+    {
+      "id": "0b59e8b1-4f7c-4585-874e-bbb309b1768c",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "sobrang ingay ng mga batang naglalaro dito",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-28T05:52:35.942803+00:00"
+    },
+    {
+      "id": "0f93222b-a654-4bbd-bba8-7c903447e92a",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "ninakaw ni ericson ang metro ng tubig namin",
+      "verification_status": "valid",
+      "created_at": "2026-05-28T08:31:29.948852+00:00"
+    },
+    {
+      "id": "40b4f2b8-9eb5-444f-b667-88bb0a22e846",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "asdasd",
+      "verification_status": "unreviewed",
+      "created_at": "2026-05-31T16:35:44.252232+00:00"
+    },
+    {
+      "id": "5ef5668c-ea5d-486f-b468-4e42fa35b409",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "barado yung kanal",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:55:26.844637+00:00"
+    },
+    {
+      "id": "ff863a76-abe2-4d05-8a4c-f83234cc466e",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:59:25.967675+00:00"
+    },
+    {
+      "id": "3e0195d7-6d1b-47b0-9404-220c0be1b2d6",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Baradong kanal sa tabi ng bahay namin umaapaw na po pakisolusyunan naman",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:05:55.853703+00:00"
+    },
+    {
+      "id": "ae4d3dfb-94cc-4fb9-a89b-0a269037cbe6",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Ung kanal dito sobrang daming lamok breeding ground na to ng dengue eh! Tas ung bahay sa likod namin amoy marijuana pls pakicheck po ",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:09:23.527334+00:00"
+    },
+    {
+      "id": "b87744cf-0fb3-47f5-8650-0bb26b084b5b",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T23:03:51.458+00:00"
+    },
+    {
+      "id": "d3bee96d-407d-49e2-acf4-26eea11df90a",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Drainage flooding at Alley 1",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-06T12:10:46.172804+00:00"
+    },
+    {
+      "id": "722e8f1c-c7e0-46e0-9f13-01a304d69038",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing infrastructure.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T05:59:53.597+00:00"
+    },
+    {
+      "id": "9db386e4-d400-465a-9260-3f7488cfac8a",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:57:12.959681+00:00"
+    },
+    {
+      "id": "1de30f36-a189-4c65-81e3-28b7ac48b521",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:57:49.705327+00:00"
+    },
+    {
+      "id": "5315858d-d78b-4402-b8ad-223eb3abf327",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing sanitation_health.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T05:03:01.993+00:00"
+    },
+    {
+      "id": "05b03bca-5cdd-4e66-b0d6-31c93c8a61ba",
+      "category": "environmental",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:59:42.960156+00:00"
+    },
+    {
+      "id": "a31578d7-3b62-4411-88e2-1f19a2bdef34",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "Mga bata dito samin naglalaro ng kandila baka makasunog sila parespondehan po",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:06:58.761217+00:00"
+    },
+    {
+      "id": "a1761604-6cb3-4c18-8cc7-a16507d5a6aa",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T22:57:23.744+00:00"
+    },
+    {
+      "id": "1299a1af-2d6e-4a13-b65f-128c37cd3bc8",
+      "category": "other",
+      "admin_category": null,
+      "description": "may bading po kong nakita dito ",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-09T03:11:38.255945+00:00"
+    },
+    {
+      "id": "a594751d-f182-496e-a78e-c3766af877bc",
+      "category": "other",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing other.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T12:20:41.912+00:00"
+    },
+    {
+      "id": "37fffa0e-1547-41d5-90da-a14bf077dd9c",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T21:52:23.97+00:00"
+    },
+    {
+      "id": "838b0aad-3476-4972-8a0a-7cf03415966a",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing sanitation_health.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T04:33:09.341+00:00"
+    },
+    {
+      "id": "4317c6f3-5d01-4383-96df-7dccb114b58e",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T16:56:49.579+00:00"
+    },
+    {
+      "id": "9be731c1-f926-4ad5-9f38-92d68bb9b913",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing sanitation_health.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T10:42:45.08+00:00"
+    },
+    {
+      "id": "854974ce-1b27-4328-8579-61e5dfb879a7",
+      "category": "environmental",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing environmental.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T01:54:48.571+00:00"
+    },
+    {
+      "id": "e3aea497-ee36-4a83-b403-6c4879dc501b",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-15T14:58:06.378+00:00"
+    },
+    {
+      "id": "ffb6a970-98dc-45dc-b20a-7070383606e0",
+      "category": "sanitation_health",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing sanitation_health.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T03:48:16.624+00:00"
+    },
+    {
+      "id": "14514c1b-8b77-418b-add3-56d949dc3ae7",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing infrastructure.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T05:52:50.517+00:00"
+    },
+    {
+      "id": "c6142838-bccd-4c55-908a-6def43de2752",
+      "category": "other",
+      "admin_category": null,
+      "description": "mga tricycle driver dyan sa sto.nino gala, wala na ngang students discount hindi pa pwede regular ride. mostly rudee and never na bumaba yung trike fare even if wala ng hike.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-06T12:27:57.170454+00:00"
+    },
+    {
+      "id": "3002054e-c0a8-4493-86e3-7254d725d6f5",
+      "category": "fire_hazard",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T14:57:33.244891+00:00"
+    },
+    {
+      "id": "a49d0de0-be6a-4185-9bf4-0be74e5cece7",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris elementum nulla sed malesuada mattis. Nullam dictum vestibulum lacus non cursus. Nullam sagittis elit non nunc malesuada sollicitudin. Aenean nec laoreet nunc, et viverra turpis. Nam ornare diam a lorem euismod, et laoreet arcu suscipit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris tempor bibendum nisl, elementum egestas ex sollicitudin ut. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Quisque at sem ligula. Suspendisse tristique quam elit, a ultrices dui viverra nec.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:00:01.765989+00:00"
+    },
+    {
+      "id": "c7c0a9de-f25f-4144-a073-0a4bc32fe8cd",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Ung kapitbahay namin binubugbog ata asawa nya pls pa welfare check po skanila dito banda samin pangalan ng asawa Mheriel ",
+      "verification_status": "unreviewed",
+      "created_at": "2026-10-08T15:07:47.346852+00:00"
+    },
+    {
+      "id": "dee3addf-cb08-4967-a980-7b56b3417c77",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T11:59:58.614+00:00"
+    },
+    {
+      "id": "d927a63e-d7c6-405d-a8e9-fa6187cc1aab",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T19:20:49.693+00:00"
+    },
+    {
+      "id": "e64bace8-2abe-4679-90a2-4f6e33138883",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-15T15:46:11.469+00:00"
+    },
+    {
+      "id": "588a1378-f44b-41e6-b6ad-390865180711",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing safety_concern.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T07:52:22.151+00:00"
+    },
+    {
+      "id": "981e61dd-64f7-4148-9540-649bbde1bd4e",
+      "category": "noise_nuisance",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing noise_nuisance.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T08:30:41.471+00:00"
+    },
+    {
+      "id": "cde4a208-12c6-4b80-9652-bcc6214a85ce",
+      "category": "infrastructure",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing infrastructure.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-15T20:15:35.865+00:00"
+    },
+    {
+      "id": "ebebc644-15b4-47a2-bc12-843451e01c0e",
+      "category": "drainage_flooding",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing drainage_flooding.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-17T01:00:08.86+00:00"
+    },
+    {
+      "id": "f2e3b932-c390-48f0-8778-e7965c3af8ea",
+      "category": "safety_concern",
+      "admin_category": null,
+      "description": "Auto-generated dummy report for testing safety_concern.",
+      "verification_status": "unreviewed",
+      "created_at": "2026-06-16T15:22:03.652+00:00"
+    }
+  ]
+}

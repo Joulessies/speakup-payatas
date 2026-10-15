@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo } from "lucide-react";
+import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo, Sparkles } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -665,6 +665,12 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
                                             {CATEGORY_LABELS[(report.admin_category || report.category) as ReportCategory] || report.category}
                                         </Badge>
+                                        {report.ai_category && (
+                                            <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] gap-1">
+                                                <Sparkles className="h-3 w-3" />
+                                                AI: {CATEGORY_LABELS[report.ai_category as ReportCategory] || report.ai_category}
+                                            </Badge>
+                                        )}
                                         {report.is_flagged && (
                                             <Badge variant="destructive" className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">
                                                 <AlertTriangle className="h-3 w-3 mr-1" /> Flagged
@@ -955,6 +961,12 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                 <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
                                     {CATEGORY_LABELS[(detailModal.admin_category || detailModal.category) as ReportCategory] || detailModal.category}
                                 </Badge>
+                                {detailModal.ai_category && (
+                                    <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs gap-1">
+                                        <Sparkles className="h-3 w-3" />
+                                        AI: {CATEGORY_LABELS[detailModal.ai_category as ReportCategory] || detailModal.ai_category}
+                                    </Badge>
+                                )}
                             </div>
                             <button
                                 onClick={() => setDetailModal(null)}
