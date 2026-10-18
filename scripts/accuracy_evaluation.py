@@ -6,12 +6,12 @@ Evaluates core algorithms using MAPE and MSE for SOP documentation and system va
 
   1. **AI NLP Incident Classification**:
      - Baseline: Rule-Based Keyword Density Matching
-     - Upgraded: Supervised Machine Learning Model (TF-IDF + Softmax Logistic Regression)
+     - Upgraded: Random Forest Classifier (with TF-IDF Feature Extraction & 100 Estimators)
      - Compares system-predicted categories against admin-verified ground truth
      - Computes Precision, Recall, F1-Score, Accuracy, MSE (0/1 loss & probability error), and MAPE
 
   2. **Multi-Model Incident Forecasting**:
-     - Models: Ordinary Least Squares (OLS) Linear Regression, Simple Moving Average (SMA), Single Exponential Smoothing (SES)
+     - Models: Random Forest Regressor, Ordinary Least Squares (OLS) Linear Regression, Simple Moving Average (SMA), Single Exponential Smoothing (SES)
      - Metrics: MSE, RMSE, MAPE, Symmetric MAPE (sMAPE), and Weighted Absolute Percentage Error (WAPE)
      - Leave-out cross validation on holdout days
 
@@ -120,13 +120,13 @@ def classify_rule_based(description: str) -> str:
 
 def classify_trained_ai(description: str) -> tuple[str, float]:
     """
-    Predicts category using the trained Python TF-IDF + Logistic Regression model.
+    Predicts category using the trained Python TF-IDF + Random Forest Classifier model.
     Returns: (predicted_category, confidence_probability)
     """
     if TRAINED_MODEL is not None:
         try:
             vec = TRAINED_MODEL["vectorizer"]
-            clf = TRAINED_MODEL["classifier"]
+            clf = TRAINED_MODEL.get("random_forest") or TRAINED_MODEL.get("classifier")
             classes = TRAINED_MODEL["evaluation"]["classes"]
             x = vec.transform([description])
             probs = clf.predict_proba(x)[0]
@@ -209,6 +209,50 @@ def forecast_exponential_smoothing(daily_counts, forecast_days=4, alpha=0.3):
     predictions = [forecast_value] * forecast_days
 
     return predictions, {"alpha": round(alpha, 2), "last_smoothed": round(smoothed[-1], 2)}
+
+
+def forecast_random_forest(daily_counts, forecast_days=4):
+    """
+    Supervised Machine Learning Time-Series Forecasting using Random Forest Regressor.
+    Uses multi-lag autoregressive feature vectors to capture non-linear community trend dynamics.
+    """
+    n = len(daily_counts)
+    if n < 4:
+        avg = sum(daily_counts) / max(1, n)
+        return [max(0, round(avg))] * forecast_days, {"n_estimators": 100, "strategy": "mean_fallback"}
+
+    try:
+        from sklearn.ensemble import RandomForestRegressor
+        window = min(3, n - 1)
+        X = []
+        y = []
+        for i in range(window, n):
+            features = [i] + [daily_counts[i - j] for j in range(1, window + 1)]
+            X.append(features)
+            y.append(daily_counts[i])
+
+        rf = RandomForestRegressor(n_estimators=100, max_depth=5, random_state=42)
+        rf.fit(X, y)
+
+        predictions = []
+        history = list(daily_counts)
+        for step in range(forecast_days):
+            t = n + step
+            features = [t] + [history[-j] for j in range(1, window + 1)]
+            pred = rf.predict([features])[0]
+            val = max(0, round(pred))
+            predictions.append(val)
+            history.append(val)
+
+        return predictions, {
+            "model": "Random Forest Regressor",
+            "n_estimators": 100,
+            "max_depth": 5,
+            "feature_window": f"lag_{window}",
+        }
+    except Exception as e:
+        avg = sum(daily_counts[-3:]) / min(3, n)
+        return [max(0, round(avg))] * forecast_days, {"error": str(e)}
 
 
 # =======================================================================
@@ -416,6 +460,7 @@ def evaluate_forecast(reports):
     actual_test = daily_counts[-test_days:]
 
     models = {
+        "Random Forest Regressor": forecast_random_forest,
         "Linear Regression": forecast_linear_regression,
         "Simple Moving Average (SMA)": forecast_sma,
         "Exponential Smoothing (SES)": forecast_exponential_smoothing,
@@ -482,7 +527,7 @@ def print_classification_results(res):
     print(f"  {'Configuration':<32} {'Accuracy':>10} {'MSE':>10} {'MAPE':>10}")
     print("  " + "-" * 66)
     print(f"  {'1. Rule-Based Baseline (Legacy)':<32} {legacy['overall_accuracy']:>9.2f}% {legacy['mse']:>10.4f} {legacy['mape']:>9.2f}%")
-    print(f"  {'2. Trained Supervised AI Model':<32} {trained['overall_accuracy']:>9.2f}% {trained['mse']:>10.4f} {trained['mape']:>9.2f}%")
+    print(f"  {'2. Trained Random Forest AI Model':<32} {trained['overall_accuracy']:>9.2f}% {trained['mse']:>10.4f} {trained['mape']:>9.2f}%")
     print("  " + "-" * 66)
     sign = "+" if res["delta_accuracy"] >= 0 else ""
     print(f"  Performance Delta              : {sign}{res['delta_accuracy']}% Accuracy | -{res['delta_mse']} MSE | -{res['delta_mape']}% MAPE")
@@ -632,7 +677,7 @@ def generate_docx_report(class_res, forecast_res, output_path):
         row1.cells[3].text = f"{leg['mape']}%"
 
         row2 = ct.add_row()
-        row2.cells[0].text = "Trained Supervised AI Model"
+        row2.cells[0].text = "Trained Random Forest AI Model (100 Trees)"
         row2.cells[1].text = f"{trn['overall_accuracy']}%"
         row2.cells[2].text = str(trn["mse"])
         row2.cells[3].text = f"{trn['mape']}%"

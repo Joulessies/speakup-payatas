@@ -1,6 +1,14 @@
 import { type ReportCategory } from "@/types";
 import trainedModel from "@/data/trained_ai_model.json";
 
+interface DecisionTree {
+    feature: number[];
+    threshold: number[];
+    children_left: number[];
+    children_right: number[];
+    value: number[][];
+}
+
 interface ModelArtifact {
     model_name: string;
     model_type: string;
@@ -8,6 +16,7 @@ interface ModelArtifact {
     categories: string[];
     vocabulary: Record<string, number>;
     idf: number[];
+    forest_trees?: DecisionTree[];
     coefficients: number[][];
     intercepts: number[];
     metrics: {
@@ -185,25 +194,50 @@ function predictTrainedModel(description: string): { category: ReportCategory; c
         tfidfVector[idx] /= norm;
     }
 
-    // Compute logits: logit_c = intercept_c + sum(coef_c[idx] * x[idx])
-    const logits: number[] = new Array(model.categories.length).fill(0);
-    for (let c = 0; c < model.categories.length; c++) {
-        let dot = model.intercepts[c] ?? 0;
-        const coefRow = model.coefficients[c];
-        for (const [idxStr, xVal] of Object.entries(tfidfVector)) {
-            const idx = parseInt(idxStr, 10);
-            dot += (coefRow[idx] ?? 0) * xVal;
+    let probs: number[];
+
+    // 1. RANDOM FOREST ENSEMBLE EVALUATION (50 Decision Trees)
+    if (model.forest_trees && model.forest_trees.length > 0) {
+        const numClasses = model.categories.length;
+        const sumProbs = new Array(numClasses).fill(0);
+        for (const tree of model.forest_trees) {
+            let node = 0;
+            while (tree.children_left[node] !== -1 && tree.children_right[node] !== -1) {
+                const featIdx = tree.feature[node];
+                const val = tfidfVector[featIdx] || 0.0;
+                if (val <= tree.threshold[node]) {
+                    node = tree.children_left[node];
+                } else {
+                    node = tree.children_right[node];
+                }
+            }
+            const leafProbs = tree.value[node] || [];
+            for (let c = 0; c < numClasses; c++) {
+                sumProbs[c] += leafProbs[c] || 0.0;
+            }
         }
-        logits[c] = dot;
+        const nTrees = model.forest_trees.length;
+        probs = sumProbs.map(p => p / nTrees);
+    } else {
+        // Fallback: Softmax dot product
+        const logits: number[] = new Array(model.categories.length).fill(0);
+        for (let c = 0; c < model.categories.length; c++) {
+            let dot = model.intercepts[c] ?? 0;
+            const coefRow = model.coefficients[c];
+            for (const [idxStr, xVal] of Object.entries(tfidfVector)) {
+                const idx = parseInt(idxStr, 10);
+                dot += (coefRow[idx] ?? 0) * xVal;
+            }
+            logits[c] = dot;
+        }
+
+        const maxLogit = Math.max(...logits);
+        const expVals = logits.map(l => Math.exp(l - maxLogit));
+        const sumExp = expVals.reduce((a, b) => a + b, 0) || 1.0;
+        probs = expVals.map(e => e / sumExp);
     }
 
-    // Softmax probabilities
-    const maxLogit = Math.max(...logits);
-    const expVals = logits.map(l => Math.exp(l - maxLogit));
-    const sumExp = expVals.reduce((a, b) => a + b, 0) || 1.0;
-    const probs = expVals.map(e => e / sumExp);
-
-    // Pick argmax
+    // Pick argmax category
     let bestIdx = 0;
     let bestProb = probs[0];
     for (let i = 1; i < probs.length; i++) {
@@ -264,6 +298,7 @@ export function classifyReportWithConfidence(description: string): {
     category: ReportCategory;
     confidence: number;
     is_ai_trained: boolean;
+    model_type: string;
 } {
     const trained = predictTrainedModel(description);
     if (trained && trained.confidence >= 0.28) {
@@ -271,6 +306,7 @@ export function classifyReportWithConfidence(description: string): {
             category: trained.category,
             confidence: trained.confidence,
             is_ai_trained: true,
+            model_type: "Random Forest Classifier (50 Trees Ensemble)",
         };
     }
 
@@ -280,5 +316,6 @@ export function classifyReportWithConfidence(description: string): {
         category: fallback,
         confidence: fallback === "other" ? 0.10 : 0.50,
         is_ai_trained: false,
+        model_type: "Rule-Based Keyword Fallback",
     };
 }

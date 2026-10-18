@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
@@ -406,9 +407,22 @@ def train_and_optimize(X_raw, y_raw):
     )
     champion_clf.fit(X_tfidf, y_idx)
 
-    y_pred_idx = champion_clf.predict(X_tfidf)
+    # Train Random Forest Classifier (Ensemble of 100 Decision Trees)
+    print("\n  Training Ensemble Model (Random Forest Classifier - 100 Trees):")
+    print("  " + "-" * 55)
+    rf_clf = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=15,
+        class_weight="balanced",
+        random_state=42
+    )
+    rf_scores = cross_val_score(rf_clf, X_tfidf, y_idx, cv=cv, scoring="accuracy")
+    rf_clf.fit(X_tfidf, y_idx)
+    print(f"    Random Forest (100 Trees) -> CV Accuracy: {np.mean(rf_scores) * 100:.2f}% (std: {np.std(rf_scores) * 100:.2f}%)")
+
+    y_pred_idx = rf_clf.predict(X_tfidf)
     y_pred = [classes[i] for i in y_pred_idx]
-    y_probs = champion_clf.predict_proba(X_tfidf)
+    y_probs = rf_clf.predict_proba(X_tfidf)
 
     acc = accuracy_score(y_raw, y_pred)
     prec_list, rec_list, f1_list, support_list = precision_recall_fscore_support(
@@ -442,6 +456,7 @@ def train_and_optimize(X_raw, y_raw):
         "prob_mse": prob_mse,
         "zero_one_mse": zero_one_mse,
         "mape": macro_mape,
+        "model_type": "Random Forest Classifier (Ensemble)",
         "per_category": {
             c: {
                 "precision": float(prec_list[i]),
@@ -455,9 +470,31 @@ def train_and_optimize(X_raw, y_raw):
         "total_samples": len(y_raw),
     }
 
-    return vectorizer, champion_clf, evaluation
+    return vectorizer, champion_clf, rf_clf, evaluation
 
-def export_model_artifacts(vectorizer, classifier, evaluation, output_dir: str):
+def serialize_forest(rf_model, max_trees=50):
+    trees_json = []
+    selected_trees = rf_model.estimators_[:max_trees]
+    for est in selected_trees:
+        t = est.tree_
+        node_values = []
+        for val in t.value:
+            counts = val[0]
+            s = float(counts.sum())
+            if s > 0:
+                node_values.append([round(float(c / s), 4) for c in counts])
+            else:
+                node_values.append([0.0] * len(counts))
+        trees_json.append({
+            "feature": t.feature.tolist(),
+            "threshold": [round(float(th), 4) for th in t.threshold],
+            "children_left": t.children_left.tolist(),
+            "children_right": t.children_right.tolist(),
+            "value": node_values
+        })
+    return trees_json
+
+def export_model_artifacts(vectorizer, classifier, rf_classifier, evaluation, output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     json_path = os.path.join(output_dir, "trained_ai_model.json")
@@ -466,15 +503,16 @@ def export_model_artifacts(vectorizer, classifier, evaluation, output_dir: str):
     intercept_list = classifier.intercept_.tolist()
 
     model_json = {
-        "model_name": "SpeakUp Payatas Supervised NLP Classifier",
-        "model_type": "tfidf_logistic_regression",
-        "version": "2.1.0",
+        "model_name": "SpeakUp Payatas Random Forest & NLP Classifier",
+        "model_type": "tfidf_random_forest_ensemble",
+        "version": "2.2.0",
         "trained_at": datetime.now().isoformat(),
         "categories": evaluation["classes"],
         "stop_words": STOP_WORDS,
         "slang_map": SLANG_MAP,
         "vocabulary": vectorizer.vocabulary_,
         "idf": idf_list,
+        "forest_trees": serialize_forest(rf_classifier, max_trees=50),
         "coefficients": coef_list,
         "intercepts": intercept_list,
         "metrics": {
@@ -492,13 +530,19 @@ def export_model_artifacts(vectorizer, classifier, evaluation, output_dir: str):
     print(f"\n  [OK] Exported trained model weights JSON to: {os.path.abspath(json_path)}")
 
     joblib_path = os.path.join(output_dir, "trained_ai_model.joblib")
-    joblib.dump({"vectorizer": vectorizer, "classifier": classifier, "evaluation": evaluation}, joblib_path)
-    print(f"  [OK] Exported Python model joblib to: {os.path.abspath(joblib_path)}")
+    joblib.dump({
+        "vectorizer": vectorizer,
+        "classifier": rf_classifier,
+        "random_forest": rf_classifier,
+        "logistic_regression": classifier,
+        "evaluation": evaluation
+    }, joblib_path)
+    print(f"  [OK] Exported Python Random Forest model joblib to: {os.path.abspath(joblib_path)}")
 
 def main():
     print("=" * 70)
-    print("  SPEAKUP PAYATAS — AI NLP MACHINE LEARNING TRAINER (v2.1)")
-    print("  Featuring Tagalog Stemming, Slang Expansion, and L2 Optimization")
+    print("  SPEAKUP PAYATAS — AI NLP MACHINE LEARNING TRAINER (v2.2)")
+    print("  Featuring Random Forest Ensemble, Tagalog Stemming, and Slang Expansion")
     print("=" * 70)
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -506,11 +550,12 @@ def main():
     output_dir = os.path.join(project_root, "data")
 
     X_raw, y_raw = load_all_training_data(mock_data_path)
-    vectorizer, classifier, evaluation = train_and_optimize(X_raw, y_raw)
+    vectorizer, classifier, rf_clf, evaluation = train_and_optimize(X_raw, y_raw)
 
     print("\n" + "=" * 70)
-    print("  TRAINING RESULTS & EVALUATION METRICS")
+    print("  RANDOM FOREST TRAINING RESULTS & EVALUATION METRICS")
     print("=" * 70)
+    print(f"  Model Type                : Random Forest Classifier (100 Trees)")
     print(f"  Overall Training Accuracy : {evaluation['accuracy'] * 100:.2f}%")
     print(f"  Probability MSE Loss      : {evaluation['prob_mse']:.4f}")
     print(f"  Mean Absolute Error (MAPE): {evaluation['mape']:.2f}%")
@@ -524,8 +569,8 @@ def main():
         print(f"  {cat:<24} {m['precision'] * 100:>8.1f}%  {m['recall'] * 100:>8.1f}%  {m['f1'] * 100:>8.1f}%  {m['support']:>6}")
     print("  " + "-" * 66)
 
-    export_model_artifacts(vectorizer, classifier, evaluation, output_dir)
-    print("\n  [OK] Training complete. Weights successfully deployed to live application.\n")
+    export_model_artifacts(vectorizer, classifier, rf_clf, evaluation, output_dir)
+    print("\n  [OK] Training complete. Random Forest model successfully deployed to live application.\n")
 
 if __name__ == "__main__":
     main()
