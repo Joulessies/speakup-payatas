@@ -32,7 +32,7 @@ export default function AboutPage() {
           </h1>
           <p className={`text-sm md:text-base max-w-3xl leading-relaxed ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>
             The official algorithm-based anonymous reporting platform developed
-            for the residents of Barangay Payatas-A, built to support civic
+            for the residents of Barangay Payatas, built to support civic
             transparency and local governance.
           </p>
         </div>
@@ -53,7 +53,7 @@ export default function AboutPage() {
                   SPEAKUP
                 </strong>
                 , an algorithm-based anonymous reporting platform developed to
-                provide residents of Barangay Payatas-A with a safe, convenient,
+                provide residents of Barangay Payatas with a safe, convenient,
                 and reliable way to report community concerns. The system was
                 created to strengthen communication between residents and
                 barangay officials while ensuring the privacy and anonymity of
@@ -132,7 +132,7 @@ export default function AboutPage() {
               </div>
               <p className={`text-xs md:text-sm leading-relaxed ${isDark ? "text-white/55" : "text-[#4a6080]"}`}>
                 Developed by the researchers and developers of the SPEAKUP
-                system for Barangay Payatas-A community enhancement and
+                system for Barangay Payatas community enhancement and
                 accountability support.
               </p>
             </div>

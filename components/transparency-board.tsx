@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, Search, MapPin, Calendar, CheckCircle2, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Loader2, Search, MapPin, Calendar, CheckCircle2, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Maximize2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { CATEGORY_LABELS } from "@/types";
 import { useRouter } from "next/navigation";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 interface FeedbackEntry {
     rating: number;
@@ -59,6 +60,7 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
     const [loading, setLoading] = useState(true);
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -156,15 +158,26 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                     {r.description || <span className="italic opacity-50">No description provided</span>}
                                 </p>
                                 {(r.resolution_photo_url || r.photo_url) && (
-                                    <div className="mt-2 rounded-xl overflow-hidden border border-emerald-500/30 max-h-40">
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setLightboxImage({ src: (r.resolution_photo_url || r.photo_url)!, alt: "Resolution Proof" });
+                                        }}
+                                        className="group mt-2 relative rounded-xl overflow-hidden border border-emerald-500/30 max-h-40 cursor-zoom-in"
+                                        title="Click to view full screen"
+                                    >
                                         <img
                                             src={r.resolution_photo_url || r.photo_url}
                                             alt="Responder proof / resolution photo"
-                                            className="w-full h-36 object-cover"
+                                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-200"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = "none";
                                             }}
                                         />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-medium backdrop-blur-[1px]">
+                                            <Maximize2 className="h-4 w-4" />
+                                            View Fullscreen
+                                        </div>
                                     </div>
                                 )}
                                 <div className="flex flex-wrap items-center gap-3 mt-2">
@@ -221,9 +234,20 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                                             <span>{a.note}</span>
                                                         </div>
                                                         {a.photo_url && (
-                                                            <div className="mt-1">
-                                                                <span className="text-[10px] text-emerald-500 font-medium block mb-1">📷 Responder Photo / Proof:</span>
-                                                                <img src={a.photo_url} alt="Responder proof" className="h-28 w-full object-cover rounded-lg border border-emerald-500/20" />
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setLightboxImage({ src: a.photo_url!, alt: "Responder Action Proof" });
+                                                                }}
+                                                                className="group mt-1 relative rounded-lg overflow-hidden border border-emerald-500/20 cursor-zoom-in"
+                                                                title="Click to view full screen"
+                                                            >
+                                                                <span className="text-[10px] text-emerald-500 font-medium block p-1 bg-emerald-500/10">📷 Responder Photo / Proof:</span>
+                                                                <img src={a.photo_url} alt="Responder proof" className="h-28 w-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-medium backdrop-blur-[1px]">
+                                                                    <Maximize2 className="h-3.5 w-3.5" />
+                                                                    Full screen
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </li>
@@ -282,6 +306,15 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                         View all {reports.length} resolved reports →
                     </button>
                 </div>
+            )}
+            {/* Fullscreen Image Lightbox */}
+            {lightboxImage && (
+                <ImageLightbox
+                    src={lightboxImage.src}
+                    alt={lightboxImage.alt}
+                    isOpen={Boolean(lightboxImage)}
+                    onClose={() => setLightboxImage(null)}
+                />
             )}
         </div>
     );

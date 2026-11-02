@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal } from "lucide-react";
+import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, ExternalLink, Maximize2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { CATEGORY_LABELS } from "@/types";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 interface Report {
     id: string;
@@ -29,6 +30,7 @@ export default function AdminReportsPage() {
     const [viewTarget, setViewTarget] = useState<Report | null>(null);
     const [editTarget, setEditTarget] = useState<Report | null>(null);
     const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
+    const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
     const pageSize = 10;
 
     const totalPages = Math.ceil(reports.length / pageSize);
@@ -343,31 +345,42 @@ export default function AdminReportsPage() {
 
             {/* Delete Modal */}
             {deleteTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
-                        <div className="flex items-start gap-4 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Trash2 className="h-5 w-5 text-red-500" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className={`w-full max-w-sm p-5 rounded-2xl shadow-2xl border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                        <div className="flex items-start justify-between mb-3.5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">
+                                    <Trash2 className="h-4.5 w-4.5 text-red-500" />
+                                </div>
+                                <div>
+                                    <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                        Delete Report
+                                    </h2>
+                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                        This action cannot be undone.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    Delete Report
-                                </h2>
-                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                    Are you sure you want to delete this report? This action cannot be undone.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
                             <button
                                 onClick={() => setDeleteTarget(null)}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? "text-white/40 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                        <p className={`text-xs mb-5 ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                            Are you sure you want to delete this report? This will remove all associated notes and records permanently.
+                        </p>
+                        <div className="flex gap-2.5">
+                            <button
+                                onClick={() => setDeleteTarget(null)}
+                                className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => handleDelete(deleteTarget)}
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
+                                className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
                             >
                                 Delete
                             </button>
@@ -378,133 +391,197 @@ export default function AdminReportsPage() {
 
             {/* View Details Modal */}
             {viewTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-2xl p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
-                        <div className="flex items-start gap-4 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Eye className="h-5 w-5 text-emerald-500" />
-                            </div>
-                            <div>
-                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    Report Details
-                                </h2>
-                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                    ID: {viewTarget.id}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</label>
-                                <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {CATEGORY_LABELS[viewTarget.category as keyof typeof CATEGORY_LABELS] || viewTarget.category}
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</label>
-                                <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {viewTarget.description}
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Status</label>
-                                    <p className="mt-1">
-                                        <Badge variant="outline" className={`text-[10px] capitalize ${viewTarget.status === "resolved" ? "text-emerald-500 border-emerald-500/20" : "text-amber-500 border-amber-500/20"}`}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className={`w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                        {/* Header */}
+                        <div className={`px-5 py-3.5 border-b flex items-center justify-between shrink-0 ${isDark ? "border-white/10 bg-white/[0.02]" : "border-gray-100 bg-gray-50/70"}`}>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                                    <Eye className="h-4 w-4 text-emerald-500" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h2 className={`text-sm sm:text-base font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                                            Report Details
+                                        </h2>
+                                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${viewTarget.status === "resolved" ? "text-emerald-500 border-emerald-500/30 bg-emerald-500/5" : "text-amber-500 border-amber-500/30 bg-amber-500/5"}`}>
                                             {viewTarget.status.replace("_", " ")}
                                         </Badge>
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Verification</label>
-                                    <p className="mt-1">
-                                        <Badge variant="outline" className={`text-[10px] capitalize ${viewTarget.verification_status === "spam" ? "text-red-500 border-red-500/20" : viewTarget.verification_status === "valid" ? "text-emerald-500 border-emerald-500/20" : "text-gray-500 border-gray-500/20"}`}>
+                                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${viewTarget.verification_status === "spam" ? "text-red-500 border-red-500/30 bg-red-500/5" : viewTarget.verification_status === "valid" ? "text-emerald-500 border-emerald-500/30 bg-emerald-500/5" : "text-gray-400 border-gray-500/30"}`}>
                                             {viewTarget.verification_status}
                                         </Badge>
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter</label>
-                                    <p className={`mt-1 font-mono text-xs break-all ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                        {viewTarget.reporter_hash}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Created</label>
-                                    <p className={`mt-1 text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
-                                        {new Date(viewTarget.created_at).toLocaleDateString()} at {new Date(viewTarget.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                            </div>
-                            <div>
-                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</label>
-                                <p className={`mt-1 font-mono text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {viewTarget.latitude.toFixed(6)}, {viewTarget.longitude.toFixed(6)}
-                                </p>
-                            </div>
-                            {viewTarget.photo_url && (
-                                <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Photo Evidence</label>
-                                    <div className="mt-2 flex justify-center">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={viewTarget.photo_url}
-                                            alt="Report Evidence"
-                                            className="max-w-full max-h-64 object-contain rounded-xl border border-dashed border-gray-300 dark:border-white/10"
-                                        />
                                     </div>
+                                    <p className={`text-[11px] font-mono truncate mt-0.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                        ID: {viewTarget.id}
+                                    </p>
                                 </div>
-                            )}
+                            </div>
+                            <button
+                                onClick={() => setViewTarget(null)}
+                                className={`p-1.5 rounded-lg transition-colors shrink-0 ml-2 ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+                                aria-label="Close"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
 
-                            {/* Internal Notes Section */}
-                            <div className="pt-3 border-t border-dashed border-border/50 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white/70" : "text-gray-600"}`}>
-                                        Internal Notes ({adminNotes.length})
-                                    </h3>
-                                    <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                        Staff & Admin Only
-                                    </span>
-                                </div>
-                                {adminNotes.length === 0 ? (
-                                    <p className={`text-xs italic ${isDark ? "text-white/40" : "text-gray-500"}`}>No internal notes added yet.</p>
-                                ) : (
-                                    <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                                        {adminNotes.map((n) => (
-                                            <div key={n.id} className={`p-2.5 rounded-xl border text-xs ${isDark ? "bg-white/[0.03] border-white/10 text-white/80" : "bg-gray-50 border-gray-200 text-gray-800"}`}>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="font-semibold text-emerald-500 capitalize">{n.author_id} ({n.author_role})</span>
-                                                    <span className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>{new Date(n.created_at).toLocaleString()}</span>
-                                                </div>
-                                                <p>{n.content}</p>
-                                            </div>
-                                        ))}
+                        {/* Modal Body - 2 Columns */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                {/* Left Column: Info & Details (col-span-7) */}
+                                <div className="md:col-span-7 space-y-3">
+                                    {/* Category Pill / Card */}
+                                    <div className={`p-3 rounded-xl border ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</span>
+                                        <p className={`text-sm font-semibold mt-0.5 ${isDark ? "text-white" : "text-gray-900"}`}>
+                                            {CATEGORY_LABELS[viewTarget.category as keyof typeof CATEGORY_LABELS] || viewTarget.category}
+                                        </p>
                                     </div>
-                                )}
-                                <div className="flex gap-2 pt-1">
-                                    <input
-                                        type="text"
-                                        value={newAdminNote}
-                                        onChange={(e) => setNewAdminNote(e.target.value)}
-                                        placeholder="Add an internal note for staff..."
-                                        className={`flex-1 text-xs px-3 py-2 rounded-xl border outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}
-                                    />
-                                    <button
-                                        disabled={savingAdminNote || !newAdminNote.trim()}
-                                        onClick={() => handleAddAdminNote(viewTarget.id)}
-                                        className="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                                    >
-                                        Post Note
-                                    </button>
+
+                                    {/* Description */}
+                                    <div className={`p-3.5 rounded-xl border ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</span>
+                                        <p className={`mt-1 text-xs sm:text-sm leading-relaxed whitespace-pre-line ${isDark ? "text-white/90" : "text-gray-800"}`}>
+                                            {viewTarget.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Coordinates & Location */}
+                                    <div className={`p-3 rounded-xl border flex items-center justify-between ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <div>
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Coordinates</span>
+                                            <p className={`font-mono text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                {viewTarget.latitude.toFixed(6)}, {viewTarget.longitude.toFixed(6)}
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={`https://www.google.com/maps?q=${viewTarget.latitude},${viewTarget.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                                        >
+                                            <MapPin className="h-3 w-3" />
+                                            Google Maps
+                                        </a>
+                                    </div>
+
+                                    {/* Created & Reporter Meta */}
+                                    <div className={`p-3 rounded-xl border grid grid-cols-1 sm:grid-cols-2 gap-3 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <div>
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Submitted</span>
+                                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                {new Date(viewTarget.created_at).toLocaleDateString()} at {new Date(viewTarget.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter Hash</span>
+                                            <p className={`font-mono text-[10px] break-all mt-0.5 ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                                {viewTarget.reporter_hash}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Photo Evidence & Internal Notes (col-span-5) */}
+                                <div className="md:col-span-5 space-y-3">
+                                    {/* Photo Evidence */}
+                                    {viewTarget.photo_url ? (
+                                        <div className={`p-3 rounded-xl border ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Photo Evidence</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLightboxImage({ src: viewTarget.photo_url!, alt: `Report ${viewTarget.id} Evidence` })}
+                                                    className="text-[11px] text-emerald-500 hover:text-emerald-400 hover:underline inline-flex items-center gap-1 font-medium transition-colors"
+                                                >
+                                                    <Maximize2 className="h-3 w-3" />
+                                                    Full screen
+                                                </button>
+                                            </div>
+                                            <div
+                                                onClick={() => setLightboxImage({ src: viewTarget.photo_url!, alt: `Report ${viewTarget.id} Evidence` })}
+                                                className="group relative rounded-lg overflow-hidden bg-black/30 border border-white/5 h-44 flex items-center justify-center cursor-zoom-in"
+                                                title="Click to view full screen"
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={viewTarget.photo_url}
+                                                    alt="Report Evidence"
+                                                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-medium backdrop-blur-[1px]">
+                                                    <Maximize2 className="h-4 w-4" />
+                                                    View Fullscreen
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={`p-3 rounded-xl border text-center py-5 ${isDark ? "bg-white/[0.02] border-white/10 text-white/40" : "bg-gray-50 border-gray-200 text-gray-400"}`}>
+                                            <p className="text-xs">No photo evidence attached</p>
+                                        </div>
+                                    )}
+
+                                    {/* Internal Notes Section */}
+                                    <div className={`p-3 rounded-xl border space-y-2.5 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <div className="flex items-center justify-between">
+                                            <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                                Internal Notes ({adminNotes.length})
+                                            </h3>
+                                            <span className="text-[9px] text-amber-500 font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+                                                Staff Only
+                                            </span>
+                                        </div>
+                                        {adminNotes.length === 0 ? (
+                                            <p className={`text-xs italic py-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>No internal notes yet.</p>
+                                        ) : (
+                                            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                                {adminNotes.map((n) => (
+                                                    <div key={n.id} className={`p-2 rounded-lg border text-xs ${isDark ? "bg-white/[0.03] border-white/10 text-white/80" : "bg-white border-gray-200 text-gray-800"}`}>
+                                                        <div className="flex justify-between items-center mb-0.5">
+                                                            <span className="font-semibold text-emerald-500 capitalize">{n.author_id} ({n.author_role})</span>
+                                                            <span className={`text-[9px] ${isDark ? "text-white/40" : "text-gray-400"}`}>{new Date(n.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <p className="text-[11px] leading-relaxed">{n.content}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="flex gap-1.5 pt-1">
+                                            <input
+                                                type="text"
+                                                value={newAdminNote}
+                                                onChange={(e) => setNewAdminNote(e.target.value)}
+                                                placeholder="Add internal note..."
+                                                className={`flex-1 text-xs px-2.5 py-1.5 rounded-lg border outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                            />
+                                            <button
+                                                disabled={savingAdminNote || !newAdminNote.trim()}
+                                                onClick={() => handleAddAdminNote(viewTarget.id)}
+                                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                                            >
+                                                Post
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-6 flex gap-3">
+
+                        {/* Footer */}
+                        <div className={`px-5 py-3 border-t flex items-center justify-between shrink-0 ${isDark ? "border-white/10 bg-white/[0.01]" : "border-gray-100 bg-gray-50/60"}`}>
+                            <button
+                                onClick={() => {
+                                    setEditTarget(viewTarget);
+                                    setViewTarget(null);
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-1.5"
+                            >
+                                <Edit className="h-3.5 w-3.5" />
+                                Edit Report
+                            </button>
                             <button
                                 onClick={() => setViewTarget(null)}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                                className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors ${isDark ? "bg-white/10 hover:bg-white/15 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-900"}`}
                             >
                                 Close
                             </button>
@@ -515,28 +592,36 @@ export default function AdminReportsPage() {
 
             {/* Edit Modal */}
             {editTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-lg p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
-                        <div className="flex items-start gap-4 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Edit className="h-5 w-5 text-amber-500" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className={`w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                        <div className={`px-5 py-3.5 border-b flex items-center justify-between shrink-0 ${isDark ? "border-white/10 bg-white/[0.02]" : "border-gray-100 bg-gray-50/70"}`}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
+                                    <Edit className="h-4 w-4 text-amber-500" />
+                                </div>
+                                <div>
+                                    <h2 className={`text-sm sm:text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                        Edit Report
+                                    </h2>
+                                    <p className={`text-[11px] ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                        Update report details and statuses
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    Edit Report
-                                </h2>
-                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                    Make changes to the report details.
-                                </p>
-                            </div>
+                            <button
+                                onClick={() => setEditTarget(null)}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
-                        <div className="space-y-4">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
                             <div>
-                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</label>
+                                <label className={`text-[11px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Category</label>
                                 <select
                                     value={editTarget.category}
                                     onChange={(e) => setEditTarget({ ...editTarget, category: e.target.value })}
-                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
+                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-xs sm:text-sm border outline-none ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                 >
                                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                                         <option key={key} value={key}>{label}</option>
@@ -544,21 +629,21 @@ export default function AdminReportsPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</label>
+                                <label className={`text-[11px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Description</label>
                                 <textarea
                                     value={editTarget.description}
                                     onChange={(e) => setEditTarget({ ...editTarget, description: e.target.value })}
                                     rows={3}
-                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border resize-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                                    className={`mt-1 w-full px-3 py-2 rounded-lg text-xs sm:text-sm border resize-none outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"}`}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Status</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Status</label>
                                     <select
                                         value={editTarget.status}
                                         onChange={(e) => setEditTarget({ ...editTarget, status: e.target.value })}
-                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-xs sm:text-sm border outline-none ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                     >
                                         <option value="pending">Pending</option>
                                         <option value="in_progress">In Progress</option>
@@ -567,11 +652,11 @@ export default function AdminReportsPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>Verification</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Verification</label>
                                     <select
                                         value={editTarget.verification_status}
                                         onChange={(e) => setEditTarget({ ...editTarget, verification_status: e.target.value })}
-                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
+                                        className={`mt-1 w-full px-3 py-2 rounded-lg text-xs sm:text-sm border outline-none ${isDark ? "bg-white/5 border-white/10 text-white [&>option]:bg-[#112240] [&>option]:text-white" : "bg-white border-gray-200 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                                     >
                                         <option value="unreviewed">Unreviewed</option>
                                         <option value="valid">Valid</option>
@@ -580,10 +665,10 @@ export default function AdminReportsPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-6 flex gap-3">
+                        <div className={`px-5 py-3 border-t flex gap-2.5 shrink-0 ${isDark ? "border-white/10 bg-white/[0.01]" : "border-gray-100 bg-gray-50/60"}`}>
                             <button
                                 onClick={() => setEditTarget(null)}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                                className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
                             >
                                 Cancel
                             </button>
@@ -594,7 +679,7 @@ export default function AdminReportsPage() {
                                     status: editTarget.status,
                                     verification_status: editTarget.verification_status
                                 })}
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors"
+                                className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors"
                             >
                                 Save Changes
                             </button>
@@ -605,31 +690,42 @@ export default function AdminReportsPage() {
 
             {/* Status Update Modal */}
             {statusTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${isDark ? "bg-card border border-white/10" : "bg-white border border-gray-100"}`}>
-                        <div className="flex items-start gap-4 mb-6">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                                statusTarget.action === 'approve' ? 'bg-emerald-500/10' : 'bg-orange-500/10'
-                            }`}>
-                                {statusTarget.action === 'approve' ? (
-                                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                                ) : (
-                                    <XCircle className="h-5 w-5 text-orange-500" />
-                                )}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className={`w-full max-w-sm p-5 rounded-2xl shadow-2xl border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                    statusTarget.action === 'approve' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-orange-500/15 text-orange-500'
+                                }`}>
+                                    {statusTarget.action === 'approve' ? (
+                                        <CheckCircle className="h-4.5 w-4.5 text-emerald-500" />
+                                    ) : (
+                                        <XCircle className="h-4.5 w-4.5 text-orange-500" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h2 className={`text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                        {statusTarget.action === 'approve' ? 'Approve Report' : 'Reject Report'}
+                                    </h2>
+                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                                        Confirm report moderation
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-                                    {statusTarget.action === 'approve' ? 'Approve Report' : 'Reject Report'}
-                                </h2>
-                                <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-gray-500"}`}>
-                                    Are you sure you want to {statusTarget.action} this report?
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
                             <button
                                 onClick={() => setStatusTarget(null)}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? "text-white/40 hover:text-white hover:bg-white/10" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                        <p className={`text-xs mb-5 ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                            Are you sure you want to {statusTarget.action} this report?
+                        </p>
+                        <div className="flex gap-2.5">
+                            <button
+                                onClick={() => setStatusTarget(null)}
+                                className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}`}
                             >
                                 Cancel
                             </button>
@@ -639,7 +735,7 @@ export default function AdminReportsPage() {
                                     statusTarget.action === 'approve' ? 'resolved' : 'pending',
                                     statusTarget.action === 'approve' ? 'valid' : 'spam'
                                 )}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors ${
+                                className={`flex-1 py-2 rounded-xl text-xs font-semibold text-white transition-colors ${
                                     statusTarget.action === 'approve' 
                                         ? 'bg-emerald-500 hover:bg-emerald-600' 
                                         : 'bg-orange-500 hover:bg-orange-600'
@@ -650,6 +746,15 @@ export default function AdminReportsPage() {
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Fullscreen Image Lightbox */}
+            {lightboxImage && (
+                <ImageLightbox
+                    src={lightboxImage.src}
+                    alt={lightboxImage.alt}
+                    isOpen={Boolean(lightboxImage)}
+                    onClose={() => setLightboxImage(null)}
+                />
             )}
         </div>
     );

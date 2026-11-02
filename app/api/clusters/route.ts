@@ -11,7 +11,7 @@ function toMeters(lat: number, lng: number): [number, number] {
     return [(lng - REF_LNG) * DEG_TO_M_LNG, (lat - REF_LAT) * DEG_TO_M_LAT];
 }
 
-type WindowKey = "24h" | "7d" | "30d";
+type WindowKey = "24h" | "7d" | "30d" | "all";
 type ReportSummary = {
     id: string;
     receipt_id?: string;
@@ -27,13 +27,15 @@ type ReportSummary = {
 function getWindowMs(window: WindowKey): number {
     if (window === "24h") return 24 * 60 * 60 * 1000;
     if (window === "7d") return 7 * 24 * 60 * 60 * 1000;
-    return 30 * 24 * 60 * 60 * 1000;
+    if (window === "30d") return 30 * 24 * 60 * 60 * 1000;
+    return 365 * 24 * 60 * 60 * 1000;
 }
 
 function getBucketMs(window: WindowKey): number {
     if (window === "24h") return 2 * 60 * 60 * 1000;
     if (window === "7d") return 12 * 60 * 60 * 1000;
-    return 24 * 60 * 60 * 1000;
+    if (window === "30d") return 24 * 60 * 60 * 1000;
+    return 7 * 24 * 60 * 60 * 1000;
 }
 
 function clusterReports(reports: ReportSummary[]) {
@@ -82,17 +84,26 @@ export async function POST(request: Request) {
             body = await request.json();
         } catch {}
         
-        const selectedWindow: WindowKey = body.window === "24h" || body.window === "30d" ? body.window : "7d";
+        const selectedWindow: WindowKey = body.window === "24h" || body.window === "30d" || body.window === "all" ? body.window : "30d";
         const now = Date.now();
         const windowMs = getWindowMs(selectedWindow);
         const since = new Date(now - windowMs).toISOString();
         
-        const { data, error } = await getSupabaseAdmin()
-            .from("reports")
-            .select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description")
-            .gte("created_at", since);
+        let { data, error } = await (selectedWindow === "all"
+            ? getSupabaseAdmin().from("reports").select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description")
+            : getSupabaseAdmin().from("reports").select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description").gte("created_at", since));
             
         if (error) throw new Error(error.message);
+        
+        if ((!data || data.length === 0) && selectedWindow !== "all") {
+            const fallback = await getSupabaseAdmin()
+                .from("reports")
+                .select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description")
+                .limit(500);
+            if (fallback.data && fallback.data.length > 0) {
+                data = fallback.data;
+            }
+        }
         
         const reports = (data ?? [])
             .map((r) => ({

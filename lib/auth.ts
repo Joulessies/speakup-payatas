@@ -8,8 +8,10 @@ export interface AuthPayload {
 export const AUTH_COOKIE_NAME = "speakup_auth";
 const encoder = new TextEncoder();
 function getAuthSecret() {
-    return process.env.AUTH_SECRET || "speakup-dev-secret-change-me";
+    return process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "speakup-dev-secret-change-me";
 }
+
+export { auth } from "@/lib/better-auth";
 async function digestHex(input: string) {
     const bytes = encoder.encode(input);
     const hash = await crypto.subtle.digest("SHA-256", bytes);
@@ -25,7 +27,6 @@ export async function signAuthPayload(payload: AuthPayload) {
 export async function verifyAuthToken(token: string | undefined | null) {
     if (!token)
         return null;
-    // Payload is URI-encoded JSON and may contain "." (e.g. email domains); signature is last segment after final "."
     const dot = token.lastIndexOf(".");
     if (dot <= 0)
         return null;

@@ -174,9 +174,10 @@ export default function SidebarNav() {
                     {!collapsed && (
                         <div className="flex flex-col items-center text-center gap-1.5 min-w-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/payatas-logo.png" alt="Barangay Payatas Official Seal" className="w-12 h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
+                            <img src="/payatas-logo.png" alt="SpeakUp Payatas Official Seal" className="w-12 h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
                             <div className="min-w-0">
-                                <h1 className="font-bold text-white leading-none text-sm tracking-wide uppercase">Barangay Payatas</h1>
+                                <h1 className="font-bold text-white leading-none text-sm tracking-wide uppercase">SpeakUp Payatas</h1>
+                                <p className="text-[10px] text-emerald-300/80 font-medium tracking-wide mt-1">Barangay Payatas</p>
                                 <span className={`mt-1 inline-block text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                                     session?.role === "admin" ? "bg-red-500/20 text-red-300 border border-red-500/30" : session?.role === "staff" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                                 }`}>
@@ -192,34 +193,48 @@ export default function SidebarNav() {
                     <button
                         onClick={() => setCollapsed(!collapsed)}
                         className={`p-1 rounded-md transition-colors text-white/40 hover:text-white hover:bg-white/10 absolute right-2 top-2`}
-                        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </button>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+                <nav className={`flex-1 py-3 space-y-1 overflow-y-auto ${collapsed ? "px-0" : "px-3"}`}>
                     {navItems.map((item) => {
                         const active = isActive(item.href);
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                title={collapsed ? item.label : undefined}
-                                className={`flex items-center rounded-lg text-xs font-semibold transition-all duration-150 ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5"
-                                    } ${active
-                                        ? "bg-emerald-500/20 text-emerald-300 border-l-4 border-emerald-400 pl-[10px]"
-                                        : "text-white/60 hover:bg-white/[0.08] hover:text-white border-l-4 border-transparent"
-                                    }`}
-                            >
-                                <item.icon
-                                    className={`h-4 w-4 shrink-0 ${active ? "text-emerald-400" : ""}`}
-                                />
-                                {!collapsed && (
-                                    <span className="flex-1 truncate">{item.label}</span>
+                            <div key={item.href} className="relative flex items-center justify-center w-full">
+                                {active && (
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)] pointer-events-none" />
                                 )}
-                            </Link>
+                                <Link
+                                    href={item.href}
+                                    aria-label={item.label}
+                                    className={`group relative flex items-center transition-all duration-150 ${
+                                        collapsed
+                                            ? "w-10 h-10 justify-center rounded-xl"
+                                            : "w-full gap-3 px-3.5 py-2.5 rounded-xl text-xs"
+                                    } ${
+                                        active
+                                            ? "text-emerald-400"
+                                            : "text-white/40 hover:text-white hover:bg-white/[0.05]"
+                                    }`}
+                                >
+                                    <item.icon
+                                        className={`h-[18px] w-[18px] shrink-0 transition-all ${
+                                            active
+                                                ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.45)]"
+                                                : "text-white/40 group-hover:text-white"
+                                        }`}
+                                    />
+                                    {!collapsed && (
+                                        <span className={`flex-1 truncate ${active ? "text-white font-semibold" : "text-white/60 group-hover:text-white font-medium"}`}>
+                                            {item.label}
+                                        </span>
+                                    )}
+                                </Link>
+                            </div>
                         );
                     })}
                 </nav>
@@ -233,53 +248,74 @@ export default function SidebarNav() {
                         </div>
                     )}
                     {session && (
-                        <div className={`rounded-lg border border-white/10 bg-white/[0.05] ${collapsed ? "p-2" : "p-2.5"}`}>
-                            <div className={`flex items-center gap-2.5 ${collapsed ? "flex-col" : "mb-2"}`}>
+                        collapsed ? (
+                            <div className="flex flex-col items-center gap-1.5 w-full py-1">
                                 <Link
                                     href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
-                                    title="Account Settings"
-                                    className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-colors shrink-0"
+                                    aria-label="Account Settings"
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] text-emerald-300 transition-colors border border-white/5"
                                 >
-                                    <UserRound className="h-3.5 w-3.5" />
+                                    <UserRound className="h-4 w-4" />
                                 </Link>
-                                {!collapsed && (
+                                <Link
+                                    href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                    aria-label="Settings"
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition-colors"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                </Link>
+                                <button
+                                    onClick={() => setShowLogoutConfirm(true)}
+                                    aria-label="Logout"
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-white/10 bg-white/[0.05] p-3 space-y-2.5">
+                                <div className="flex items-center gap-2.5">
+                                    <Link
+                                        href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                        aria-label="Account Settings"
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-colors shrink-0 border border-emerald-500/30"
+                                    >
+                                        <UserRound className="h-4 w-4" />
+                                    </Link>
                                     <div className="flex-1 min-w-0">
                                         <Link
                                             href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
-                                            title="Account Settings"
+                                            aria-label="Account Settings"
                                             className="text-xs font-semibold text-white hover:underline truncate block"
                                         >
                                             {session.username}
                                         </Link>
+                                        <span className="text-[10px] text-emerald-300/70 capitalize block">
+                                            {session.role}
+                                        </span>
                                     </div>
-                                )}
-                                {!collapsed && (
                                     <NotificationBell role={session.role} reporterHash={session.reporter_hash} />
-                                )}
+                                </div>
+                                <div className="flex items-center gap-1.5 pt-2 border-t border-white/10">
+                                    <Link
+                                        href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
+                                        aria-label="Settings"
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-white/70 hover:text-white hover:bg-white/10 border border-white/5"
+                                    >
+                                        <Settings className="h-3.5 w-3.5" />
+                                        <span>Settings</span>
+                                    </Link>
+                                    <button
+                                        onClick={() => setShowLogoutConfirm(true)}
+                                        aria-label="Logout"
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-white/60 hover:text-red-300 hover:bg-red-500/15 border border-white/5"
+                                    >
+                                        <LogOut className="h-3.5 w-3.5" />
+                                        <span>LogOut</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/10">
-                                <Link
-                                    href={session.role === "admin" || session.role === "staff" ? "/admin/settings" : "/account"}
-                                    title={collapsed ? "Settings" : undefined}
-                                    className={`flex items-center justify-center gap-1.5 py-1 rounded-md text-[11px] font-medium transition-colors text-white/70 hover:text-white hover:bg-white/10 ${
-                                        collapsed ? "w-full px-2" : "flex-1"
-                                    }`}
-                                >
-                                    <Settings className="h-3 w-3" />
-                                    {!collapsed && "Settings"}
-                                </Link>
-                                <button
-                                    onClick={() => setShowLogoutConfirm(true)}
-                                    title={collapsed ? "Logout" : undefined}
-                                    className={`flex items-center justify-center gap-1.5 py-1 rounded-md text-[11px] font-medium transition-colors text-white/50 hover:text-white hover:bg-white/10 ${
-                                        collapsed ? "w-full px-2" : "flex-1"
-                                    }`}
-                                >
-                                    <LogOut className="h-3 w-3" />
-                                    {!collapsed && "LogOut"}
-                                </button>
-                            </div>
-                        </div>
+                        )
                     )}
                 </div>
             </aside>

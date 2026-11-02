@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
               Analytics
             </h1>
             <p className={`text-sm mt-1 ${isDark ? "text-white/45" : "text-gray-500"}`}>
-              Algorithm-based incident analysis for Barangay Payatas-A
+              Algorithm-based incident analysis for Barangay Payatas
             </p>
           </div>
           <Badge variant="outline" className={`${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-600"} w-fit`}>
