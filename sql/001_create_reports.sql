@@ -1,12 +1,6 @@
--- ============================================================
--- Module 1: Database Schema for SpeakUp Payatas
--- Run this in your Supabase SQL Editor
--- ============================================================
 
--- Enable PostGIS
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Reports table
 CREATE TABLE IF NOT EXISTS reports (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   reporter_hash TEXT        NOT NULL,
@@ -22,9 +16,8 @@ CREATE TABLE IF NOT EXISTS reports (
   photo_url   TEXT,
   created_at  TIMESTAMPTZ   DEFAULT now(),
   synced_at   TIMESTAMPTZ
-);
+)
 
--- Auto-populate the geography column from lat/lng on insert or update
 CREATE OR REPLACE FUNCTION set_report_location()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -38,24 +31,18 @@ CREATE TRIGGER trigger_set_location
   FOR EACH ROW
   EXECUTE FUNCTION set_report_location();
 
--- Spatial index for fast geo-queries in high-density Payatas
 CREATE INDEX IF NOT EXISTS idx_reports_location ON reports USING GIST (location);
 
--- Index for status filtering
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status);
 
--- Index for time-based queries
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports (created_at DESC);
 
--- Row Level Security
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
--- Allow anonymous inserts (via anon key)
 CREATE POLICY "Allow anonymous inserts"
   ON reports FOR INSERT
   WITH CHECK (true);
 
--- Allow public reads for verified/pending reports
 CREATE POLICY "Allow public reads"
   ON reports FOR SELECT
   USING (true);

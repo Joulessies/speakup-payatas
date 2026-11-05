@@ -173,4 +173,3 @@ export function ImageLightbox({ src, alt = "Report Evidence", isOpen, onClose }:
         document.body
     );
 }
-

@@ -2,7 +2,8 @@
 import { useTheme } from "@/components/theme-provider";
 import VerificationPanel from "@/components/verification-panel";
 import PredictiveAnalytics from "@/components/predictive-analytics";
-import { ShieldCheck, TrendingUp } from "lucide-react";
+import { ShieldCheck, TrendingUp, Map, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function StaffPage() {
     const { theme } = useTheme();
@@ -12,17 +13,39 @@ export default function StaffPage() {
         <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-6 md:px-8 md:py-8 space-y-6">
                 {/* Staff Dashboard Header */}
-                <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
-                        <ShieldCheck className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
+                            <ShieldCheck className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                        </div>
+                        <div>
+                            <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
+                                Staff Verification Queue
+                            </h1>
+                            <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
+                                Verify reports, monitor spatial risk hotspots, add internal notes, and update statuses.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
-                            Staff Dashboard
-                        </h1>
-                        <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
-                            Verify reports, monitor spatial risk hotspots, add internal notes, and update statuses.
-                        </p>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <Link
+                            href="/report"
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02]"
+                        >
+                            <Plus className="h-4 w-4" />
+                            File Report
+                        </Link>
+                        <Link
+                            href="/staff/map"
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                                isDark
+                                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14] border border-white/10"
+                                    : "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                            }`}
+                        >
+                            <Map className="h-4 w-4 text-emerald-400" />
+                            Hotspot Map
+                        </Link>
                     </div>
                 </div>
 

@@ -105,7 +105,9 @@ export default function SidebarNav() {
             case "staff":
                 return [
                     { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
+                    { href: "/staff/map", label: "Hotspot Map", icon: Map },
                     { href: "/staff", label: "Verification Queue", icon: Shield },
+                    { href: "/report", label: "File Report", icon: FileWarning },
                     { href: "/staff/summary", label: "Monthly Summary", icon: BarChart3 },
                 ];
             case "admin":
@@ -200,41 +202,38 @@ export default function SidebarNav() {
                 </div>
 
                 {/* Navigation */}
-                <nav className={`flex-1 py-3 space-y-1 overflow-y-auto ${collapsed ? "px-0" : "px-3"}`}>
+                <nav className={`flex-1 py-3 space-y-1.5 overflow-y-auto ${collapsed ? "px-2" : "px-3"}`}>
                     {navItems.map((item) => {
                         const active = isActive(item.href);
                         return (
-                            <div key={item.href} className="relative flex items-center justify-center w-full">
-                                {active && (
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)] pointer-events-none" />
-                                )}
-                                <Link
-                                    href={item.href}
-                                    aria-label={item.label}
-                                    className={`group relative flex items-center transition-all duration-150 ${
-                                        collapsed
-                                            ? "w-10 h-10 justify-center rounded-xl"
-                                            : "w-full gap-3 px-3.5 py-2.5 rounded-xl text-xs"
-                                    } ${
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                aria-label={item.label}
+                                title={collapsed ? item.label : undefined}
+                                className={`group relative flex items-center transition-all duration-150 ${
+                                    collapsed
+                                        ? "w-11 h-11 mx-auto justify-center rounded-xl"
+                                        : "w-full gap-3 px-3.5 py-2.5 rounded-xl text-xs"
+                                } ${
+                                    active
+                                        ? "bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30"
+                                        : "text-white/60 hover:text-white hover:bg-white/[0.06] border border-transparent font-medium"
+                                }`}
+                            >
+                                <item.icon
+                                    className={`h-[18px] w-[18px] shrink-0 transition-colors ${
                                         active
                                             ? "text-emerald-400"
-                                            : "text-white/40 hover:text-white hover:bg-white/[0.05]"
+                                            : "text-white/50 group-hover:text-white"
                                     }`}
-                                >
-                                    <item.icon
-                                        className={`h-[18px] w-[18px] shrink-0 transition-all ${
-                                            active
-                                                ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.45)]"
-                                                : "text-white/40 group-hover:text-white"
-                                        }`}
-                                    />
-                                    {!collapsed && (
-                                        <span className={`flex-1 truncate ${active ? "text-white font-semibold" : "text-white/60 group-hover:text-white font-medium"}`}>
-                                            {item.label}
-                                        </span>
-                                    )}
-                                </Link>
-                            </div>
+                                />
+                                {!collapsed && (
+                                    <span className="flex-1 truncate">
+                                        {item.label}
+                                    </span>
+                                )}
+                            </Link>
                         );
                     })}
                 </nav>

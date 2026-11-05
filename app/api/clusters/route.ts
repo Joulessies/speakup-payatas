@@ -84,7 +84,7 @@ export async function POST(request: Request) {
             body = await request.json();
         } catch {}
         
-        const selectedWindow: WindowKey = body.window === "24h" || body.window === "30d" || body.window === "all" ? body.window : "30d";
+        const selectedWindow: WindowKey = body.window === "24h" || body.window === "7d" || body.window === "30d" || body.window === "all" ? body.window : "30d";
         const now = Date.now();
         const windowMs = getWindowMs(selectedWindow);
         const since = new Date(now - windowMs).toISOString();

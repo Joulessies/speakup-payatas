@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download, Plus, Map, ArrowUpRight } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -248,9 +248,9 @@ export default function StaffDashboard() {
         <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-[#04271e]" : "bg-[#f4fbf7]"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-6 md:px-8 md:py-10 space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
                             <LayoutDashboard className={`h-6 w-6 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
                         </div>
                         <div>
@@ -258,22 +258,42 @@ export default function StaffDashboard() {
                                 Staff Dashboard
                             </h1>
                             <p className={`text-sm mt-1 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
-                                Overview of reports and verification status.
+                                Overview of reports, verification status, and spatial risk hotspots.
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={exportToCSV}
-                        disabled={exporting || loading}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                            isDark
-                                ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-                        }`}
-                    >
-                        {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        Export CSV
-                    </button>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <Link
+                            href="/report"
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02]"
+                        >
+                            <Plus className="h-4 w-4" />
+                            File Report
+                        </Link>
+                        <Link
+                            href="/staff/map"
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                                isDark
+                                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14] border border-white/10"
+                                    : "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                            }`}
+                        >
+                            <Map className="h-4 w-4 text-emerald-400" />
+                            Hotspot Map
+                        </Link>
+                        <button
+                            onClick={exportToCSV}
+                            disabled={exporting || loading}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors ${
+                                isDark
+                                    ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                            }`}
+                        >
+                            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Grid */}
@@ -325,44 +345,79 @@ export default function StaffDashboard() {
                     </div>
                 )}
 
-                {/* Hotspot Map & Analytics Dashboard */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Hotspot Map Card */}
-                    <div className={`p-4 md:p-6 rounded-2xl border flex flex-col ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
-                        <div className="mb-4">
-                            <h2 className={`text-sm font-semibold uppercase tracking-wider ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
-                                Active Hotspot Risk Map (Payatas-A)
-                            </h2>
-                            <p className={`text-xs mt-1 ${isDark ? "text-white/40" : "text-[#047857]/60"}`}>
-                                DBSCAN-clustered risk assessments based on local resident reports.
+                {/* Hotspot Map Card (Full Size) */}
+                <div className={`p-4 md:p-6 rounded-2xl border flex flex-col shadow-xl ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                    <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className={`text-sm md:text-base font-bold uppercase tracking-wider ${isDark ? "text-emerald-300" : "text-[#064e3b]"}`}>
+                                    Active Hotspot Risk Map (Payatas-A)
+                                </h2>
+                                <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${isDark ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" : "border-emerald-300 text-emerald-800 bg-emerald-50"}`}>
+                                    {clusters.length} Hotspot Clusters
+                                </Badge>
+                            </div>
+                            <p className={`text-xs mt-1 ${isDark ? "text-white/50" : "text-[#047857]/70"}`}>
+                                DBSCAN-clustered incident density with live pinpoint markers and neighborhood boundary.
                             </p>
                         </div>
-                        <div className="h-[350px] w-full rounded-xl overflow-hidden relative border border-white/[0.06]">
-                            <AdminMapInner
-                                clusters={clusters}
-                                selectedCluster={selectedCluster}
-                                onClusterClick={handleClusterClick}
-                                showHeatmap={false}
-                                heatPoints={heatPoints}
-                            />
-                        </div>
-                        {selectedCluster !== null && clusters[selectedCluster] && (
-                            <div className={`mt-3 p-3 rounded-xl border text-xs leading-relaxed ${isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
-                                <h4 className="font-bold text-emerald-500">
-                                    Cluster Details — {clusters[selectedCluster].count} reports
+                        <Link
+                            href="/staff/map"
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all hover:scale-[1.02] shrink-0"
+                        >
+                            <Map className="h-3.5 w-3.5" />
+                            Open Full-Screen Map
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+
+                    <div className="h-[500px] md:h-[600px] w-full rounded-xl overflow-hidden relative border border-white/[0.08] shadow-inner">
+                        <AdminMapInner
+                            clusters={clusters}
+                            selectedCluster={selectedCluster}
+                            onClusterClick={handleClusterClick}
+                            showHeatmap={false}
+                            heatPoints={heatPoints}
+                        />
+                    </div>
+
+                    {selectedCluster !== null && clusters[selectedCluster] && (
+                        <div className={`mt-3 p-3.5 rounded-xl border text-xs leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${isDark ? "bg-emerald-500/10 border-emerald-500/30 text-white" : "bg-emerald-50 border-emerald-200 text-[#064e3b]"}`}>
+                            <div>
+                                <h4 className="font-bold text-emerald-400 text-sm">
+                                    Selected Cluster — {clusters[selectedCluster].count} reports
                                 </h4>
-                                <p className={`mt-1 ${isDark ? "text-white/70" : "text-gray-600"}`}>
-                                    Top Category: <span className="capitalize font-semibold">{
-                                        Object.entries(clusters[selectedCluster].category_breakdown).sort((a, b) => b[1] - a[1])[0]?.[0] || "Mixed"
-                                    }</span>
-                                </p>
-                                <p className={`mt-0.5 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                <p className={`mt-0.5 ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                                    Primary Category: <span className="font-semibold">{(() => {
+                                        const topCat = Object.entries(clusters[selectedCluster].category_breakdown).sort((a, b) => b[1] - a[1])[0]?.[0];
+                                        return topCat ? (CATEGORY_LABELS[topCat as keyof typeof CATEGORY_LABELS] || topCat.replace(/_/g, " ")) : "Mixed";
+                                    })()}</span>
+                                    <span className="mx-2 opacity-40">•</span>
                                     Coordinates: {clusters[selectedCluster].latitude.toFixed(5)}, {clusters[selectedCluster].longitude.toFixed(5)}
                                 </p>
                             </div>
-                        )}
-                    </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${clusters[selectedCluster].latitude},${clusters[selectedCluster].longitude}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium ${isDark ? "bg-white/10 text-white hover:bg-white/15" : "bg-white text-gray-800 border border-gray-200 shadow-sm hover:bg-gray-50"}`}
+                                >
+                                    Google Maps
+                                </a>
+                                <Link
+                                    href="/staff/map"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+                                >
+                                    Inspect in Full Map →
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
+                {/* Analytics Trend & Distribution */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Analytics Trend & Distribution */}
                     <div className={`p-4 md:p-6 rounded-2xl border flex flex-col justify-between ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                         <div>

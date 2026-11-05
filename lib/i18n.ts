@@ -1,3 +1,5 @@
+import { CATEGORY_LABELS } from "@/types";
+
 export type Locale = "en" | "fil";
 const translations = {
     en: {
@@ -276,7 +278,16 @@ export function getTranslations(locale: Locale) {
 export type Translations = ReturnType<typeof getTranslations>;
 
 export function translateCategory(category: string, t: Translations): string {
-    const key = category.toLowerCase();
+    if (!category) return t.cat_other;
+    const key = category.toLowerCase().trim();
+    if (key.includes("drain") || key.includes("flood")) return t.cat_drainage_flooding;
+    if (key.includes("fire")) return t.cat_fire_hazard;
+    if (key.includes("safe") || key.includes("crime") || key.includes("secur")) return t.cat_safety_concern;
+    if (key.includes("infra") || key.includes("road") || key.includes("light")) return t.cat_infrastructure;
+    if (key.includes("sanit") || key.includes("health") || key.includes("waste") || key.includes("dengue")) return t.cat_sanitation_health;
+    if (key.includes("noise") || key.includes("nuisance")) return t.cat_noise_nuisance;
+    if (key.includes("environ")) return t.cat_environmental;
+
     switch (key) {
         case "drainage_flooding":
         case "flooding":
@@ -300,6 +311,6 @@ export function translateCategory(category: string, t: Translations): string {
         case "environ":
             return t.cat_environmental;
         default:
-            return t.cat_other;
+            return CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category || t.cat_other;
     }
 }

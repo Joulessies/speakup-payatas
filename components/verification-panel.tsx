@@ -1019,7 +1019,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             {/* Detail Modal — portalled to body to escape sidebar's backdrop-blur containing block */}
             {detailModal && typeof document !== "undefined" && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-                    <div className={`w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                    <div className={`w-full max-w-2xl max-h-[80vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
                         {/* Header */}
                         <div className={`flex items-center justify-between px-5 py-3.5 border-b shrink-0 ${isDark ? "border-white/10 bg-white/[0.02]" : "border-gray-100 bg-gray-50/70"}`}>
                             <div className="flex items-center gap-2.5 flex-wrap min-w-0">

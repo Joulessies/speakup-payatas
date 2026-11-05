@@ -136,7 +136,18 @@ const CATEGORY_META: Record<string, CategoryMeta> = {
 };
 
 function getCategoryMeta(cat: string): CategoryMeta {
-  const normalized = cat.toLowerCase().trim();
+  if (!cat) return CATEGORY_META.other;
+  const s = cat.toLowerCase().trim();
+  if (CATEGORY_META[s]) return CATEGORY_META[s];
+  if (s.includes("drain") || s.includes("flood")) return CATEGORY_META.drainage_flooding;
+  if (s.includes("fire")) return CATEGORY_META.fire_hazard;
+  if (s.includes("safe") || s.includes("crime")) return CATEGORY_META.safety_concern;
+  if (s.includes("infra") || s.includes("road") || s.includes("light")) return CATEGORY_META.infrastructure;
+  if (s.includes("sanit") || s.includes("health") || s.includes("waste") || s.includes("dengue")) return CATEGORY_META.sanitation_health;
+  if (s.includes("noise") || s.includes("nuisance")) return CATEGORY_META.noise_nuisance;
+  if (s.includes("environ")) return CATEGORY_META.environmental;
+
+  const normalized = s.replace(/[\s\/\-]+/g, "_");
   return (
     CATEGORY_META[normalized] || {
       label: cat.replace(/_/g, " "),

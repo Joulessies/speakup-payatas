@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { translateCategory } from "@/lib/i18n";
-import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
 import type { ClusterResult } from "@/types";
@@ -24,24 +24,44 @@ const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
 });
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-    flooding: <Droplets className="h-3.5 w-3.5 text-muted-foreground"/>,
+    drainage_flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
+    flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
+    fire_hazard: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
     fire: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
+    safety_concern: <ShieldAlert className="h-3.5 w-3.5 text-red-400"/>,
     crime: <ShieldAlert className="h-3.5 w-3.5 text-red-400"/>,
     infrastructure: <Wrench className="h-3.5 w-3.5 text-amber-400"/>,
-    health: <HeartPulse className="h-3.5 w-3.5 text-pink-400"/>,
-    environmental: <Leaf className="h-3.5 w-3.5 text-emerald-400"/>,
+    sanitation_health: <HeartPulse className="h-3.5 w-3.5 text-emerald-400"/>,
+    health: <HeartPulse className="h-3.5 w-3.5 text-emerald-400"/>,
+    noise_nuisance: <Volume2 className="h-3.5 w-3.5 text-purple-400"/>,
+    noise: <Volume2 className="h-3.5 w-3.5 text-purple-400"/>,
+    environmental: <Leaf className="h-3.5 w-3.5 text-teal-400"/>,
     other: <CircleHelp className="h-3.5 w-3.5 text-gray-400"/>,
 };
 
 const ALL_CATEGORIES = [
-    "flooding",
-    "fire",
-    "crime",
+    "drainage_flooding",
+    "fire_hazard",
+    "safety_concern",
     "infrastructure",
-    "health",
+    "sanitation_health",
+    "noise_nuisance",
     "environmental",
     "other",
 ];
+
+function normalizeCategory(cat: string): string {
+    if (!cat) return "other";
+    const s = cat.toLowerCase().trim();
+    if (s.includes("drain") || s.includes("flood")) return "drainage_flooding";
+    if (s.includes("fire")) return "fire_hazard";
+    if (s.includes("safe") || s.includes("crime")) return "safety_concern";
+    if (s.includes("infra") || s.includes("road") || s.includes("light")) return "infrastructure";
+    if (s.includes("sanit") || s.includes("health") || s.includes("waste") || s.includes("dengue")) return "sanitation_health";
+    if (s.includes("noise") || s.includes("nuisance")) return "noise_nuisance";
+    if (s.includes("environ")) return "environmental";
+    return s.replace(/[\s\/\-]+/g, "_");
+}
 
 type ClusterWithReports = ClusterResult & {
     weighted_score?: number;
@@ -81,7 +101,7 @@ function getDensityLabel(count: number, t: any) {
     return { text: t.sevLow || "Low", color: "bg-emerald-500" };
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "staff" } = {}) {
     const { theme } = useTheme();
     const { t } = useLanguage();
     const isDark = theme === "dark";
@@ -273,9 +293,10 @@ export default function AdminDashboard() {
             .map((c) => {
             const filteredBreakdown: Record<string, number> = {};
             let filteredCount = 0;
-            for (const [cat, count] of Object.entries(c.category_breakdown)) {
-                if (activeCategories.has(cat)) {
-                    filteredBreakdown[cat] = count;
+            for (const [rawCat, count] of Object.entries(c.category_breakdown)) {
+                const norm = normalizeCategory(rawCat);
+                if (activeCategories.has(norm) || activeCategories.has(rawCat)) {
+                    filteredBreakdown[rawCat] = count;
                     filteredCount += count;
                 }
             }
@@ -409,6 +430,7 @@ export default function AdminDashboard() {
               showHeatmap={showHeatmap}
               sidebarTab={sidebarTab}
               setSidebarTab={setSidebarTab}
+              role={role}
             />
           </div>
         </aside>
@@ -572,12 +594,13 @@ export default function AdminDashboard() {
             showHeatmap={showHeatmap}
             sidebarTab={sidebarTab}
             setSidebarTab={setSidebarTab}
+            role={role}
           />
         </div>
       </div>
     </div>);
 }
-function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, }: {
+function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, role = "admin", }: {
     isDark: boolean;
     loading: boolean;
     totalReports: number;
@@ -621,8 +644,9 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
     showHeatmap: boolean;
     sidebarTab: "map" | "queue";
     setSidebarTab: Dispatch<SetStateAction<"map" | "queue">>;
+    role?: "admin" | "staff";
 }) {
-    const isAdmin = true;
+    const isAdmin = role === "admin";
 
     const exportCSV = () => {
         const header = "Cluster,Latitude,Longitude,Report Count,Top Category,Density\n";
@@ -914,7 +938,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5 mb-0.5">
-                                                {topCategory && CATEGORY_ICONS[topCategory[0]]}
+                                                {topCategory && (CATEGORY_ICONS[normalizeCategory(topCategory[0])] || CATEGORY_ICONS[topCategory[0]] || <CircleHelp className="h-3.5 w-3.5 text-gray-400" />)}
                                                 <span className={`text-xs font-semibold truncate ${isDark ? "text-white/90" : "text-[#064e3b]"}`}>
                                                     {topCategory ? translateCategory(topCategory[0], t) : (t.catOther || "Mixed")}
                                                 </span>

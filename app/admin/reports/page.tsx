@@ -392,7 +392,7 @@ export default function AdminReportsPage() {
             {/* View Details Modal */}
             {viewTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-                    <div className={`w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
+                    <div className={`w-full max-w-2xl max-h-[80vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${isDark ? "bg-[#0c1615] border-white/10" : "bg-white border-gray-200"}`}>
                         {/* Header */}
                         <div className={`px-5 py-3.5 border-b flex items-center justify-between shrink-0 ${isDark ? "border-white/10 bg-white/[0.02]" : "border-gray-100 bg-gray-50/70"}`}>
                             <div className="flex items-center gap-3 min-w-0">
@@ -474,9 +474,9 @@ export default function AdminReportsPage() {
                                             </p>
                                         </div>
                                         <div>
-                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter Hash</span>
-                                            <p className={`font-mono text-[10px] break-all mt-0.5 ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                                {viewTarget.reporter_hash}
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter ID</span>
+                                            <p className={`font-mono text-[11px] truncate mt-0.5 ${isDark ? "text-white/70" : "text-gray-700"}`} title={viewTarget.reporter_hash}>
+                                                {viewTarget.reporter_hash ? `${viewTarget.reporter_hash.slice(0, 10)}...${viewTarget.reporter_hash.slice(-8)}` : "Anonymous"}
                                             </p>
                                         </div>
                                     </div>
