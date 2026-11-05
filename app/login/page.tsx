@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { use, useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, Mail, Lock, Eye, EyeOff, Smartphone, KeyRound, ArrowLeft, CheckCircle, AlertCircle, Check, X as XIcon } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
@@ -10,15 +10,55 @@ import { Checkbox } from "@/components/ui/checkbox";
 import EmergencyReminder from "@/components/emergency-reminder";
 import ThemeToggle from "@/components/theme-toggle";
 import TermsAndConditions from "@/components/terms-and-conditions";
+import GoogleSignupDialog from "@/components/google-signup-dialog";
 import { getSupabaseBrowser } from "@/lib/supabase";
+import { safeNextPath } from "@/lib/safe-next-path";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
 
 type AuthMode = "login" | "register";
 type AuthMethod = "password" | "sms_otp" | "email_otp";
 type ForgotPasswordStep = "request" | "verify" | "reset" | "success";
 
-export default function LoginPage() {
+const GOOGLE_SIGN_IN_ENABLED = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
+const SIGN_IN_ERRORS: Record<string, string> = {
+    google_not_configured: "Google sign-in isn't set up yet. Use your email or mobile number for now.",
+    google_cancelled: "Google sign-in was cancelled.",
+    google_expired: "Google sign-in took too long or was started in another browser. Please try again.",
+    google_unverified: "Your Google account's email address isn't verified yet. Verify it with Google, then try again.",
+    google_failed: "Couldn't sign in with Google. Please try again.",
+};
+
+function firstParam(value: string | string[] | undefined) {
+    return Array.isArray(value) ? value[0] : value;
+}
+
+function signInErrorFromQuery(code: string | undefined, until: string | undefined): string | null {
+    if (code === "suspended") {
+        const date = until ? new Date(until) : null;
+        // A fixed locale and time zone make the server-rendered text match the browser's.
+        return date && !Number.isNaN(date.getTime())
+            ? `Your account is suspended until ${date.toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle: "short" })} due to a guidelines violation.`
+            : "Your account is suspended due to a guidelines violation.";
+    }
+    return code ? SIGN_IN_ERRORS[code] ?? null : null;
+}
+
+function GoogleLogo() {
+    return (
+        <svg viewBox="0 0 48 48" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+        </svg>
+    );
+}
+
+export default function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
     const router = useRouter();
+    const query = use(searchParams);
+    const nextPath = safeNextPath(firstParam(query.next));
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [mode, setMode] = useState<AuthMode>("login");
@@ -30,7 +70,9 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(() => signInErrorFromQuery(firstParam(query.error), firstParam(query.until)));
+    const [googleRedirecting, setGoogleRedirecting] = useState(false);
+    const [googleSignupOpen, setGoogleSignupOpen] = useState(() => Boolean(firstParam(query.google_signup)));
     const [otp, setOtp] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [sendingOtp, setSendingOtp] = useState(false);
@@ -131,6 +173,32 @@ export default function LoginPage() {
         const id = window.setInterval(() => setForgotResendTimer((t) => Math.max(0, t - 1)), 1000);
         return () => window.clearInterval(id);
     }, [forgotResendTimer]);
+
+    // The sign-in error is already on screen; drop it from the address bar so a refresh doesn't repeat it.
+    useEffect(() => {
+        if (!query.error) return;
+        const url = new URL(window.location.href);
+        url.searchParams.delete("error");
+        url.searchParams.delete("until");
+        window.history.replaceState(null, "", url);
+    }, [query.error]);
+
+    // Pressing Back on Google's page restores this page from the browser cache with the spinner still showing.
+    useEffect(() => {
+        const onPageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) setGoogleRedirecting(false);
+        };
+        window.addEventListener("pageshow", onPageShow);
+        return () => window.removeEventListener("pageshow", onPageShow);
+    }, []);
+
+    const closeGoogleSignup = useCallback((message?: string) => {
+        setGoogleSignupOpen(false);
+        if (message) setError(message);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("google_signup");
+        window.history.replaceState(null, "", url);
+    }, []);
     const normalizedRegisterPhone = registerPhone.replace(/\D/g, "").slice(-10);
     const normalizedEmailOtpPhone = emailOtpPhone.replace(/\D/g, "").slice(-10);
 
@@ -192,8 +260,7 @@ export default function LoginPage() {
             if (!res.ok) {
                 throw new Error(data.error || "Invalid OTP code.");
             }
-            const next = new URLSearchParams(window.location.search).get("next");
-            router.push(next || data.redirect_to || "/dashboard");
+            router.push(nextPath || data.redirect_to || "/dashboard");
             router.refresh();
         } catch (e) {
             setError(e instanceof Error ? e.message : "Unable to verify code.");
@@ -397,8 +464,7 @@ export default function LoginPage() {
                 localStorage.removeItem("speakup_remember_me");
             }
 
-            const next = new URLSearchParams(window.location.search).get("next");
-            router.push(next || data.redirect_to || "/dashboard");
+            router.push(nextPath || data.redirect_to || "/dashboard");
             router.refresh();
         } catch (e) {
             setError(e instanceof Error ? e.message : mode === "register" ? "Unable to register right now." : "Unable to login right now.");
@@ -419,7 +485,7 @@ export default function LoginPage() {
                             <CardHeader className="px-0 pt-0 pb-5 sm:pb-6">
                                 <div className="flex items-center justify-center mb-3">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src="/payatas-logo.png" alt="Barangay Payatas Logo" className="w-16 h-16 object-contain drop-shadow-md" />
+                                    <img src="/payatas-seal.png" alt="Barangay Payatas Logo" className="w-16 h-16 object-contain drop-shadow-md" />
                                 </div>
                                 <div className="text-center">
                                     <CardTitle className={`text-2xl sm:text-3xl leading-tight font-bold ${isDark ? "text-white" : "text-[#0f1f3d]"}`}>
@@ -702,6 +768,25 @@ export default function LoginPage() {
                                                 : (verifyingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "register" ? "Verify code & Register" : "Verify code & Sign In"))}
                                     </Button>
 
+                                    {GOOGLE_SIGN_IN_ENABLED && (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3" aria-hidden="true">
+                                                <span className={`h-px flex-1 ${isDark ? "bg-white/10" : "bg-gray-200"}`} />
+                                                <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? "text-white/40" : "text-gray-400"}`}>or</span>
+                                                <span className={`h-px flex-1 ${isDark ? "bg-white/10" : "bg-gray-200"}`} />
+                                            </div>
+                                            <a
+                                                href={`/api/auth/google${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+                                                onClick={() => setGoogleRedirecting(true)}
+                                                aria-disabled={googleRedirecting}
+                                                className={`flex h-11 w-full items-center justify-center gap-3 rounded-lg border text-sm font-medium transition-colors ${googleRedirecting ? "pointer-events-none opacity-70" : ""} ${isDark ? "bg-[#131314] border-[#8e918f] text-[#e3e3e3] hover:bg-[#1e1f20]" : "bg-white border-[#747775] text-[#1f1f1f] hover:bg-[#f8f9fa]"}`}
+                                            >
+                                                {googleRedirecting ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <GoogleLogo />}
+                                                Continue with Google
+                                            </a>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[11px] pt-1 text-center sm:text-left">
                                         <p className={isDark ? "text-white/40" : "text-[#7b7468]"}>
                                             {mode === "register" ? "Have an account?" : "No account yet?"}{" "}
@@ -754,6 +839,8 @@ export default function LoginPage() {
             </div>
 
             <TermsAndConditions open={showTerms} onClose={() => setShowTerms(false)} />
+
+            {googleSignupOpen && <GoogleSignupDialog isDark={isDark} onShowTerms={() => setShowTerms(true)} onClose={closeGoogleSignup} />}
 
             {/* Forgot Password Modal */}
             {showForgotPassword && (

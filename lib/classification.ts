@@ -31,35 +31,91 @@ interface ModelArtifact {
 
 const model = trainedModel as unknown as ModelArtifact;
 
+// The trained model only knows the original seven categories; these keywords are
+// the only way the newer categories get suggested.
 const FALLBACK_KEYWORDS: Record<Exclude<ReportCategory, "other">, string[]> = {
     drainage_flooding: [
         "flood", "flooding", "baha", "bumabaha", "lubog", "tubig", 
         "drainage", "kanal", "clogged", "barado", "estero"
     ],
     fire_hazard: [
-        "fire", "sunog", "spark", "sparking", "usok", "smoke", 
-        "wire", "kuryente", "electrical", "poste", "lpg", "gas"
+        "fire", "sunog", "usok", "smoke", "lpg", "gas",
+        "disaster", "sakuna", "bagyo", "typhoon", "lindol", "earthquake", "evacuation", "lumikas"
     ],
     safety_concern: [
         "crime", "krimen", "magnanakaw", "robbery", "theft", "snatcher",
-        "suspicious", "kahina-hinala", "away", "fight", "tambay", "gulo",
-        "accident", "aksidente"
+        "suspicious", "kahina-hinala", "away", "fight", "tambay", "gulo"
+    ],
+    threats_harassment: [
+        "threat", "banta", "pinagbantaan", "harass", "harassment", "binastos", "bastos",
+        "bully", "binubully", "stalker", "sinusundan", "takot"
+    ],
+    medical_health: [
+        "ambulance", "ambulansya", "hospital", "ospital", "gamot", "medicine", "check-up",
+        "doktor", "doctor", "buntis", "pregnant", "sugatan", "injured", "nahimatay"
+    ],
+    road_traffic: [
+        "traffic", "trapik", "trapiko", "parking", "nakaparada", "nakaharang", "harang",
+        "sasakyan", "tricycle", "jeep", "obstruction"
+    ],
+    road_accidents: [
+        "accident", "aksidente", "banggaan", "nabangga", "bumangga", "sagasa", "nasagasaan",
+        "collision", "hit and run", "nadisgrasya"
+    ],
+    electrical_concerns: [
+        "kuryente", "electrical", "electric", "wire", "wires", "kawad", "linya", "spark", "sparking",
+        "meralco", "transformer", "brownout", "blackout", "jumper", "metro"
+    ],
+    animal_concerns: [
+        "aso", "dog", "dogs", "pusa", "cat", "cats", "kagat", "nakagat", "rabies", "askal",
+        "stray", "hayop", "animal", "ahas", "snake"
+    ],
+    family_domestic: [
+        "asawa", "mag-asawa", "vawc", "domestic", "pamilya", "family", "binugbog", "bugbog",
+        "sinasaktan", "child abuse", "inabuso", "abuse"
+    ],
+    substance_concerns: [
+        "droga", "drugs", "drug", "shabu", "marijuana", "adik", "addict", "pusher", "tulak",
+        "rugby", "solvent", "lasing", "lasenggo", "drunk"
+    ],
+    social_welfare: [
+        "ayuda", "senior", "seniors", "pwd", "4ps", "indigent", "solo parent", "pension",
+        "relief", "financial assistance"
+    ],
+    legal_mediation: [
+        "lupon", "mediation", "hearing", "summon", "patawag", "kaso", "utang", "settlement",
+        "areglo", "kasunduan", "dispute", "alitan"
     ],
     infrastructure: [
         "road", "daan", "kalsada", "pothole", "lubak", "sira", "broken",
         "bridge", "tulay", "light", "ilaw", "poste", "crack", "collapsed"
     ],
-    sanitation_health: [
-        "dengue", "disease", "sakit", "health", "kalusugan", 
-        "garbage", "basura", "kalat", "smell", "mabaho", "rat", "daga", "lamok"
+    clearance_concerns: [
+        "clearance", "certificate", "certification", "cedula", "residency", "indigency",
+        "barangay id", "brgy id", "permit", "dokumento", "document"
+    ],
+    service_assistance: [
+        "request", "requesting", "pahiram", "hiram", "borrow", "tent", "tolda", "upuan",
+        "chairs", "lamesa", "serbisyo", "service"
     ],
     environmental: [
         "pollution", "polusyon", "tree", "puno", "landslide", "guho",
         "erosion", "burn", "sunog basura", "chemical", "spill"
     ],
+    garbage_concerns: [
+        "garbage", "basura", "trash", "kalat", "nakakalat", "hakot", "hakutan", "collector",
+        "garbage truck", "tambak", "waste", "segregation"
+    ],
+    sanitation_health: [
+        "dengue", "disease", "sakit", "health", "kalusugan",
+        "smell", "mabaho", "rat", "daga", "lamok"
+    ],
+    inquiries: [
+        "inquiry", "inquire", "tanong", "magtatanong", "itatanong", "schedule", "office hours"
+    ],
     noise_nuisance: [
         "noise", "ingay", "maingay", "loud", "music", "karaoke", 
-        "videoke", "party", "construction", "gabi", "disturbance"
+        "videoke", "party", "construction", "gabi", "disturbance", "inuman"
     ]
 };
 

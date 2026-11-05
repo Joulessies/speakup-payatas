@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeActionHistory, type DbReport } from "@/lib/server-db";
+import { fetchUnlocatedReportIds, normalizeActionHistory, type DbReport } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import DBSCAN from "density-clustering";
 
@@ -39,11 +39,14 @@ export async function GET() {
             .slice(0, 5)
             .map(([category, count]) => ({ category, count }));
 
-        const points = monthReports.map((r) => [r.latitude * LAT_TO_M, r.longitude * LNG_TO_M]);
+        // Reports encoded without a map pin sit on a placeholder point; keep them out of affected areas.
+        const unlocatedIds = await fetchUnlocatedReportIds();
+        const locatedReports = monthReports.filter((r) => !unlocatedIds.has(r.id));
+        const points = locatedReports.map((r) => [r.latitude * LAT_TO_M, r.longitude * LNG_TO_M]);
         const dbscan = new DBSCAN.DBSCAN();
         const clusterIndices = points.length >= 3 ? dbscan.run(points, 50, 2) : [];
         const areas = clusterIndices.map((indices: number[]) => {
-            const reports = indices.map((i: number) => monthReports[i]);
+            const reports = indices.map((i: number) => locatedReports[i]);
             const lat = reports.reduce((s, r) => s + r.latitude, 0) / reports.length;
             const lng = reports.reduce((s, r) => s + r.longitude, 0) / reports.length;
             const cats: Record<string, number> = {};

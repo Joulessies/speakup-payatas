@@ -2,10 +2,16 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import TrendChart from "@/components/trend-chart";
+import PopulationReportSection from "@/components/population-report";
 import { Loader2, TrendingUp, AlertTriangle, Zap, BarChart3, MapPin, ArrowUpRight, } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { UrgencyScore } from "@/lib/urgency";
 import type { AnomalyResult } from "@/lib/anomaly";
+import { CATEGORY_COLORS, CATEGORY_LABELS, resolveCategory, type PopulationReport } from "@/types";
+
+function categoryName(category: string): string {
+    return CATEGORY_LABELS[resolveCategory(category) ?? "other"];
+}
 interface TrendPoint {
     date: string;
     count: number;
@@ -25,6 +31,15 @@ interface AnalyticsData {
     category_distribution: Record<string, number>;
     anomaly_count: number;
     total_reports: number;
+    population: PopulationReport | null;
+}
+
+function readPopulation(value: unknown): PopulationReport | null {
+    if (!value || typeof value !== "object") return null;
+    const p = value as Partial<PopulationReport>;
+    return typeof p.total_reports === "number" && p.gender && p.age_by_gender && p.sources && p.areas
+        ? (p as PopulationReport)
+        : null;
 }
 
 /** Accepts API success bodies and normalizes missing fields so the UI never calls .reduce on undefined. */
@@ -47,6 +62,7 @@ function normalizeAnalyticsResponse(value: unknown): AnalyticsData | null {
         category_distribution,
         anomaly_count,
         total_reports,
+        population: readPopulation(o.population),
     };
 }
 
@@ -177,7 +193,7 @@ export default function AnalyticsPage() {
                 Incident Trend (14 days)
               </h2>
               {topCategory && (<Badge variant="outline" className={`text-[10px] ${isDark ? "border-white/10 text-white/50" : "text-gray-600 border-gray-200"}`}>
-                  Top: {topCategory[0]} ({topCategory[1]})
+                  Top: {categoryName(topCategory[0])} ({topCategory[1]})
                 </Badge>)}
             </div>
             <TrendChart data={trendSeries} isDark={isDark}/>
@@ -194,11 +210,11 @@ export default function AnalyticsPage() {
             .map(([cat, count]) => {
             const pct = data.total_reports > 0 ? Math.round((count / data.total_reports) * 100) : 0;
             return (<div key={cat} className="flex items-center gap-3">
-                      <span className={`text-xs capitalize w-24 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                        {cat}
+                      <span className={`text-xs w-28 truncate ${isDark ? "text-white/60" : "text-gray-600"}`} title={categoryName(cat)}>
+                        {categoryName(cat)}
                       </span>
                       <div className={`flex-1 h-2 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}/>
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[resolveCategory(cat) ?? "other"] }}/>
                       </div>
                       <span className={`text-xs font-mono w-14 text-right ${isDark ? "text-white/45" : "text-gray-500"}`}>
                         {count} ({pct}%)
@@ -208,6 +224,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+
+        <PopulationReportSection population={data.population} isDark={isDark}/>
 
         
         <div className={`p-5 rounded-2xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-gray-100"}`}>
@@ -247,8 +265,8 @@ export default function AnalyticsPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-sm font-medium capitalize truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                        {topCat?.[0] ?? "Mixed"}
+                      <span className={`text-sm font-medium truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                        {topCat ? categoryName(topCat[0]) : "Mixed"}
                       </span>
                       {cluster.anomaly.isAnomaly && (<AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0"/>)}
                     </div>

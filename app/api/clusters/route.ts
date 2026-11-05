@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DBSCAN } from "density-clustering";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { fetchUnlocatedReportIds } from "@/lib/server-db";
 
 const REF_LAT = 14.7055;
 const REF_LNG = 121.099;
@@ -105,7 +106,10 @@ export async function POST(request: Request) {
             }
         }
         
+        // Reports encoded without a map pin sit on a placeholder point; keep them off the map.
+        const unlocatedIds = await fetchUnlocatedReportIds();
         const reports = (data ?? [])
+            .filter((r) => !unlocatedIds.has(r.id))
             .map((r) => ({
             id: r.id,
             receipt_id: r.receipt_id ?? undefined,

@@ -1,20 +1,12 @@
 "use client";
 import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { CATEGORY_COLORS, CATEGORY_LABELS, REPORT_CATEGORIES, resolveCategory } from "@/types";
 
 interface TrendPoint {
     date: string;
     count: number;
     categories: Record<string, number>;
 }
-const CATEGORY_COLORS: Record<string, string> = {
-    flooding: "#60a5fa",
-    fire: "#fb923c",
-    crime: "#f87171",
-    infrastructure: "#fbbf24",
-    health: "#f472b6",
-    environmental: "#34d399",
-    other: "#9ca3af",
-};
 
 export default function TrendChart({ data, isDark, }: {
     data: TrendPoint[];
@@ -23,11 +15,22 @@ export default function TrendChart({ data, isDark, }: {
     if (!data || data.length === 0)
         return null;
 
-    const chartData = data.map(d => ({
-        ...d,
-        formattedDate: new Date(d.date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" }),
-        ...d.categories
-    }));
+    const chartData = data.map(d => {
+        const counts: Record<string, number> = {};
+        for (const [cat, n] of Object.entries(d.categories)) {
+            const key = resolveCategory(cat) ?? "other";
+            counts[key] = (counts[key] ?? 0) + n;
+        }
+        return {
+            ...d,
+            formattedDate: new Date(d.date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" }),
+            ...counts,
+        };
+    });
+    // Only chart categories that occur in this window; 22 empty legend entries would bury the real ones.
+    const presentCategories = REPORT_CATEGORIES.filter((cat) =>
+        data.some((d) => Object.keys(d.categories).some((raw) => (resolveCategory(raw) ?? "other") === cat)),
+    );
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -73,19 +76,19 @@ export default function TrendChart({ data, isDark, }: {
                             content={<CustomTooltip />} 
                             cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} 
                         />
-                        {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
-                            <Bar key={cat} dataKey={cat} stackId="a" fill={color} radius={[0, 0, 0, 0]} />
+                        {presentCategories.map((cat) => (
+                            <Bar key={cat} dataKey={cat} name={CATEGORY_LABELS[cat]} stackId="a" fill={CATEGORY_COLORS[cat]} radius={[0, 0, 0, 0]} />
                         ))}
                     </BarChart>
                 </ResponsiveContainer>
             </div>
             
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3.5 px-1.5">
-                {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
+                {presentCategories.map((cat) => (
                     <div key={cat} className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }}/>
-                        <span className={`text-[10px] capitalize ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                            {cat}
+                        <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CATEGORY_COLORS[cat] }}/>
+                        <span className={`text-[10px] ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                            {CATEGORY_LABELS[cat]}
                         </span>
                     </div>
                 ))}

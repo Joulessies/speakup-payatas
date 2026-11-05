@@ -15,149 +15,14 @@ import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import { useTheme } from "./theme-provider";
 import { useLanguage } from "./language-provider";
 import MapsMissingKey from "./maps-missing-key";
-import type { ClusterResult } from "@/types";
+import { CATEGORY_COLORS, resolveCategory, type ClusterResult } from "@/types";
 import { translateCategory } from "@/lib/i18n";
-import { Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapIcon, Navigation, Volume2, X, MapPin, ExternalLink } from "lucide-react";
+import { CATEGORY_ICONS } from "./category-icon";
+import { MapIcon, Navigation, X, MapPin, ExternalLink } from "lucide-react";
 
-interface CategoryMeta {
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
-  barColor: string;
-  bgLight: string;
-  bgDark: string;
-}
-
-const CATEGORY_META: Record<string, CategoryMeta> = {
-  drainage_flooding: {
-    label: "Drainage / Flooding",
-    Icon: Droplets,
-    iconColor: "text-blue-400",
-    barColor: "bg-blue-400",
-    bgLight: "bg-blue-50 text-blue-700",
-    bgDark: "bg-blue-500/15 text-blue-300",
-  },
-  flooding: {
-    label: "Drainage / Flooding",
-    Icon: Droplets,
-    iconColor: "text-blue-400",
-    barColor: "bg-blue-400",
-    bgLight: "bg-blue-50 text-blue-700",
-    bgDark: "bg-blue-500/15 text-blue-300",
-  },
-  fire_hazard: {
-    label: "Fire Hazard",
-    Icon: Flame,
-    iconColor: "text-orange-400",
-    barColor: "bg-orange-400",
-    bgLight: "bg-orange-50 text-orange-700",
-    bgDark: "bg-orange-500/15 text-orange-300",
-  },
-  fire: {
-    label: "Fire Hazard",
-    Icon: Flame,
-    iconColor: "text-orange-400",
-    barColor: "bg-orange-400",
-    bgLight: "bg-orange-50 text-orange-700",
-    bgDark: "bg-orange-500/15 text-orange-300",
-  },
-  safety_concern: {
-    label: "Safety Concern",
-    Icon: ShieldAlert,
-    iconColor: "text-rose-400",
-    barColor: "bg-rose-400",
-    bgLight: "bg-rose-50 text-rose-700",
-    bgDark: "bg-rose-500/15 text-rose-300",
-  },
-  crime: {
-    label: "Safety Concern",
-    Icon: ShieldAlert,
-    iconColor: "text-rose-400",
-    barColor: "bg-rose-400",
-    bgLight: "bg-rose-50 text-rose-700",
-    bgDark: "bg-rose-500/15 text-rose-300",
-  },
-  infrastructure: {
-    label: "Infrastructure",
-    Icon: Wrench,
-    iconColor: "text-amber-400",
-    barColor: "bg-amber-400",
-    bgLight: "bg-amber-50 text-amber-700",
-    bgDark: "bg-amber-500/15 text-amber-300",
-  },
-  sanitation_health: {
-    label: "Sanitation / Health",
-    Icon: HeartPulse,
-    iconColor: "text-emerald-400",
-    barColor: "bg-emerald-400",
-    bgLight: "bg-emerald-50 text-emerald-700",
-    bgDark: "bg-emerald-500/15 text-emerald-300",
-  },
-  health: {
-    label: "Sanitation / Health",
-    Icon: HeartPulse,
-    iconColor: "text-emerald-400",
-    barColor: "bg-emerald-400",
-    bgLight: "bg-emerald-50 text-emerald-700",
-    bgDark: "bg-emerald-500/15 text-emerald-300",
-  },
-  noise_nuisance: {
-    label: "Noise / Nuisance",
-    Icon: Volume2,
-    iconColor: "text-purple-400",
-    barColor: "bg-purple-400",
-    bgLight: "bg-purple-50 text-purple-700",
-    bgDark: "bg-purple-500/15 text-purple-300",
-  },
-  noise: {
-    label: "Noise / Nuisance",
-    Icon: Volume2,
-    iconColor: "text-purple-400",
-    barColor: "bg-purple-400",
-    bgLight: "bg-purple-50 text-purple-700",
-    bgDark: "bg-purple-500/15 text-purple-300",
-  },
-  environmental: {
-    label: "Environmental",
-    Icon: Leaf,
-    iconColor: "text-teal-400",
-    barColor: "bg-teal-400",
-    bgLight: "bg-teal-50 text-teal-700",
-    bgDark: "bg-teal-500/15 text-teal-300",
-  },
-  other: {
-    label: "Other",
-    Icon: CircleHelp,
-    iconColor: "text-slate-400",
-    barColor: "bg-slate-400",
-    bgLight: "bg-gray-100 text-gray-700",
-    bgDark: "bg-white/10 text-white/70",
-  },
-};
-
-function getCategoryMeta(cat: string): CategoryMeta {
-  if (!cat) return CATEGORY_META.other;
-  const s = cat.toLowerCase().trim();
-  if (CATEGORY_META[s]) return CATEGORY_META[s];
-  if (s.includes("drain") || s.includes("flood")) return CATEGORY_META.drainage_flooding;
-  if (s.includes("fire")) return CATEGORY_META.fire_hazard;
-  if (s.includes("safe") || s.includes("crime")) return CATEGORY_META.safety_concern;
-  if (s.includes("infra") || s.includes("road") || s.includes("light")) return CATEGORY_META.infrastructure;
-  if (s.includes("sanit") || s.includes("health") || s.includes("waste") || s.includes("dengue")) return CATEGORY_META.sanitation_health;
-  if (s.includes("noise") || s.includes("nuisance")) return CATEGORY_META.noise_nuisance;
-  if (s.includes("environ")) return CATEGORY_META.environmental;
-
-  const normalized = s.replace(/[\s\/\-]+/g, "_");
-  return (
-    CATEGORY_META[normalized] || {
-      label: cat.replace(/_/g, " "),
-      Icon: CircleHelp,
-      iconColor: "text-slate-400",
-      barColor: "bg-slate-400",
-      bgLight: "bg-gray-100 text-gray-700",
-      bgDark: "bg-white/10 text-white/70",
-    }
-  );
+function getCategoryStyle(cat: string) {
+  const key = resolveCategory(cat) ?? "other";
+  return { color: CATEGORY_COLORS[key], Icon: CATEGORY_ICONS[key] };
 }
 
 function createClusterPinSvg(count: number, color: string, isSelected: boolean) {
@@ -185,14 +50,7 @@ function createClusterPinSvg(count: number, color: string, isSelected: boolean) 
 }
 
 function createReportPinSvg(category: string, isDark: boolean) {
-  const meta = getCategoryMeta(category);
-  const color = meta.barColor === "bg-blue-400" ? "#3b82f6"
-    : meta.barColor === "bg-orange-400" ? "#f97316"
-    : meta.barColor === "bg-rose-400" ? "#f43f5e"
-    : meta.barColor === "bg-amber-400" ? "#f59e0b"
-    : meta.barColor === "bg-purple-400" ? "#a855f7"
-    : meta.barColor === "bg-teal-400" ? "#14b8a6"
-    : "#10b981";
+  const { color } = getCategoryStyle(category);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="30" viewBox="0 0 22 30">
     <defs>
@@ -491,15 +349,14 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
                 .slice(0, 4)
                 .map(([cat, count]) => {
                   const percentage = Math.round((count / selected.count) * 100);
-                  const meta = getCategoryMeta(cat);
-                  const Icon = meta.Icon;
+                  const { color, Icon } = getCategoryStyle(cat);
 
                   return (
                     <div key={cat} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <div className={`p-1 rounded-md shrink-0 ${isDark ? meta.bgDark : meta.bgLight}`}>
-                            <Icon className={`w-3 h-3 ${meta.iconColor}`} />
+                          <div className="p-1 rounded-md shrink-0" style={{ backgroundColor: `${color}26` }}>
+                            <Icon className="w-3 h-3" style={{ color }} />
                           </div>
                           <span className={`font-medium truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>
                             {translateCategory(cat, t)}
@@ -513,8 +370,8 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
                       {/* Visual progress bar */}
                       <div className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-gray-100"}`}>
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${meta.barColor}`}
-                          style={{ width: `${percentage}%` }}
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%`, backgroundColor: color }}
                         />
                       </div>
                     </div>

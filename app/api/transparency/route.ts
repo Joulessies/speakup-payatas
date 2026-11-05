@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { normalizeActionHistory, type DbReport } from "@/lib/server-db";
+import { fetchIntakeSummaries, normalizeActionHistory, type DbReport } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { CONFIDENTIAL_CATEGORIES } from "@/types";
 
 function serverErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Transparency feed failed";
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
             .select("*")
             .eq("status", "resolved")
             .neq("verification_status", "spam")
+            .not("category", "in", `(${CONFIDENTIAL_CATEGORIES.join(",")})`)
             .order("created_at", { ascending: false })
             .limit(Math.max(1, Math.min(limit, 50)));
 
@@ -100,11 +102,17 @@ export async function GET(request: Request) {
             };
         });
 
+        // Concerns encoded without a pin only have placeholder coordinates.
+        const intake = ids.length > 0 ? await fetchIntakeSummaries(ids) : null;
+        const reports = resolved.map((r) =>
+            intake?.get(r.id)?.location_known === false ? { ...r, latitude: null, longitude: null } : r,
+        );
+
         const overallAverage = ratingCount > 0 ? Math.round((totalRating / ratingCount) * 10) / 10 : null;
 
         return NextResponse.json({
-            reports: resolved,
-            total: resolved.length,
+            reports,
+            total: reports.length,
             feedback_summary: {
                 total_feedback: ratingCount,
                 average_rating: overallAverage,

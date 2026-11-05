@@ -116,7 +116,7 @@ export default function NavBar() {
             <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-5">
                 <Link href="/" className="inline-flex shrink-0 items-center gap-2 leading-none">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/payatas-logo.png" alt="Barangay Payatas Logo" className="h-6 w-6 object-contain shrink-0" />
+                    <img src="/payatas-seal.png" alt="Barangay Payatas Logo" className="h-6 w-6 object-contain shrink-0" />
                     <span className={`hidden lg:inline text-base font-bold tracking-tight leading-none ${isDark ? "text-white" : "text-[#064e3b]"}`}>SpeakUp Payatas</span>
                 </Link>
                 <div className={`hidden lg:block w-px h-5 ${isDark ? "bg-white/10" : "bg-black/10"}`} />

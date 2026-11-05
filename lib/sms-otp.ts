@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 
-/** Maps PostgREST / Postgres messages to a short hint (full detail stays in server logs). */
 function explainOtpDbError(message: string): string {
     const m = message.toLowerCase();
     if (
@@ -48,7 +47,6 @@ function cleanMemorySessions() {
     }
 }
 
-/** Stores OTP in Supabase with memory fallback (survives server restarts when Supabase is connected). */
 export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string } | { error: string }> {
     const now = Date.now();
     cleanMemorySessions();
@@ -96,7 +94,6 @@ export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string }
             throw new Error(upsertErr.message);
         }
 
-        // Keep in memory as secondary mirror
         memoryOtpSessions.set(phoneLast10, {
             code,
             expiresAt: now + OTP_TTL_MS,

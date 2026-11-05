@@ -30,6 +30,7 @@ import {
     Info,
     TrendingUp,
     Settings,
+    ClipboardPen,
 } from "lucide-react";
 
 interface NavItem {
@@ -107,6 +108,7 @@ export default function SidebarNav() {
                     { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
                     { href: "/staff/map", label: "Hotspot Map", icon: Map },
                     { href: "/staff", label: "Verification Queue", icon: Shield },
+                    { href: "/staff/intake", label: "Encode Report", icon: ClipboardPen },
                     { href: "/report", label: "File Report", icon: FileWarning },
                     { href: "/staff/summary", label: "Monthly Summary", icon: BarChart3 },
                 ];
@@ -115,6 +117,7 @@ export default function SidebarNav() {
                     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
                     { href: "/admin", label: "Hotspot Map", icon: Map },
                     { href: "/admin/reports", label: "Manage Reports", icon: FileWarning },
+                    { href: "/admin/intake", label: "Encode Report", icon: ClipboardPen },
                     { href: "/admin/users", label: "Manage Users", icon: Users },
                     { href: "/analytics", label: "Analytics", icon: BarChart3 },
                 ];
@@ -176,7 +179,7 @@ export default function SidebarNav() {
                     {!collapsed && (
                         <div className="flex flex-col items-center text-center gap-1.5 min-w-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/payatas-logo.png" alt="SpeakUp Payatas Official Seal" className="w-12 h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
+                            <img src="/payatas-seal.png" alt="SpeakUp Payatas Official Seal" className="w-12 h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
                             <div className="min-w-0">
                                 <h1 className="font-bold text-white leading-none text-sm tracking-wide uppercase">SpeakUp Payatas</h1>
                                 <p className="text-[10px] text-emerald-300/80 font-medium tracking-wide mt-1">Barangay Payatas</p>
@@ -190,7 +193,7 @@ export default function SidebarNav() {
                     )}
                     {collapsed && (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src="/payatas-logo.png" alt="Barangay Payatas Official Seal" className="w-9 h-9 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
+                        <img src="/payatas-seal.png" alt="Barangay Payatas Official Seal" className="w-9 h-9 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5" />
                     )}
                     <button
                         onClick={() => setCollapsed(!collapsed)}

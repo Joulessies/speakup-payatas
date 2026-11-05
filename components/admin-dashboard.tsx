@@ -4,10 +4,11 @@ import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { translateCategory } from "@/lib/i18n";
-import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, Droplets, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass, Volume2 } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, ShieldAlert, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
-import type { ClusterResult } from "@/types";
+import { CategoryIcon } from "./category-icon";
+import { REPORT_CATEGORIES, resolveCategory, type ClusterResult } from "@/types";
 import {
   Select,
   SelectContent,
@@ -23,44 +24,10 @@ const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     </div>),
 });
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-    drainage_flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
-    flooding: <Droplets className="h-3.5 w-3.5 text-blue-400"/>,
-    fire_hazard: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
-    fire: <Flame className="h-3.5 w-3.5 text-orange-400"/>,
-    safety_concern: <ShieldAlert className="h-3.5 w-3.5 text-red-400"/>,
-    crime: <ShieldAlert className="h-3.5 w-3.5 text-red-400"/>,
-    infrastructure: <Wrench className="h-3.5 w-3.5 text-amber-400"/>,
-    sanitation_health: <HeartPulse className="h-3.5 w-3.5 text-emerald-400"/>,
-    health: <HeartPulse className="h-3.5 w-3.5 text-emerald-400"/>,
-    noise_nuisance: <Volume2 className="h-3.5 w-3.5 text-purple-400"/>,
-    noise: <Volume2 className="h-3.5 w-3.5 text-purple-400"/>,
-    environmental: <Leaf className="h-3.5 w-3.5 text-teal-400"/>,
-    other: <CircleHelp className="h-3.5 w-3.5 text-gray-400"/>,
-};
-
-const ALL_CATEGORIES = [
-    "drainage_flooding",
-    "fire_hazard",
-    "safety_concern",
-    "infrastructure",
-    "sanitation_health",
-    "noise_nuisance",
-    "environmental",
-    "other",
-];
+const ALL_CATEGORIES: readonly string[] = REPORT_CATEGORIES;
 
 function normalizeCategory(cat: string): string {
-    if (!cat) return "other";
-    const s = cat.toLowerCase().trim();
-    if (s.includes("drain") || s.includes("flood")) return "drainage_flooding";
-    if (s.includes("fire")) return "fire_hazard";
-    if (s.includes("safe") || s.includes("crime")) return "safety_concern";
-    if (s.includes("infra") || s.includes("road") || s.includes("light")) return "infrastructure";
-    if (s.includes("sanit") || s.includes("health") || s.includes("waste") || s.includes("dengue")) return "sanitation_health";
-    if (s.includes("noise") || s.includes("nuisance")) return "noise_nuisance";
-    if (s.includes("environ")) return "environmental";
-    return s.replace(/[\s\/\-]+/g, "_");
+    return resolveCategory(cat) ?? "other";
 }
 
 type ClusterWithReports = ClusterResult & {
@@ -414,6 +381,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
               selectedCluster={selectedCluster}
               setSelectedCluster={handleClusterClick}
               activeCategories={activeCategories}
+              setActiveCategories={setActiveCategories}
               toggleCategory={toggleCategory}
               filterInView={filterInView}
               setFilterInView={setFilterInView}
@@ -578,6 +546,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
               setPanelOpen(false);
             }}
             activeCategories={activeCategories}
+            setActiveCategories={setActiveCategories}
             toggleCategory={toggleCategory}
             filterInView={filterInView}
             setFilterInView={setFilterInView}
@@ -600,7 +569,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
       </div>
     </div>);
 }
-function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, role = "admin", }: {
+function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, setActiveCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, role = "admin", }: {
     isDark: boolean;
     loading: boolean;
     totalReports: number;
@@ -610,6 +579,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
     selectedCluster: number | null;
     setSelectedCluster: (i: number | null) => void;
     activeCategories: Set<string>;
+    setActiveCategories: Dispatch<SetStateAction<Set<string>>>;
     toggleCategory: (cat: string) => void;
     filterInView: boolean;
     setFilterInView: Dispatch<SetStateAction<boolean>>;
@@ -829,7 +799,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                                     : "bg-white text-gray-600 border-emerald-100 hover:bg-[#e6f4ea]"
                                         }`}
                                     >
-                                        {CATEGORY_ICONS[cat]}
+                                        <CategoryIcon category={cat} className="h-3.5 w-3.5 shrink-0" />
                                         <span className="truncate">{translateCategory(cat, t)}</span>
                                     </button>
                                 );
@@ -938,7 +908,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5 mb-0.5">
-                                                {topCategory && (CATEGORY_ICONS[normalizeCategory(topCategory[0])] || CATEGORY_ICONS[topCategory[0]] || <CircleHelp className="h-3.5 w-3.5 text-gray-400" />)}
+                                                {topCategory && <CategoryIcon category={topCategory[0]} className="h-3.5 w-3.5 shrink-0" />}
                                                 <span className={`text-xs font-semibold truncate ${isDark ? "text-white/90" : "text-[#064e3b]"}`}>
                                                     {topCategory ? translateCategory(topCategory[0], t) : (t.catOther || "Mixed")}
                                                 </span>

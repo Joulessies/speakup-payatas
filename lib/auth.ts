@@ -49,6 +49,30 @@ export async function verifyAuthToken(token: string | undefined | null) {
         return null;
     }
 }
+/** For short-lived values that must never pass as a session, like a Google sign-up still waiting for a mobile number. */
+export async function signScopedToken(scope: string, value: object, ttlSeconds: number) {
+    const encoded = encodeURIComponent(JSON.stringify({ ...value, exp: Date.now() + ttlSeconds * 1000 }));
+    const signature = await digestHex(`${getAuthSecret()}:${scope}.${encoded}`);
+    return `${encoded}.${signature}`;
+}
+export async function verifyScopedToken<T extends object>(scope: string, token: string | undefined | null): Promise<T | null> {
+    if (!token)
+        return null;
+    const dot = token.lastIndexOf(".");
+    if (dot <= 0)
+        return null;
+    const encoded = token.slice(0, dot);
+    const expected = await digestHex(`${getAuthSecret()}:${scope}.${encoded}`);
+    if (expected !== token.slice(dot + 1))
+        return null;
+    try {
+        const value = JSON.parse(decodeURIComponent(encoded)) as T & { exp?: unknown };
+        return typeof value.exp === "number" && Date.now() <= value.exp ? value : null;
+    }
+    catch {
+        return null;
+    }
+}
 export function getAllowedCredentials() {
     return {
         admin: {

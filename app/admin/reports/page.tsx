@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, ExternalLink, Maximize2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, MapPinOff, ExternalLink, Maximize2, ClipboardPen } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { CATEGORY_LABELS } from "@/types";
+import { BARANGAY_AREA_LABELS, CATEGORY_LABELS, INTAKE_SOURCE_LABELS, type BarangayArea, type IntakeSource } from "@/types";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { IntakeDetailsCard } from "@/components/intake-details-card";
 
 interface Report {
     id: string;
@@ -18,6 +20,9 @@ interface Report {
     latitude: number;
     longitude: number;
     photo_url?: string;
+    location_known?: boolean;
+    intake_source?: IntakeSource | null;
+    intake_area?: BarangayArea | null;
 }
 
 export default function AdminReportsPage() {
@@ -183,7 +188,7 @@ export default function AdminReportsPage() {
     return (
         <div className={`flex flex-col h-full overflow-y-auto ${isDark ? "bg-background" : "bg-gray-50"}`}>
             <div className="max-w-6xl mx-auto w-full px-4 py-8 space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <h1 className={`text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
                             Manage Reports
@@ -192,6 +197,13 @@ export default function AdminReportsPage() {
                             Full CRUD access for all submitted reports.
                         </p>
                     </div>
+                    <Link
+                        href="/admin/intake"
+                        className="flex items-center gap-2 self-start sm:self-auto px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors"
+                    >
+                        <ClipboardPen className="h-4 w-4" />
+                        Encode Report
+                    </Link>
                 </div>
 
                 <div className={`rounded-2xl border overflow-hidden shadow-xl ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
@@ -239,8 +251,15 @@ export default function AdminReportsPage() {
                                                     {r.verification_status}
                                                 </Badge>
                                             </td>
-                                            <td className={`p-4 font-mono text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>
-                                                {r.reporter_hash.slice(0, 8)}...
+                                            <td className={`p-4 text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                                {r.intake_source ? (
+                                                    <span className="inline-flex items-center gap-1 font-medium">
+                                                        <ClipboardPen className="h-3 w-3" />
+                                                        {INTAKE_SOURCE_LABELS[r.intake_source]}
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-mono">{r.reporter_hash.slice(0, 8)}...</span>
+                                                )}
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center justify-end gap-1">
@@ -447,6 +466,17 @@ export default function AdminReportsPage() {
                                     </div>
 
                                     {/* Coordinates & Location */}
+                                    {viewTarget.location_known === false ? (
+                                    <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                        <MapPinOff className={`h-4 w-4 shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`} />
+                                        <div>
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</span>
+                                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                No exact location{viewTarget.intake_area ? ` · ${BARANGAY_AREA_LABELS[viewTarget.intake_area]}` : ""}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    ) : (
                                     <div className={`p-3 rounded-xl border flex items-center justify-between ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                         <div>
                                             <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Coordinates</span>
@@ -464,22 +494,31 @@ export default function AdminReportsPage() {
                                             Google Maps
                                         </a>
                                     </div>
+                                    )}
 
                                     {/* Created & Reporter Meta */}
                                     <div className={`p-3 rounded-xl border grid grid-cols-1 sm:grid-cols-2 gap-3 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                         <div>
-                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Submitted</span>
+                                            <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>{viewTarget.intake_source ? "Received" : "Submitted"}</span>
                                             <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
                                                 {new Date(viewTarget.created_at).toLocaleDateString()} at {new Date(viewTarget.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
                                         <div>
                                             <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Reporter ID</span>
-                                            <p className={`font-mono text-[11px] truncate mt-0.5 ${isDark ? "text-white/70" : "text-gray-700"}`} title={viewTarget.reporter_hash}>
-                                                {viewTarget.reporter_hash ? `${viewTarget.reporter_hash.slice(0, 10)}...${viewTarget.reporter_hash.slice(-8)}` : "Anonymous"}
-                                            </p>
+                                            {viewTarget.intake_source ? (
+                                                <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                    Encoded by staff
+                                                </p>
+                                            ) : (
+                                                <p className={`font-mono text-[11px] truncate mt-0.5 ${isDark ? "text-white/70" : "text-gray-700"}`} title={viewTarget.reporter_hash}>
+                                                    {viewTarget.reporter_hash ? `${viewTarget.reporter_hash.slice(0, 10)}...${viewTarget.reporter_hash.slice(-8)}` : "Anonymous"}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
+
+                                    <IntakeDetailsCard reportId={viewTarget.id} isDark={isDark} />
                                 </div>
 
                                 {/* Right Column: Photo Evidence & Internal Notes (col-span-5) */}

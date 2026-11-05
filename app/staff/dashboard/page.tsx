@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download, Plus, Map, ArrowUpRight } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download, Plus, Map, ArrowUpRight, ClipboardPen } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { CATEGORY_LABELS } from "@/types";
+import { CATEGORY_COLORS, CATEGORY_LABELS, resolveCategory } from "@/types";
 import dynamic from "next/dynamic";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
@@ -13,12 +13,6 @@ interface TrendPoint {
     count: number;
     categories: Record<string, number>;
 }
-
-const CATEGORY_COLORS: Record<string, string> = {
-    flooding: "#059669", fire: "#fb923c", crime: "#f87171",
-    infrastructure: "#fbbf24", health: "#f472b6",
-    environmental: "#34d399", other: "#9ca3af",
-};
 
 const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     ssr: false,
@@ -271,6 +265,17 @@ export default function StaffDashboard() {
                             File Report
                         </Link>
                         <Link
+                            href="/staff/intake"
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                                isDark
+                                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14] border border-white/10"
+                                    : "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                            }`}
+                        >
+                            <ClipboardPen className="h-4 w-4 text-emerald-400" />
+                            Encode Report
+                        </Link>
+                        <Link
                             href="/staff/map"
                             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                                 isDark
@@ -453,7 +458,7 @@ export default function StaffDashboard() {
                                             const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
                                             return (
                                                 <div key={cat} className="flex items-center gap-3">
-                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#9ca3af" }} />
+                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[resolveCategory(cat) ?? "other"] }} />
                                                     <span className={`text-xs capitalize flex-1 truncate ${isDark ? "text-white/60" : "text-[#064e3b]"}`}>{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}</span>
                                                     <div className={`w-20 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-emerald-100"}`}>
                                                         <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />

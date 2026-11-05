@@ -4,17 +4,19 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, Droplets, Flame, ShieldAlert, Wrench, HeartPulse, Leaf, CircleHelp, LocateFixed, Camera, X, HelpCircle, ExternalLink, AlertCircle, Upload, Image as ImageIcon, } from "lucide-react";
+import { MapPin, Wifi, WifiOff, Loader2, ShieldCheck, Send, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, Camera, X, HelpCircle, ExternalLink, AlertCircle, Upload, Image as ImageIcon, } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "@/lib/db";
 import { generateReporterHash, getDeviceId } from "@/lib/crypto";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import GpsHelpDialog from "@/components/gps-help-dialog";
-import { type ReportCategory, type OfflineReport, CATEGORY_LABELS } from "@/types";
+import { CATEGORY_ICONS } from "@/components/category-icon";
+import { CATEGORY_COLORS, GENDER_OPTIONS, REPORT_CATEGORIES, isGender, parseReporterAge, type Gender, type ReportCategory, type OfflineReport } from "@/types";
 import { translateCategory } from "@/lib/i18n";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
@@ -25,6 +27,21 @@ const ReportLocationPicker = dynamic(() => import("@/components/report-location-
     ssr: false,
     loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30" />,
 });
+
+// Shown before "More categories"; the rest of REPORT_CATEGORIES follow in their usual order.
+const FEATURED_CATEGORIES: ReportCategory[] = [
+    "garbage_concerns",
+    "drainage_flooding",
+    "noise_nuisance",
+    "infrastructure",
+    "electrical_concerns",
+    "safety_concern",
+    "fire_hazard",
+];
+const ALL_CATEGORIES_ORDERED: ReportCategory[] = [
+    ...FEATURED_CATEGORIES,
+    ...REPORT_CATEGORIES.filter((key) => !FEATURED_CATEGORIES.includes(key)),
+];
 
 const getRandomPayatasLocation = () => {
     const PAYATAS_AREAS = [
@@ -45,6 +62,7 @@ const getRandomPayatasLocation = () => {
 export default function ReportForm() {
     const DRAFT_KEY = "speakup.report.draft.v1";
     const DRAFT_TOAST_KEY = "speakup.report.draft.toast-shown.v1";
+    const PROFILE_KEY = "speakup.reporter.profile.v1";
     const DUPLICATE_WINDOW_MINUTES = 10;
     const DUPLICATE_DISTANCE_METERS = 150;
     const POOR_ACCURACY_THRESHOLD_METERS = 80;
@@ -61,6 +79,9 @@ export default function ReportForm() {
     const [pendingCount, setPendingCount] = useState(0);
     const [category, setCategory] = useState<ReportCategory | "">("");
     const [autoCategory, setAutoCategory] = useState(true);
+    const [showAllCategories, setShowAllCategories] = useState(false);
+    const [reporterAge, setReporterAge] = useState("");
+    const [reporterGender, setReporterGender] = useState<Gender | "">("");
     const [description, setDescription] = useState("");
     const [severity, setSeverity] = useState(3);
     const [latitude, setLatitude] = useState<number | null>(null);
@@ -157,21 +178,18 @@ export default function ReportForm() {
         reader.onerror = () => reject(new Error("Failed to read image"));
         reader.readAsDataURL(file);
     }), []);
-    const CATEGORIES: {
-        key: ReportCategory;
-        label: string;
-        icon: React.ReactNode;
-        color: string;
-    }[] = [
-            { key: "drainage_flooding", label: translateCategory("drainage_flooding", t), icon: <Droplets className="h-5 w-5" />, color: "text-emerald-400" },
-            { key: "fire_hazard", label: translateCategory("fire_hazard", t), icon: <Flame className="h-5 w-5" />, color: "text-orange-400" },
-            { key: "safety_concern", label: translateCategory("safety_concern", t), icon: <ShieldAlert className="h-5 w-5" />, color: "text-red-400" },
-            { key: "infrastructure", label: translateCategory("infrastructure", t), icon: <Wrench className="h-5 w-5" />, color: "text-amber-400" },
-            { key: "sanitation_health", label: translateCategory("sanitation_health", t), icon: <HeartPulse className="h-5 w-5" />, color: "text-pink-400" },
-            { key: "environmental", label: translateCategory("environmental", t), icon: <Leaf className="h-5 w-5" />, color: "text-emerald-400" },
-            { key: "noise_nuisance", label: translateCategory("noise_nuisance", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-emerald-400" },
-            { key: "other", label: translateCategory("other", t), icon: <CircleHelp className="h-5 w-5" />, color: "text-gray-400" },
-        ];
+    // Collapsed view keeps a selected non-featured category visible.
+    const visibleCategories = showAllCategories
+        ? ALL_CATEGORIES_ORDERED
+        : category && !FEATURED_CATEGORIES.includes(category)
+            ? [...FEATURED_CATEGORIES, category]
+            : FEATURED_CATEGORIES;
+    const GENDER_TEXT: Record<Gender, string> = {
+        male: t.genderMale,
+        female: t.genderFemale,
+        other: t.genderOther,
+        prefer_not_to_say: t.genderPreferNotToSay,
+    };
     const SEVERITY_CONFIG = [
         { value: 1, label: t.sevLow, color: "bg-emerald-500" },
         { value: 2, label: t.sevMinor, color: "bg-lime-500" },
@@ -207,6 +225,21 @@ export default function ReportForm() {
     }, []);
     useEffect(() => {
         setPlatform(detectPlatform());
+    }, []);
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(PROFILE_KEY);
+            if (!raw)
+                return;
+            const profile = JSON.parse(raw) as { age?: unknown; gender?: unknown };
+            const savedAge = parseReporterAge(profile.age);
+            if (savedAge !== null)
+                setReporterAge(String(savedAge));
+            if (isGender(profile.gender))
+                setReporterGender(profile.gender);
+        }
+        catch {
+        }
     }, []);
     useEffect(() => {
         if (typeof navigator === "undefined" || !("permissions" in navigator)) {
@@ -413,6 +446,21 @@ export default function ReportForm() {
             setError(t.reportOutsideBoundary);
             return;
         }
+        const parsedAge = parseReporterAge(reporterAge);
+        if (reporterAge.trim() !== "" && parsedAge === null) {
+            setError(t.reportAgeInvalid);
+            return;
+        }
+        try {
+            if (parsedAge !== null || reporterGender) {
+                localStorage.setItem(PROFILE_KEY, JSON.stringify({ age: parsedAge, gender: reporterGender || null }));
+            }
+            else {
+                localStorage.removeItem(PROFILE_KEY);
+            }
+        }
+        catch {
+        }
         const duplicateNearby = await checkForDuplicateNearby();
         if (duplicateNearby && !window.confirm(t.reportDuplicateConfirm)) {
             return;
@@ -442,6 +490,8 @@ export default function ReportForm() {
             longitude: finalLng,
             severity,
             photo_url: photoPreview || undefined,
+            reporter_age: parsedAge,
+            reporter_gender: reporterGender || null,
             is_synced: 0,
             created_at: new Date().toISOString(),
         };
@@ -557,22 +607,28 @@ export default function ReportForm() {
                     <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
                         {t.reportWhatHappened}
                     </Label>
-                    <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2">
-                        {CATEGORIES.map((cat) => {
-                            const isSelected = category === cat.key;
-                            return (<button key={cat.key} type="button" aria-label={`Category ${cat.label}`} onClick={() => { setCategory(cat.key); setAutoCategory(false); }} className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isSelected
+                    <div className="grid grid-cols-2 min-[420px]:grid-cols-4 gap-1.5 md:gap-2">
+                        {visibleCategories.map((key) => {
+                            const isSelected = category === key;
+                            const label = translateCategory(key, t);
+                            const Icon = CATEGORY_ICONS[key];
+                            return (<button key={key} type="button" aria-label={`Category ${label}`} aria-pressed={isSelected} onClick={() => { setCategory(key); setAutoCategory(false); }} className={`flex min-h-14 flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isSelected
                                 ? isDark ? "bg-white/[0.12] ring-1 ring-white/20" : "bg-emerald-50 ring-1 ring-emerald-300"
                                 : isDark ? "bg-white/[0.04] hover:bg-white/[0.08]" : "bg-black/[0.02] hover:bg-black/[0.05]"}`}>
-                                <span className={isSelected ? cat.color : isDark ? "text-white/40" : "text-gray-400"}>
-                                    {cat.icon}
-                                </span>
-                                <span className={`w-full truncate px-0.5 text-[10px] font-medium leading-none ${isSelected
+                                <Icon className={`h-5 w-5 shrink-0 ${isSelected ? "" : isDark ? "text-white/40" : "text-gray-400"}`} style={isSelected ? { color: CATEGORY_COLORS[key] } : undefined} />
+                                <span className={`w-full line-clamp-3 px-0.5 text-[10px] font-medium leading-tight ${isSelected
                                     ? isDark ? "text-white" : "text-gray-900"
                                     : isDark ? "text-white/40" : "text-gray-400"}`}>
-                                    {cat.label}
+                                    {label}
                                 </span>
                             </button>);
                         })}
+                        <button type="button" aria-expanded={showAllCategories} onClick={() => setShowAllCategories((prev) => !prev)} className={`flex min-h-14 flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl border border-dashed text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isDark ? "border-white/15 text-white/60 hover:bg-white/[0.06]" : "border-black/15 text-gray-500 hover:bg-black/[0.03]"}`}>
+                            {showAllCategories ? <ChevronUp className="h-5 w-5 shrink-0" /> : <ChevronDown className="h-5 w-5 shrink-0" />}
+                            <span className="w-full px-0.5 text-[10px] font-medium leading-tight">
+                                {showAllCategories ? t.reportFewerCategories : t.reportMoreCategories}
+                            </span>
+                        </button>
                     </div>
                 </div>
 
@@ -733,6 +789,38 @@ export default function ReportForm() {
                     </>)}
                 </div>
 
+
+                <div className="space-y-2">
+                    <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        {t.reportAboutYou}
+                    </Label>
+                    <p className={`text-[10px] leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        {t.reportAboutYouHint}
+                    </p>
+                    <div className="grid grid-cols-[5.5rem_1fr] gap-2">
+                        <div className="space-y-1">
+                            <Label htmlFor="reporter-age" className={`text-[11px] ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                {t.reportAge}
+                            </Label>
+                            <Input id="reporter-age" inputMode="numeric" autoComplete="off" maxLength={3} placeholder={t.reportAgePlaceholder} value={reporterAge} onChange={(e) => setReporterAge(e.target.value.replace(/\D/g, ""))} className="min-h-11 rounded-xl text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                            <span className={`block text-[11px] font-medium ${isDark ? "text-white/60" : "text-gray-600"}`}>
+                                {t.reportGender}
+                            </span>
+                            <div role="radiogroup" aria-label={t.reportGender} className="grid grid-cols-2 gap-1.5">
+                                {GENDER_OPTIONS.map((option) => {
+                                    const isSelected = reporterGender === option;
+                                    return (<button key={option} type="button" role="radio" aria-checked={isSelected} onClick={() => setReporterGender(isSelected ? "" : option)} className={`min-h-9 px-2 rounded-lg text-[11px] font-medium leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isSelected
+                                        ? isDark ? "bg-white/[0.12] ring-1 ring-white/20 text-white" : "bg-emerald-50 ring-1 ring-emerald-300 text-gray-900"
+                                        : isDark ? "bg-white/[0.04] text-white/50 hover:bg-white/[0.08]" : "bg-black/[0.02] text-gray-500 hover:bg-black/[0.05]"}`}>
+                                        {GENDER_TEXT[option]}
+                                    </button>);
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {error && (<Alert variant="destructive" className="py-2 rounded-xl">
                     <AlertDescription className="text-sm">{error}</AlertDescription>

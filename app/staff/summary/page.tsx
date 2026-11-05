@@ -3,8 +3,16 @@ import { useEffect, useState } from "react";
 import { Loader2, BarChart3, TrendingUp, MapPin, Download, Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
-import { CATEGORY_LABELS } from "@/types";
+import { BARANGAY_AREA_LABELS, CATEGORY_LABELS, type BarangayArea } from "@/types";
 import { getAreaFromCoordinates } from "@/lib/payatas-boundary";
+
+function reportArea(r: { latitude?: number; longitude?: number; location_known?: boolean; intake_area?: BarangayArea | null }): string {
+    
+    if (r.location_known === false) {
+        return r.intake_area ? BARANGAY_AREA_LABELS[r.intake_area] : "Location not given";
+    }
+    return (r.latitude && r.longitude) ? getAreaFromCoordinates(r.latitude, r.longitude) : "Unknown Area";
+}
 
 interface MonthlyData {
     month: string;
@@ -62,10 +70,7 @@ export default function StaffMonthlySummary() {
                 const status = r.status || "pending";
                 monthData.byStatus[status] = (monthData.byStatus[status] || 0) + 1;
 
-                // Area — derive from GPS coordinates since location_area is not stored in DB
-                const area = (r.latitude && r.longitude)
-                    ? getAreaFromCoordinates(r.latitude, r.longitude)
-                    : "Unknown Area";
+                const area = reportArea(r);
                 monthData.byArea[area] = (monthData.byArea[area] || 0) + 1;
             });
 
@@ -99,7 +104,7 @@ export default function StaffMonthlySummary() {
             r.status,
             r.verification_status,
             new Date(r.created_at).toISOString(),
-            (r.latitude && r.longitude) ? getAreaFromCoordinates(r.latitude, r.longitude) : "Unknown Area",
+            reportArea(r),
             r.description?.replace(/,/g, ";") || "",
             r.receipt_id || "",
         ]);
@@ -250,7 +255,7 @@ export default function StaffMonthlySummary() {
                             )}
                         </div>
 
-                        {/* Status Breakdown */}
+                        
                         <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
                             <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Status Breakdown

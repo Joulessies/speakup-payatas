@@ -1,4 +1,4 @@
-import { CATEGORY_LABELS } from "@/types";
+import { resolveCategory } from "@/types";
 
 export type Locale = "en" | "fil";
 const translations = {
@@ -66,14 +66,40 @@ const translations = {
         catHealth: "Health",
         catEnvironmental: "Environ",
         catOther: "Other",
+        cat_safety_concern: "Violence and Public Safety",
+        cat_threats_harassment: "Threats and Harassment",
+        cat_fire_hazard: "Fire and Disaster Alert",
+        cat_medical_health: "Medical and Health",
+        cat_road_traffic: "Road and Traffic",
+        cat_road_accidents: "Road Accidents",
+        cat_noise_nuisance: "Public Disturbance / Noise",
+        cat_electrical_concerns: "Electrical Concerns",
+        cat_animal_concerns: "Animal Related Concerns",
+        cat_family_domestic: "Family and Domestic Concerns",
+        cat_substance_concerns: "Substance Related Concerns",
+        cat_social_welfare: "Social Welfare Concerns",
+        cat_legal_mediation: "Legal and Barangay Mediation",
+        cat_infrastructure: "Infrastructure and Public Works",
         cat_drainage_flooding: "Drainage / Flooding",
-        cat_fire_hazard: "Fire Hazard",
-        cat_safety_concern: "Safety Concern",
-        cat_infrastructure: "Infrastructure",
+        cat_clearance_concerns: "Clearance Concerns",
+        cat_service_assistance: "Service and Assistance Requests",
+        cat_environmental: "Environmental Concerns",
+        cat_garbage_concerns: "Garbage Concerns",
         cat_sanitation_health: "Sanitation / Health",
-        cat_noise_nuisance: "Noise Nuisance",
-        cat_environmental: "Environmental",
-        cat_other: "Other",
+        cat_inquiries: "Inquiries",
+        cat_other: "Others",
+        reportMoreCategories: "More categories",
+        reportFewerCategories: "Fewer categories",
+        reportAboutYou: "About you (optional)",
+        reportAboutYouHint: "Used for the barangay's population statistics. Only barangay staff can see this.",
+        reportAge: "Age",
+        reportAgePlaceholder: "e.g. 34",
+        reportAgeInvalid: "Age must be a whole number from 1 to 120.",
+        reportGender: "Gender",
+        genderMale: "Male",
+        genderFemale: "Female",
+        genderOther: "Other",
+        genderPreferNotToSay: "Prefer not to say",
         sevLow: "Low",
         sevMinor: "Minor",
         sevModerate: "Moderate",
@@ -200,14 +226,40 @@ const translations = {
         catHealth: "Kalusugan",
         catEnvironmental: "Kalikasan",
         catOther: "Iba pa",
+        cat_safety_concern: "Karahasan at Kaligtasan ng Publiko",
+        cat_threats_harassment: "Pagbabanta at Panliligalig",
+        cat_fire_hazard: "Sunog at Sakuna",
+        cat_medical_health: "Medikal at Kalusugan",
+        cat_road_traffic: "Kalsada at Trapiko",
+        cat_road_accidents: "Aksidente sa Kalsada",
+        cat_noise_nuisance: "Gulo / Ingay sa Komunidad",
+        cat_electrical_concerns: "Problema sa Kuryente",
+        cat_animal_concerns: "Problema sa Hayop",
+        cat_family_domestic: "Problema sa Pamilya at Tahanan",
+        cat_substance_concerns: "Kaugnay ng Droga at Bisyo",
+        cat_social_welfare: "Kapakanang Panlipunan",
+        cat_legal_mediation: "Legal at Pag-aayos sa Barangay",
+        cat_infrastructure: "Imprastraktura at Pampublikong Gawain",
         cat_drainage_flooding: "Kanal / Pagbaha",
-        cat_fire_hazard: "Peligro sa Sunog",
-        cat_safety_concern: "Isyu sa Seguridad",
-        cat_infrastructure: "Imprastraktura",
+        cat_clearance_concerns: "Clearance at mga Dokumento",
+        cat_service_assistance: "Hiling na Serbisyo at Tulong",
+        cat_environmental: "Kalikasan at Kapaligiran",
+        cat_garbage_concerns: "Problema sa Basura",
         cat_sanitation_health: "Kalinisan / Kalusugan",
-        cat_noise_nuisance: "Istorbo sa Ingay",
-        cat_environmental: "Kalikasan",
+        cat_inquiries: "Mga Katanungan",
         cat_other: "Iba pa",
+        reportMoreCategories: "Iba pang kategorya",
+        reportFewerCategories: "Mas kaunting kategorya",
+        reportAboutYou: "Tungkol sa iyo (opsyonal)",
+        reportAboutYouHint: "Ginagamit para sa estadistika ng populasyon ng barangay. Mga kawani lang ng barangay ang makakakita nito.",
+        reportAge: "Edad",
+        reportAgePlaceholder: "hal. 34",
+        reportAgeInvalid: "Ang edad ay dapat buong numero mula 1 hanggang 120.",
+        reportGender: "Kasarian",
+        genderMale: "Lalaki",
+        genderFemale: "Babae",
+        genderOther: "Iba pa",
+        genderPreferNotToSay: "Ayokong sabihin",
         sevLow: "Mababa",
         sevMinor: "Bahagya",
         sevModerate: "Katamtaman",
@@ -279,38 +331,6 @@ export type Translations = ReturnType<typeof getTranslations>;
 
 export function translateCategory(category: string, t: Translations): string {
     if (!category) return t.cat_other;
-    const key = category.toLowerCase().trim();
-    if (key.includes("drain") || key.includes("flood")) return t.cat_drainage_flooding;
-    if (key.includes("fire")) return t.cat_fire_hazard;
-    if (key.includes("safe") || key.includes("crime") || key.includes("secur")) return t.cat_safety_concern;
-    if (key.includes("infra") || key.includes("road") || key.includes("light")) return t.cat_infrastructure;
-    if (key.includes("sanit") || key.includes("health") || key.includes("waste") || key.includes("dengue")) return t.cat_sanitation_health;
-    if (key.includes("noise") || key.includes("nuisance")) return t.cat_noise_nuisance;
-    if (key.includes("environ")) return t.cat_environmental;
-
-    switch (key) {
-        case "drainage_flooding":
-        case "flooding":
-            return t.cat_drainage_flooding;
-        case "fire_hazard":
-        case "fire":
-            return t.cat_fire_hazard;
-        case "safety_concern":
-        case "crime":
-            return t.cat_safety_concern;
-        case "infrastructure":
-        case "infra":
-            return t.cat_infrastructure;
-        case "sanitation_health":
-        case "health":
-            return t.cat_sanitation_health;
-        case "noise_nuisance":
-        case "noise":
-            return t.cat_noise_nuisance;
-        case "environmental":
-        case "environ":
-            return t.cat_environmental;
-        default:
-            return CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category || t.cat_other;
-    }
+    const key = resolveCategory(category);
+    return key ? t[`cat_${key}`] : category.replace(/_/g, " ");
 }

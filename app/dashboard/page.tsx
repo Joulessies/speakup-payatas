@@ -7,6 +7,7 @@ import Link from "next/link";
 import TransparencyBoard from "@/components/transparency-board";
 import PredictiveAnalytics from "@/components/predictive-analytics";
 import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from "recharts";
+import { CATEGORY_COLORS, CATEGORY_LABELS, resolveCategory } from "@/types";
 
 interface TrendPoint {
     date: string;
@@ -18,12 +19,6 @@ interface AnalyticsData {
     total_reports: number;
     category_distribution: Record<string, number>;
 }
-
-const CATEGORY_COLORS: Record<string, string> = {
-    flooding: "#059669", fire: "#ef4444", crime: "#f97316",
-    infrastructure: "#eab308", health: "#ec4899",
-    environmental: "#34d399", other: "#94a3b8",
-};
 
 function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
     if (!data || data.length < 2) return (
@@ -254,8 +249,8 @@ export default function UserDashboard() {
                                             const pct = analytics.total_reports > 0 ? Math.round((count / analytics.total_reports) * 100) : 0;
                                             return (
                                                 <div key={cat} className="flex items-center gap-3">
-                                                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#94a3b8" }} />
-                                                    <span className={`text-xs capitalize flex-1 truncate font-medium ${isDark ? "text-white/70" : "text-[#064e3b]"}`}>{cat}</span>
+                                                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: CATEGORY_COLORS[resolveCategory(cat) ?? "other"] }} />
+                                                    <span className={`text-xs flex-1 truncate font-medium ${isDark ? "text-white/70" : "text-[#064e3b]"}`}>{CATEGORY_LABELS[resolveCategory(cat) ?? "other"]}</span>
                                                     <div className={`w-24 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-emerald-100"}`}>
                                                         <div className="h-full rounded-full bg-[#059669]" style={{ width: `${pct}%` }} />
                                                     </div>

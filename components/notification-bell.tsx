@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Bell, X, Check, AlertTriangle, FileWarning, RefreshCw, ExternalLink } from "lucide-react";
+import { Bell, X, Check, AlertTriangle, ClipboardPen, FileWarning, RefreshCw, ExternalLink } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
 
@@ -122,6 +122,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
     const getIcon = (type: string) => {
         if (type === "high_priority") return <AlertTriangle className="h-3.5 w-3.5 text-red-400" />;
         if (type === "status_update") return <RefreshCw className="h-3.5 w-3.5 text-emerald-400" />;
+        if (type === "encoded_report") return <ClipboardPen className="h-3.5 w-3.5 text-emerald-400" />;
         return <FileWarning className="h-3.5 w-3.5 text-emerald-400" />;
     };
 

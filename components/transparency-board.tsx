@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Search, MapPin, Calendar, CheckCircle2, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Maximize2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { CATEGORY_LABELS } from "@/types";
+import { CATEGORY_LABELS, CONFIDENTIAL_CATEGORIES, REPORT_CATEGORIES } from "@/types";
 import { useRouter } from "next/navigation";
 import { ImageLightbox } from "@/components/image-lightbox";
 
@@ -22,8 +22,9 @@ interface ResolvedReport {
     id: string;
     category: string;
     description: string;
-    latitude: number;
-    longitude: number;
+    /** Null when the concern was encoded without a map pin. */
+    latitude: number | null;
+    longitude: number | null;
     created_at: string;
     resolved_at: string;
     photo_url?: string;
@@ -100,8 +101,8 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                             className={`bg-transparent font-medium outline-none ${isDark ? "text-white [&>option]:bg-[#04271e] [&>option]:text-white" : "text-gray-900 [&>option]:bg-white [&>option]:text-gray-900"}`}
                         >
                             <option value="all">All Categories</option>
-                            {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                <option key={k} value={k}>{v}</option>
+                            {REPORT_CATEGORIES.filter((k) => !CONFIDENTIAL_CATEGORIES.includes(k)).map((k) => (
+                                <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
                             ))}
                         </select>
                     </div>
@@ -185,10 +186,10 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                         <Calendar className="h-3 w-3" />
                                         Resolved {new Date(r.resolved_at).toLocaleDateString()}
                                     </div>
-                                    {!embedded && (
+                                    {!embedded && r.latitude != null && r.longitude != null && (
                                         <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
                                             <MapPin className="h-3 w-3" />
-                                            Approx: {r.latitude?.toFixed(4)}, {r.longitude?.toFixed(4)}
+                                            Approx: {r.latitude.toFixed(4)}, {r.longitude.toFixed(4)}
                                         </div>
                                     )}
                                 </div>

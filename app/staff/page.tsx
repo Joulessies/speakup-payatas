@@ -2,7 +2,7 @@
 import { useTheme } from "@/components/theme-provider";
 import VerificationPanel from "@/components/verification-panel";
 import PredictiveAnalytics from "@/components/predictive-analytics";
-import { ShieldCheck, TrendingUp, Map, Plus } from "lucide-react";
+import { ShieldCheck, TrendingUp, Map, Plus, ClipboardPen } from "lucide-react";
 import Link from "next/link";
 
 export default function StaffPage() {
@@ -34,6 +34,17 @@ export default function StaffPage() {
                         >
                             <Plus className="h-4 w-4" />
                             File Report
+                        </Link>
+                        <Link
+                            href="/staff/intake"
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                                isDark
+                                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14] border border-white/10"
+                                    : "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                            }`}
+                        >
+                            <ClipboardPen className="h-4 w-4 text-emerald-400" />
+                            Encode Report
                         </Link>
                         <Link
                             href="/staff/map"

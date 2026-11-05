@@ -4,11 +4,20 @@ import { rateLimit } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { classifyReport } from "@/lib/classification";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { fetchReportsBase, normalizeActionHistory } from "@/lib/server-db";
+import { addNotification, fetchIntakeSummaries, INTAKE_DETAILS_TABLE, normalizeActionHistory } from "@/lib/server-db";
 import { getReportsListLimitCap } from "@/lib/api-session";
 import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
 import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
-import type { Notification, ReportAction, ReportStatus, VerificationStatus } from "@/types";
+import {
+  CATEGORY_LABELS,
+  isGender,
+  isReportCategory,
+  parseReporterAge,
+  resolveCategory,
+  type ReportAction,
+  type ReportStatus,
+  type VerificationStatus,
+} from "@/types";
 
 type WorkflowStatus = ReportStatus;
 
@@ -17,27 +26,9 @@ function jsonFromCaught(err: unknown, status = 503) {
   return NextResponse.json({ error: message }, { status });
 }
 
-async function addNotification(params: {
-  recipient_hash?: string;
-  recipient_role?: "admin" | "staff" | "user";
-  type: Notification["type"];
-  title: string;
-  message: string;
-  report_id?: string;
-}) {
-  try {
-    await getSupabaseAdmin().from("notifications").insert({
-      recipient_hash: params.recipient_hash,
-      recipient_role: params.recipient_role,
-      type: params.type,
-      title: params.title,
-      message: params.message,
-      report_id: params.report_id,
-      read: false,
-    });
-  } catch {
-    // Fail-safe
-  }
+function categoryLabel(category: string): string {
+  const key = resolveCategory(category);
+  return key ? CATEGORY_LABELS[key] : category.replace(/_/g, " ");
 }
 
 async function isBlocked(reporterHash: string): Promise<boolean> {
@@ -59,6 +50,13 @@ export async function POST(request: Request) {
     if (!reporter_hash || !category || latitude == null || longitude == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+    if (!isReportCategory(category)) {
+      return NextResponse.json({ error: "Unknown report category" }, { status: 400 });
+    }
+
+    // Optional demographics for the population report; invalid values are dropped rather than rejecting the report.
+    const reporterAge = parseReporterAge(body.reporter_age);
+    const reporterGender = isGender(body.reporter_gender) ? body.reporter_gender : null;
 
     // Inline data URLs can grow unbounded; cap the size so a misuse can't bloat the row.
     const cleanedPhotoUrl = typeof photo_url === "string" && photo_url.trim().length > 0
@@ -135,21 +133,40 @@ export async function POST(request: Request) {
       .single();
 
     if (error || !data) {
+      if (error?.message?.includes("reports_category_check")) {
+        return NextResponse.json(
+          { error: "This category isn't available yet. Please choose another category or try again later." },
+          { status: 503 },
+        );
+      }
       return NextResponse.json({ error: error?.message ?? "Failed to create report" }, { status: 500 });
+    }
+
+    // Demographics are optional; never fail the report because of them.
+    if (reporterAge !== null || reporterGender !== null) {
+      const { error: demographicsError } = await getSupabaseAdmin().from(INTAKE_DETAILS_TABLE).insert({
+        report_id: data.id,
+        source: "web",
+        reporter_age: reporterAge,
+        reporter_gender: reporterGender,
+      });
+      if (demographicsError) {
+        console.warn("Could not save reporter demographics:", demographicsError.message);
+      }
     }
 
     await addNotification({
       recipient_role: "admin",
       type: (severity ?? 1) >= 4 ? "high_priority" : "new_report",
       title: (severity ?? 1) >= 4 ? "High-Priority Report" : "New Report",
-      message: `${category.replace(/_/g, " ")} - ${(description || "No description").slice(0, 60)}`,
+      message: `${categoryLabel(category)} - ${(description || "No description").slice(0, 60)}`,
       report_id: data.id,
     });
     await addNotification({
       recipient_role: "staff",
       type: (severity ?? 1) >= 4 ? "high_priority" : "new_report",
       title: (severity ?? 1) >= 4 ? "High-Priority Report" : "New Report",
-      message: `${category.replace(/_/g, " ")} - ${(description || "No description").slice(0, 60)}`,
+      message: `${categoryLabel(category)} - ${(description || "No description").slice(0, 60)}`,
       report_id: data.id,
     });
     if (modResult.flagged) {
@@ -201,10 +218,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const reports = (data ?? []).map((report) => ({
-      ...report,
-      action_history: Array.isArray(report.action_history) ? report.action_history : [],
-    }));
+    const rows = data ?? [];
+    const intake = await fetchIntakeSummaries(rows.map((report) => report.id as string));
+    const reports = rows.map((report) => {
+      const details = intake?.get(report.id);
+      // This endpoint is public: reporter demographics and contact details stay out.
+      return {
+        ...report,
+        action_history: Array.isArray(report.action_history) ? report.action_history : [],
+        intake_source: details && details.source !== "web" ? details.source : null,
+        intake_area: details?.area ?? null,
+        location_known: details?.location_known ?? true,
+      };
+    });
     return NextResponse.json({ reports });
   } catch (err) {
     return jsonFromCaught(err);
@@ -266,7 +292,7 @@ export async function PATCH(request: Request) {
         recipient_role: "user",
         type: "status_update",
         title: "Report Status Updated",
-        message: `Your ${report.category.replace(/_/g, " ")} report is now "${status.replace("_", " ")}".`,
+        message: `Your ${categoryLabel(report.category)} report is now "${status.replace("_", " ")}".`,
         report_id: report.id,
       });
     }

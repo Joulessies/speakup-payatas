@@ -110,6 +110,24 @@ export async function insertEmailOtpUser(email: string, phoneLast10: string) {
     return data as AppUserRow;
 }
 
+/** Resident account from a Google sign-up: Google vouches for the email, so there's no password until the user sets one on the Account page. Requires migration sql/008_app_users_email_otp_optional_password.sql */
+export async function insertGoogleUser(email: string, phoneLast10: string) {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from("app_users")
+        .insert({
+            email: normalizeEmail(email),
+            phone_e164: phoneLast10,
+            password_hash: null,
+            role: "user",
+        })
+        .select("id, email, phone_e164, password_hash, role, created_at, updated_at, suspended_until, suspension_offense")
+        .single();
+    if (error)
+        throw new Error(error.message);
+    return data as AppUserRow;
+}
+
 export async function updateAppUserPhoneLast10ById(userId: string, phoneLast10: string): Promise<AppUserRow> {
     if (!/^\d{10}$/.test(phoneLast10)) {
         throw new Error("Invalid phone number.");

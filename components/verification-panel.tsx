@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo, Sparkles, ExternalLink, Maximize2 } from "lucide-react";
+import { Loader2, CheckCircle, ShieldAlert, Copy, Check, MessageSquare, AlertTriangle, ShieldCheck, Clock, Wrench, Shield, Search, Filter, Eye, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MapPin, MapPinOff, Image, Calendar, User, MoreHorizontal, Trash2, RefreshCw, Download, Undo, Sparkles, ExternalLink, Maximize2, ClipboardPen } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CATEGORY_LABELS, type ReportCategory } from "@/types";
+import { BARANGAY_AREA_LABELS, CATEGORY_LABELS, INTAKE_SOURCE_LABELS, type BarangayArea, type IntakeSource, type ReportCategory } from "@/types";
+import { IntakeDetailsCard } from "@/components/intake-details-card";
 import Link from "next/link";
 import { toast } from "sonner";
 import StatusUpdateDialog, { type StaffStatus } from "@/components/status-update-dialog";
@@ -40,8 +41,11 @@ interface Report {
     flag_reason?: string;
     photo_url?: string;
     receipt_id?: string;
-    lat?: number;
-    lng?: number;
+    latitude?: number;
+    longitude?: number;
+    location_known?: boolean;
+    intake_source?: IntakeSource | null;
+    intake_area?: BarangayArea | null;
     severity?: number;
     reporter_id?: string;
     action_history?: {
@@ -719,6 +723,12 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         <Badge variant="outline" className={isDark ? "border-white/10 text-white/70" : ""}>
                                             {CATEGORY_LABELS[(report.admin_category || report.category) as ReportCategory] || report.category}
                                         </Badge>
+                                        {report.intake_source && (
+                                            <Badge variant="outline" className={`gap-1 text-[11px] ${isDark ? "border-sky-400/30 text-sky-300 bg-sky-500/10" : "border-sky-200 text-sky-700 bg-sky-50"}`}>
+                                                <ClipboardPen className="h-3 w-3" />
+                                                {INTAKE_SOURCE_LABELS[report.intake_source]}
+                                            </Badge>
+                                        )}
                                         {report.ai_category && (
                                             <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] gap-1">
                                                 <Sparkles className="h-3 w-3" />
@@ -1123,16 +1133,26 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                     )}
 
                                     {/* Location */}
-                                    {(detailModal.lat || detailModal.lng) && (
+                                    {detailModal.location_known === false ? (
+                                        <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                                            <MapPinOff className={`h-4 w-4 shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`} />
+                                            <div>
+                                                <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</span>
+                                                <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
+                                                    No exact location{detailModal.intake_area ? ` · ${BARANGAY_AREA_LABELS[detailModal.intake_area]}` : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : detailModal.latitude != null && detailModal.longitude != null && (
                                         <div className={`p-3 rounded-xl border flex items-center justify-between ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                             <div>
                                                 <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</span>
                                                 <p className={`font-mono text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                                                    {detailModal.lat?.toFixed(6)}, {detailModal.lng?.toFixed(6)}
+                                                    {detailModal.latitude.toFixed(6)}, {detailModal.longitude.toFixed(6)}
                                                 </p>
                                             </div>
                                             <a
-                                                href={`https://www.google.com/maps?q=${detailModal.lat},${detailModal.lng}`}
+                                                href={`https://www.google.com/maps?q=${detailModal.latitude},${detailModal.longitude}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
@@ -1142,6 +1162,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                             </a>
                                         </div>
                                     )}
+
+                                    <IntakeDetailsCard reportId={detailModal.id} isDark={isDark} />
                                 </div>
 
                                 {/* Right Column: Photo Evidence, History & Notes (col-span-5) */}

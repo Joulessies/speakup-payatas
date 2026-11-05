@@ -50,6 +50,24 @@ export async function requireAdminSession(): Promise<
     return { ok: true, role: "admin", username: session.username };
 }
 
+export function isStaffOrAdminRole(role: UserRole | string | undefined | null): role is "admin" | "staff" {
+    return role === "admin" || role === "staff";
+}
+
+export async function requireStaffSession(): Promise<
+    | { ok: true; role: "admin" | "staff"; username: string }
+    | { ok: false; response: NextResponse }
+> {
+    const session = await getSessionFromCookies();
+    if (!session || !isStaffOrAdminRole(session.role)) {
+        return {
+            ok: false,
+            response: NextResponse.json({ error: "Staff or admin access required." }, { status: 403 }),
+        };
+    }
+    return { ok: true, role: session.role, username: session.username };
+}
+
 export async function getReportsListLimitCap(): Promise<number> {
     const session = await getSessionFromCookies();
     const role = session?.role as UserRole | undefined;
