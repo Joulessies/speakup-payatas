@@ -8,7 +8,7 @@ import {
     insertPhoneUser,
 } from "@/lib/app-users";
 import { verifyPassword, hashPassword } from "@/lib/password";
-import { sendSemaphoreTransactionalSms } from "@/lib/semaphore";
+import { sendVonageSms } from "@/lib/vonage-sms";
 import { verifySmsOtp } from "@/lib/sms-otp";
 
 function getRedirectByRole(role: UserRole) {
@@ -38,7 +38,7 @@ function scheduleSignInNoticeSms(action: string, phoneLast10: string | null | un
             : isRegister
                 ? "SpeakUp Payatas: Welcome! Your account was created."
                 : "SpeakUp Payatas: Your account was signed in. If this was not you, change your password and contact barangay staff.";
-    void sendSemaphoreTransactionalSms(digits, message).catch((err) => {
+    void sendVonageSms(digits, message).catch((err) => {
         console.error("[auth] sign-in notice SMS:", err instanceof Error ? err.message : err);
     });
 }
@@ -64,9 +64,9 @@ export async function POST(request: Request) {
             if (!/^\d{6}$/.test(otp)) {
                 return NextResponse.json({ error: "Invalid OTP. Enter the 6-digit code." }, { status: 401 });
             }
-            const otpCheck = await verifySmsOtp(phone, otp);
-            if (!otpCheck.ok) {
-                return NextResponse.json({ error: otpCheck.error }, { status: 401 });
+            const local = await verifySmsOtp(phone, otp);
+            if (!local.ok) {
+                return NextResponse.json({ error: local.error }, { status: 401 });
             }
 
             const existingSms = await getUserByPhoneLast10(phone);

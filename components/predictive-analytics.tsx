@@ -301,7 +301,7 @@ export default function PredictiveAnalytics({ isDark }: { isDark: boolean }) {
                     <CardContent className="space-y-4">
                         <div className="relative">
                             <div className="w-full h-48 -ml-3 mt-2" style={{ fontFamily: "inherit" }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height={192} minWidth={0}>
                                     <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">

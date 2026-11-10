@@ -2,7 +2,7 @@
 import { useTheme } from "@/components/theme-provider";
 import VerificationPanel from "@/components/verification-panel";
 import PredictiveAnalytics from "@/components/predictive-analytics";
-import { ShieldCheck, TrendingUp, Map, Plus, ClipboardPen } from "lucide-react";
+import { ShieldCheck, TrendingUp, Map, ClipboardPen } from "lucide-react";
 import Link from "next/link";
 
 export default function StaffPage() {
@@ -28,13 +28,6 @@ export default function StaffPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                        <Link
-                            href="/report"
-                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02]"
-                        >
-                            <Plus className="h-4 w-4" />
-                            File Report
-                        </Link>
                         <Link
                             href="/staff/intake"
                             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${

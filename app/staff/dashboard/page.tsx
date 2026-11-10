@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Loader2, LayoutDashboard, FileWarning, CheckCircle2, Clock, ShieldAlert, BarChart3, Download, Plus, Map, ArrowUpRight, ClipboardPen } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, BarChart3, Download, Map, ArrowUpRight, ClipboardPen } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -49,7 +49,7 @@ function LineChart({ data, isDark }: { data: TrendPoint[]; isDark: boolean }) {
 
     return (
         <div className="w-full h-36 mt-2" style={{ fontFamily: "inherit", marginLeft: "-10px" }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={144} minWidth={0}>
                 <AreaChart data={formattedData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
@@ -127,6 +127,7 @@ export default function StaffDashboard() {
     // Map and analytics states
     const [clusters, setClusters] = useState<ClusterData[]>([]);
     const [heatPoints, setHeatPoints] = useState<any[]>([]);
+    const [noisePoints, setNoisePoints] = useState<{ latitude: number; longitude: number }[]>([]);
     const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
@@ -171,6 +172,7 @@ export default function StaffDashboard() {
                 const clustersData = await clustersRes.json();
                 setClusters(clustersData.clusters ?? []);
                 setHeatPoints(clustersData.heat_points ?? []);
+                setNoisePoints(clustersData.noise_points ?? []);
             } catch (err) {
                 console.error("Failed to load clusters for staff dashboard", err);
             }
@@ -258,13 +260,6 @@ export default function StaffDashboard() {
                     </div>
                     <div className="flex items-center gap-2.5 flex-wrap">
                         <Link
-                            href="/report"
-                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02]"
-                        >
-                            <Plus className="h-4 w-4" />
-                            File Report
-                        </Link>
-                        <Link
                             href="/staff/intake"
                             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                                 isDark
@@ -307,7 +302,7 @@ export default function StaffDashboard() {
                         <Loader2 className="h-8 w-8 animate-spin opacity-50" />
                     </div>
                 ) : stats ? (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                         <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
                             <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-white/45" : "text-gray-500"}`}>Total Reports</span>
                             <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-[#064e3b]"}`}>{stats.total}</p>
@@ -320,35 +315,8 @@ export default function StaffDashboard() {
                             <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>Valid</span>
                             <p className={`text-2xl font-bold mt-1 text-emerald-500`}>{stats.valid}</p>
                         </div>
-                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-red-500/10 border-red-500/20" : "bg-red-50 border-red-100"}`}>
-                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-red-400" : "text-red-600"}`}>Spam</span>
-                            <p className={`text-2xl font-bold mt-1 text-red-500`}>{stats.spam}</p>
-                        </div>
-                        <div className={`p-4 rounded-2xl border ${isDark ? "bg-orange-500/10 border-orange-500/20" : "bg-orange-50 border-orange-100"}`}>
-                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-orange-400" : "text-orange-600"}`}>Duplicate</span>
-                            <p className={`text-2xl font-bold mt-1 text-orange-500`}>{stats.duplicate}</p>
-                        </div>
                     </div>
                 ) : null}
-
-                {/* Category Breakdown */}
-                {stats && Object.keys(stats.byCategory).length > 0 && (
-                    <div className={`p-4 md:p-6 rounded-2xl border ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
-                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
-                            Reports by Category
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {Object.entries(stats.byCategory).map(([category, count]) => (
-                                <div key={category} className={`p-3 rounded-xl ${isDark ? "bg-emerald-500/5" : "bg-[#e6f4ea]"}`}>
-                                    <span className={`text-[11px] ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
-                                        {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
-                                    </span>
-                                    <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>{count}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* Hotspot Map Card (Full Size) */}
                 <div className={`p-4 md:p-6 rounded-2xl border flex flex-col shadow-xl ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
@@ -383,6 +351,7 @@ export default function StaffDashboard() {
                             onClusterClick={handleClusterClick}
                             showHeatmap={false}
                             heatPoints={heatPoints}
+                            noisePoints={noisePoints}
                         />
                     </div>
 

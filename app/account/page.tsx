@@ -160,19 +160,15 @@ export default function AccountSettingsPage() {
                 throw new Error(data?.error || "Failed to update account.");
             }
             if (wantsPasswordChange) {
-                try {
-                    await fetch("/api/notifications", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            recipient_role: "user",
-                            type: "warning",
-                            title: "Security Alert: Password Changed",
-                            message: `Your account password was updated on ${new Date().toLocaleString("en-PH")}. A security notification confirmation has been sent via email/SMS.`,
-                        }),
-                    });
-                } catch {}
-                toast.success("Password updated. A security notification confirmation has been sent via Email/SMS.");
+                toast.success(
+                    data.emailSent && data.smsSent
+                        ? "Password updated. A notice was sent to your email and mobile."
+                        : data.emailSent
+                            ? "Password updated. A notice was sent to your email."
+                            : data.smsSent
+                                ? "Password updated. A notice was sent to your mobile."
+                                : "Password updated.",
+                );
             } else {
                 toast.success("Account updated.");
             }

@@ -58,6 +58,18 @@ interface Report {
     }[];
 }
 
+const QUEUE_LABELS = {
+    unreviewed: "Unreviewed",
+    valid: "Valid",
+    spam: "Spam",
+    duplicate: "Duplicate",
+} as const;
+
+function inVerificationQueue(report: Report, status: keyof typeof QUEUE_LABELS) {
+    if (report.status === "resolved" || report.status === "rejected") return false;
+    return (report.verification_status || "unreviewed") === status;
+}
+
 export default function VerificationPanel({ role }: { role: "admin" | "staff" }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
@@ -136,15 +148,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     const applyFilters = (reportsToFilter: Report[], query: string, catFilter: string, sort: string, resetPage: boolean = true) => {
         // Exclude resolved and rejected complaints from verification queues (Staff 1.1)
         // Apply 7-day limit for unreviewed queue (Staff 1)
-        let filtered = reportsToFilter.filter((r) => {
-            if (r.status === "resolved" || r.status === "rejected") return false;
-            if (filter === "unreviewed") {
-                const reportTime = new Date(r.created_at || r.submitted_at || Date.now()).getTime();
-                const isOlderThan7Days = (Date.now() - reportTime) > 7 * 24 * 60 * 60 * 1000;
-                if (isOlderThan7Days) return false;
-            }
-            return r.verification_status === filter;
-        });
+        let filtered = reportsToFilter.filter((r) => inVerificationQueue(r, filter));
 
         // Search filter
         if (query.trim()) {
@@ -183,7 +187,8 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     };
 
     // Get counts from full reports array
-    const getCount = (status: string) => reports.filter(r => r.verification_status === status).length;
+    const getCount = (status: "unreviewed" | "valid" | "spam" | "duplicate") =>
+        reports.filter((r) => inVerificationQueue(r, status)).length;
 
     useEffect(() => {
         loadReports();
@@ -467,25 +472,25 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
     return (
         <div className="space-y-4">
             {/* Status Filter Tabs - Responsive Grid that never clips */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-black/10 dark:bg-black/30 border border-white/5 w-full">
-                {["unreviewed", "valid", "spam", "duplicate"].map((f) => {
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-black/10 dark:bg-black/30 border border-white/5 w-full">
+                {(["unreviewed", "valid", "spam", "duplicate"] as const).map((f) => {
                     const count = getCount(f);
                     const isActive = filter === f;
                     return (
                         <button
                             key={f}
-                            onClick={() => { setFilter(f as "unreviewed" | "valid" | "spam" | "duplicate"); setCurrentPage(1); }}
-                            className={`px-2 py-2 text-xs font-semibold rounded-lg capitalize transition-all flex items-center justify-center gap-1.5 min-w-0 ${
+                            onClick={() => { setFilter(f); setCurrentPage(1); }}
+                            className={`px-2 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 min-w-0 ${
                                 isActive
                                     ? isDark
                                         ? "bg-emerald-500/25 text-emerald-200 border border-emerald-500/40 shadow-sm"
-                                        : "bg-white shadow text-emerald-800 border border-emerald-200"
+                                        : "bg-white shadow text-emerald-950 border border-emerald-200"
                                     : isDark
-                                        ? "text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        ? "text-white/70 hover:text-white hover:bg-white/[0.04]"
+                                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                             }`}
                         >
-                            <span className="truncate">{f}</span>
+                            <span className="whitespace-nowrap">{QUEUE_LABELS[f]}</span>
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                                 isActive
                                     ? isDark
@@ -1132,30 +1137,30 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                                         </div>
                                     )}
 
-                                    {/* Location */}
-                                    {detailModal.location_known === false ? (
+                                    {/* Location — always shown, same as the admin report */}
+                                    {detailModal.location_known === false || detailModal.latitude == null || detailModal.longitude == null ? (
                                         <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                             <MapPinOff className={`h-4 w-4 shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`} />
                                             <div>
-                                                <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</span>
+                                                <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Coordinates</span>
                                                 <p className={`text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
                                                     No exact location{detailModal.intake_area ? ` · ${BARANGAY_AREA_LABELS[detailModal.intake_area]}` : ""}
                                                 </p>
                                             </div>
                                         </div>
-                                    ) : detailModal.latitude != null && detailModal.longitude != null && (
+                                    ) : (
                                         <div className={`p-3 rounded-xl border flex items-center justify-between ${isDark ? "bg-white/[0.02] border-white/10" : "bg-gray-50 border-gray-200"}`}>
                                             <div>
-                                                <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Location</span>
+                                                <span className={`text-[10px] font-semibold uppercase tracking-wider block ${isDark ? "text-white/40" : "text-gray-400"}`}>Coordinates</span>
                                                 <p className={`font-mono text-xs mt-0.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                                                    {detailModal.latitude.toFixed(6)}, {detailModal.longitude.toFixed(6)}
+                                                    {Number(detailModal.latitude).toFixed(6)}, {Number(detailModal.longitude).toFixed(6)}
                                                 </p>
                                             </div>
                                             <a
                                                 href={`https://www.google.com/maps?q=${detailModal.latitude},${detailModal.longitude}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
                                             >
                                                 <MapPin className="h-3 w-3" />
                                                 Google Maps

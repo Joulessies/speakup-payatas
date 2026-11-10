@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { addNotification, fetchIntakeSummaries, INTAKE_DETAILS_TABLE, normalizeActionHistory } from "@/lib/server-db";
 import { getReportsListLimitCap } from "@/lib/api-session";
 import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
+import { accountReporterHashFromSession } from "@/lib/reporter-identity";
 import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
 import {
   CATEGORY_LABELS,
@@ -46,7 +47,9 @@ async function isBlocked(reporterHash: string): Promise<boolean> {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { reporter_hash, receipt_id, category, description, latitude, longitude, severity, photo_url } = body;
+    const accountHash = await accountReporterHashFromSession();
+    const { receipt_id, category, description, latitude, longitude, severity, photo_url } = body;
+    const reporter_hash = accountHash || body.reporter_hash;
     if (!reporter_hash || !category || latitude == null || longitude == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }

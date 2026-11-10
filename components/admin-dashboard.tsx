@@ -8,7 +8,7 @@ import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, 
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
 import { CategoryIcon } from "./category-icon";
-import { REPORT_CATEGORIES, resolveCategory, type ClusterResult } from "@/types";
+import { resolveCategory, type ClusterResult } from "@/types";
 import {
   Select,
   SelectContent,
@@ -24,7 +24,17 @@ const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     </div>),
 });
 
-const ALL_CATEGORIES: readonly string[] = REPORT_CATEGORIES;
+const MAP_FILTER_CATEGORIES = [
+    { key: "drainage_flooding", label: "Drainage / Flooding" },
+    { key: "fire_hazard", label: "Fire Hazard" },
+    { key: "safety_concern", label: "Safety Concern" },
+    { key: "infrastructure", label: "Infrastructure" },
+    { key: "sanitation_health", label: "Sanitation / Health" },
+    { key: "noise_nuisance", label: "Noise Nuisance" },
+    { key: "environmental", label: "Environmental" },
+    { key: "other", label: "Other" },
+] as const;
+const ALL_CATEGORIES: readonly string[] = MAP_FILTER_CATEGORIES.map((item) => item.key);
 
 function normalizeCategory(cat: string): string {
     return resolveCategory(cat) ?? "other";
@@ -75,6 +85,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
     const [clusters, setClusters] = useState<ClusterWithReports[]>([]);
     const [totalReports, setTotalReports] = useState(0);
     const [noiseCount, setNoiseCount] = useState(0);
+    const [noisePoints, setNoisePoints] = useState<{ latitude: number; longitude: number }[]>([]);
     const [heatPoints, setHeatPoints] = useState<[
         number,
         number,
@@ -143,6 +154,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
             setClusters(data.clusters ?? []);
             setTotalReports(data.total_reports ?? 0);
             setNoiseCount(data.noise_count ?? 0);
+            setNoisePoints(data.noise_points ?? []);
             setHeatPoints(data.heat_points ?? []);
             const frames: PlaybackFrame[] = data.playback_frames ?? [];
             setPlaybackFrames(frames);
@@ -247,15 +259,6 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
     const sourceTotalReports = activeFrame ? activeFrame.total_reports : totalReports;
     const sourceNoiseCount = activeFrame ? activeFrame.noise_count : noiseCount;
     const filteredClusters = useMemo(() => {
-        if (activeCategories.size === ALL_CATEGORIES.length)
-            return sourceClusters.filter((cluster) => {
-                if (!filterInView || !mapBounds)
-                    return true;
-                return (cluster.latitude >= mapBounds.south &&
-                    cluster.latitude <= mapBounds.north &&
-                    cluster.longitude >= mapBounds.west &&
-                    cluster.longitude <= mapBounds.east);
-            });
         return sourceClusters
             .map((c) => {
             const filteredBreakdown: Record<string, number> = {};
@@ -306,7 +309,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
     return (<div className="relative flex flex-col h-full overflow-hidden">
       
       <div className="absolute inset-0 z-0">
-        <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={handleClusterClick} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} onMapBoundsChange={setMapBounds}/>
+        <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={handleClusterClick} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} noisePoints={noisePoints} onMapBoundsChange={setMapBounds}/>
       </div>
 
       {clusterError && (
@@ -783,13 +786,13 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                         </div>
 
                         <div className="grid grid-cols-2 gap-1.5">
-                            {ALL_CATEGORIES.map((cat) => {
-                                const isActive = activeCategories.has(cat);
+                            {MAP_FILTER_CATEGORIES.map((item) => {
+                                const isActive = activeCategories.has(item.key);
                                 return (
                                     <button
-                                        key={cat}
-                                        onClick={() => toggleCategory(cat)}
-                                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all capitalize truncate border ${
+                                        key={item.key}
+                                        onClick={() => toggleCategory(item.key)}
+                                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all truncate border ${
                                             isActive
                                                 ? isDark
                                                     ? "bg-emerald-500/20 text-emerald-200 border-emerald-500/40 shadow-sm"
@@ -799,8 +802,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                                     : "bg-white text-gray-600 border-emerald-100 hover:bg-[#e6f4ea]"
                                         }`}
                                     >
-                                        <CategoryIcon category={cat} className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="truncate">{translateCategory(cat, t)}</span>
+                                        <CategoryIcon category={item.key} className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{item.label}</span>
                                     </button>
                                 );
                             })}

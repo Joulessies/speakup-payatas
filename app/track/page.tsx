@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface TrackedReport {
     photo_url?: string;
   }[];
 }
+const PAGE_SIZE = 5;
 const STATUS_STEPS = [
   { key: "pending", mobileLabel: "Sub", icon: Send, color: "text-amber-400" },
   { key: "verified", mobileLabel: "Ver", icon: Eye, color: "text-emerald-400" },
@@ -63,6 +64,8 @@ export default function TrackPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState("");
   const [copiedReceipt, setCopiedReceipt] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const copyReceipt = async (receiptId: string) => {
     try {
       await navigator.clipboard.writeText(receiptId);
@@ -87,6 +90,7 @@ export default function TrackPage() {
     const normalizedQuery = normalizeInput(searchQuery);
     setSearchError(null);
     setLastQuery(normalizedQuery);
+    setPage(1);
     setLoading(true);
     try {
       const url = `/api/track?q=${encodeURIComponent(normalizedQuery || "all")}`;
@@ -122,6 +126,24 @@ export default function TrackPage() {
     await triggerSearch(queryInput);
   };
 
+  const loadMyReports = useCallback(async () => {
+    setSearchError(null);
+    setLastQuery("");
+    setPage(1);
+    setLoading(true);
+    try {
+      const hash = await generateReporterHash(getDeviceId());
+      const res = await fetch(`/api/reports/my?reporter_hash=${encodeURIComponent(hash)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Could not load your reports");
+      setReports(data.reports ?? []);
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : t.trackSearchFailedError);
+      setReports([]);
+    }
+    setLoading(false);
+  }, [t]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get("id") || params.get("q");
@@ -129,10 +151,23 @@ export default function TrackPage() {
       const cleanId = targetId.trim();
       setQueryInput(cleanId);
       triggerSearch(cleanId);
-    } else {
-      triggerSearch("");
+      return;
     }
-  }, [triggerSearch]);
+    // A signed-in resident sees only the reports tied to their account, not every report in the barangay.
+    void (async () => {
+      try {
+        const me = await fetch("/api/auth/me");
+        if (me.ok) {
+          const session = await me.json();
+          if (session?.authenticated && session.role === "user") {
+            await loadMyReports();
+            return;
+          }
+        }
+      } catch { /* fall through to an empty history */ }
+      setReports([]);
+    })();
+  }, [triggerSearch, loadMyReports]);
   const handleUpvote = async (reportId: string) => {
     setConfirming(reportId);
     try {
@@ -147,6 +182,14 @@ export default function TrackPage() {
     }
     catch { }
     setConfirming(null);
+  };
+  const totalPages = Math.max(1, Math.ceil((reports?.length ?? 0) / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * PAGE_SIZE;
+  const pageReports = reports?.slice(start, start + PAGE_SIZE) ?? [];
+  const goToPage = (next: number) => {
+    setPage(next);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   return (<div className={`h-full w-full min-h-full overflow-y-auto flex flex-col items-center px-4 py-6 pb-32 md:py-10 ${isDark ? "bg-[#04271e]" : "bg-white"}`}>
     <div className="w-full max-w-2xl">
@@ -174,24 +217,32 @@ export default function TrackPage() {
           </form>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handleUseMyHash} className={`px-3 py-1.5 rounded-md text-xs transition-colors ${isDark
-              ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
-              : "bg-[#e4eaf4] text-[#1e3a6e] hover:bg-[#dce5f0] hover:text-[#0f2d5c]"}`}>
+            <button
+              type="button"
+              onClick={handleUseMyHash}
+              className={"px-3 py-1.5 rounded-md text-xs transition-colors " + (isDark
+                ? "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
+                : "bg-[#e4eaf4] text-[#1e3a6e] hover:bg-[#dce5f0] hover:text-[#0f2d5c]")}
+            >
               {t.trackUseMyId}
             </button>
-            {queryInput && (<button type="button" onClick={() => {
-              setQueryInput("");
-              setReports(null);
-              setSearchError(null);
-              setLastQuery("");
-            }} className={`px-3 py-1.5 rounded-md text-xs transition-colors ${isDark
-              ? "bg-white/[0.03] text-white/45 hover:bg-white/[0.08] hover:text-white/70"
-              : "bg-[#f0f4f8] text-[#4a6080] hover:bg-[#dce5f0] hover:text-[#0f2d5c]"}`}>
-              {t.trackClear}
-            </button>)}
+            {queryInput && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQueryInput("");
+                  void loadMyReports();
+                }}
+                className={"px-3 py-1.5 rounded-md text-xs transition-colors " + (isDark
+                  ? "bg-white/[0.03] text-white/45 hover:bg-white/[0.08] hover:text-white/70"
+                  : "bg-[#f0f4f8] text-[#4a6080] hover:bg-[#dce5f0] hover:text-[#0f2d5c]")}
+              >
+                {t.trackClear}
+              </button>
+            )}
           </div>
 
-          <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>
+          <p className={"text-xs " + (isDark ? "text-white/40" : "text-gray-500")}>
             {t.trackTip}
           </p>
 
@@ -208,15 +259,22 @@ export default function TrackPage() {
               {t.trackNoResults}
             </p>
           </CardContent>
-        </Card>) : (<div>
-          <h2 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isDark ? "text-white/35" : "text-[#4a6080]"}`}>
-            {t.trackReports} ({reports.length})
-          </h2>
+        </Card>)         : (<div ref={resultsRef}>
+          <div className="flex items-end justify-between gap-3 mb-3">
+            <h2 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-[#4a6080]"}`}>
+              {t.trackReports} ({reports.length})
+            </h2>
+            {reports.length > PAGE_SIZE && (
+              <p className={`text-xs ${isDark ? "text-white/40" : "text-[#4a6080]"}`}>
+                {t.trackPageStatus(start + 1, start + pageReports.length, reports.length)}
+              </p>
+            )}
+          </div>
           {lastQuery && (<p className={`text-xs mb-3 ${isDark ? "text-white/35" : "text-[#4a6080]"}`}>
             {t.trackResultsFor(lastQuery)}
           </p>)}
           <div className="flex flex-col gap-3">
-            {reports.map((report) => {
+            {pageReports.map((report) => {
               const statusIdx = getStatusIndex(report.status);
               const confCount = confirmations[report.id] ?? 0;
               return (<Card key={report.id} className={isDark ? "bg-[#112240] border-white/[0.07]" : "bg-white border-[#c8d6e8]"}>
@@ -352,6 +410,29 @@ export default function TrackPage() {
               </Card>);
             })}
           </div>
+          {reports.length > PAGE_SIZE && (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => goToPage(safePage - 1)}
+                disabled={safePage === 1}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "bg-white/[0.06] text-white hover:bg-white/[0.1]" : "bg-white border border-emerald-200 text-[#064e3b] hover:bg-[#e6f4ea]"}`}
+              >
+                {t.trackPrevious}
+              </button>
+              <p className={`text-xs font-medium ${isDark ? "text-white/50" : "text-[#4a6080]"}`}>
+                {t.trackPage(safePage, totalPages)}
+              </p>
+              <button
+                type="button"
+                onClick={() => goToPage(safePage + 1)}
+                disabled={safePage === totalPages}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isDark ? "bg-white/[0.06] text-white hover:bg-white/[0.1]" : "bg-white border border-emerald-200 text-[#064e3b] hover:bg-[#e6f4ea]"}`}
+              >
+                {t.trackNext}
+              </button>
+            </div>
+          )}
         </div>)}
       </>)}
     </div>

@@ -41,7 +41,7 @@ function getBucketMs(window: WindowKey): number {
 
 function clusterReports(reports: ReportSummary[]) {
     if (reports.length === 0) {
-        return { clusters: [], noise_count: 0 };
+        return { clusters: [], noise_count: 0, noise_points: [] as { latitude: number; longitude: number }[] };
     }
     const dataset = reports.map((r) => toMeters(r.latitude, r.longitude));
     const dbscan = new DBSCAN();
@@ -72,6 +72,10 @@ function clusterReports(reports: ReportSummary[]) {
     return {
         clusters,
         noise_count: dbscan.noise.length,
+        noise_points: dbscan.noise.map((idx) => ({
+            latitude: reports[idx].latitude,
+            longitude: reports[idx].longitude,
+        })),
     };
 }
 
@@ -127,10 +131,11 @@ export async function POST(request: Request) {
                 total_reports: 0,
                 noise_count: 0,
                 heat_points: [],
+                noise_points: [],
                 playback_frames: [],
             });
         }
-        const { clusters, noise_count } = clusterReports(reports);
+        const { clusters, noise_count, noise_points } = clusterReports(reports);
         const heat_points = reports.map((r) => [r.latitude, r.longitude, Math.max(1, r.severity)] as [
             number,
             number,
@@ -184,6 +189,7 @@ export async function POST(request: Request) {
             total_reports: reports.length,
             noise_count,
             heat_points,
+            noise_points,
             playback_frames,
         });
     }

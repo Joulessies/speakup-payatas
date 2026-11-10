@@ -59,6 +59,8 @@ export async function sendTextbeeSms(phoneLast10: string, message: string): Prom
         body: JSON.stringify({
             recipients: [recipient],
             message: message.trim(),
+            // DITO SIM on the realme. Recipients see this mobile number, not a brand name.
+            simSubscriptionId: Number(process.env.TEXTBEE_SIM_SUBSCRIPTION_ID || 2),
         }),
     });
 

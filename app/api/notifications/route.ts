@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { accountReporterHashFromSession } from "@/lib/reporter-identity";
 
 function configErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Server configuration error";
@@ -18,16 +19,11 @@ interface NotificationItem {
     created_at: string;
 }
 
-const memoryNotifications: NotificationItem[] = [
-    {
-        id: "notif-welcome-1",
-        type: "info",
-        title: "Welcome to SpeakUp Payatas",
-        message: "You can submit civic reports, track progress, and view community transparency updates.",
-        read: false,
-        created_at: new Date().toISOString(),
-    }
-];
+const memoryNotifications: NotificationItem[] = [];
+
+function matchesResident(row: { recipient_hash?: string | null; recipient_role?: string | null }, hashes: string[]) {
+    return Boolean(row.recipient_hash && hashes.includes(row.recipient_hash));
+}
 
 export async function POST(request: Request) {
     try {
@@ -76,6 +72,8 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const role = searchParams.get("role");
         const reporter_hash = searchParams.get("reporter_hash")?.trim();
+        const accountHash = role === "user" || !role ? await accountReporterHashFromSession() : null;
+        const residentHashes = [reporter_hash, accountHash].filter((hash): hash is string => Boolean(hash));
         const unread_only = searchParams.get("unread_only") === "true";
         const limit = Number(searchParams.get("limit") ?? "20");
 
@@ -83,13 +81,13 @@ export async function GET(request: Request) {
             let query = getSupabaseAdmin().from("notifications").select("*").order("created_at", { ascending: false });
             
             if (role === "admin") {
-                query = query.or("recipient_role.eq.admin,recipient_role.is.null");
+                query = query.eq("recipient_role", "admin");
             } else if (role === "staff") {
-                query = query.or("recipient_role.eq.staff,recipient_role.is.null");
-            } else if (reporter_hash) {
-                query = query.or(`recipient_hash.eq.${reporter_hash},recipient_role.is.null`);
+                query = query.eq("recipient_role", "staff");
+            } else if (residentHashes.length > 0) {
+                query = query.in("recipient_hash", residentHashes);
             } else {
-                query = query.or("recipient_role.eq.user,recipient_role.is.null");
+                query = query.eq("recipient_role", "user");
             }
 
             if (unread_only) {
@@ -110,11 +108,13 @@ export async function GET(request: Request) {
         // Memory Store Fallback Filtering
         let list = [...memoryNotifications];
         if (role === "admin") {
-            list = list.filter(n => !n.recipient_role || n.recipient_role === "admin");
+            list = list.filter(n => n.recipient_role === "admin");
         } else if (role === "staff") {
-            list = list.filter(n => !n.recipient_role || n.recipient_role === "staff");
-        } else if (reporter_hash) {
-            list = list.filter(n => !n.recipient_hash || n.recipient_hash === reporter_hash || !n.recipient_role || n.recipient_role === "user");
+            list = list.filter(n => n.recipient_role === "staff");
+        } else if (residentHashes.length > 0) {
+            list = list.filter(n => matchesResident(n, residentHashes));
+        } else {
+            list = list.filter(n => n.recipient_role === "user");
         }
 
         if (unread_only) {
@@ -140,15 +140,28 @@ export async function PATCH(request: Request) {
         };
 
         if (mark_all_read) {
-            memoryNotifications.forEach(n => n.read = true);
+            const accountHash = role === "user" || !role ? await accountReporterHashFromSession() : null;
+            const hashes = [reporter_hash, accountHash].filter((hash): hash is string => Boolean(hash));
+            memoryNotifications.forEach(n => {
+                const mine = role === "admin"
+                    ? n.recipient_role === "admin"
+                    : role === "staff"
+                        ? n.recipient_role === "staff"
+                        : hashes.length > 0
+                            ? matchesResident(n, hashes)
+                            : n.recipient_role === "user";
+                if (mine) n.read = true;
+            });
             try {
-                let markQuery = getSupabaseAdmin().from("notifications").update({ read: true });
+                let markQuery = getSupabaseAdmin().from("notifications").update({ read: true }).eq("read", false);
                 if (role === "admin") {
-                    markQuery = markQuery.or("recipient_role.eq.admin,recipient_role.is.null");
+                    markQuery = markQuery.eq("recipient_role", "admin");
                 } else if (role === "staff") {
                     markQuery = markQuery.eq("recipient_role", "staff");
-                } else if (reporter_hash) {
-                    markQuery = markQuery.eq("recipient_hash", reporter_hash);
+                } else if (hashes.length > 0) {
+                    markQuery = markQuery.in("recipient_hash", hashes);
+                } else {
+                    markQuery = markQuery.eq("recipient_role", "user");
                 }
                 await markQuery;
             } catch {

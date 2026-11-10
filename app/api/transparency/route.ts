@@ -26,8 +26,6 @@ export async function GET(request: Request) {
             .from("reports")
             .select("*")
             .eq("status", "resolved")
-            .neq("verification_status", "spam")
-            .not("category", "in", `(${CONFIDENTIAL_CATEGORIES.join(",")})`)
             .order("created_at", { ascending: false })
             .limit(Math.max(1, Math.min(limit, 50)));
 
@@ -38,7 +36,10 @@ export async function GET(request: Request) {
         const { data, error } = await query;
         if (error) throw new Error(error.message);
 
-        const filteredResolved = ((data as DbReport[]) ?? []).map((r) => ({
+        const filteredResolved = ((data as DbReport[]) ?? [])
+            .filter((r) => r.verification_status !== "spam" && r.verification_status !== "duplicate")
+            .filter((r) => !CONFIDENTIAL_CATEGORIES.includes(r.category as (typeof CONFIDENTIAL_CATEGORIES)[number]))
+            .map((r) => ({
             ...r,
             action_history: normalizeActionHistory(r.action_history),
         }));

@@ -81,10 +81,16 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const markAllRead = async () => {
         try {
+            let activeHash = reporterHash;
+            if (!activeHash && typeof window !== "undefined") {
+                try {
+                    activeHash = await generateReporterHash(getDeviceId());
+                } catch { /* the server can still use the signed-in account */ }
+            }
             const res = await fetch("/api/notifications", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mark_all_read: true, role, reporter_hash: reporterHash }),
+                body: JSON.stringify({ mark_all_read: true, role, reporter_hash: activeHash }),
             });
             if (res.ok) {
                 setUnreadCount(0);

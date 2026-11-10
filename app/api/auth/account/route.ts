@@ -5,6 +5,9 @@ import { getSessionFromCookies } from "@/lib/api-session";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { getUserByEmail, getUserByPhoneLast10, isReservedStaffEmail, type AppUserRow } from "@/lib/app-users";
+import { sendBrevoEmail } from "@/lib/brevo-email";
+import { sendVonageSms } from "@/lib/vonage-sms";
+import { hashReporterKey } from "@/lib/reporter-identity";
 
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12;
 
@@ -169,7 +172,47 @@ export async function PATCH(request: Request) {
     const oldUsername = me.session.username;
     const usernameChanged = Boolean(newUsername && newUsername !== oldUsername);
 
-    const res = NextResponse.json({ success: true, user: sanitize(data as AppUserRow) });
+    let smsSent = false;
+    let emailSent = false;
+    if (wantsNewPassword) {
+        if (data.email) {
+            try {
+                await sendBrevoEmail({
+                    to: data.email,
+                    subject: "Your SpeakUp Payatas password was changed",
+                    text: "Your SpeakUp Payatas password was changed. If this was not you, contact the barangay office.",
+                });
+                emailSent = true;
+            } catch (err) {
+                console.error("[account] password email:", err instanceof Error ? err.message : err);
+            }
+        }
+        if (data.phone_e164) {
+            try {
+                await sendVonageSms(
+                    data.phone_e164,
+                    "SpeakUp Payatas: your password was changed. If this was not you, contact the barangay office.",
+                );
+                smsSent = true;
+            } catch (err) {
+                console.error("[account] password SMS:", err instanceof Error ? err.message : err);
+            }
+        }
+        try {
+            await getSupabaseAdmin().from("notifications").insert({
+                recipient_hash: hashReporterKey(`account:${row.id}`),
+                recipient_role: "user",
+                type: "warning",
+                title: "Password changed",
+                message: "Your account password was updated.",
+                read: false,
+            });
+        } catch {
+            // The password change still stands if the in-app notice cannot be stored.
+        }
+    }
+
+    const res = NextResponse.json({ success: true, smsSent, emailSent, user: sanitize(data as AppUserRow) });
     if (usernameChanged && newUsername) {
         const exp = Date.now() + SESSION_COOKIE_MAX_AGE_SECONDS * 1000;
         const token = await signAuthPayload({ role: me.session.role, username: newUsername, exp });

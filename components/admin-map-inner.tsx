@@ -75,6 +75,7 @@ interface AdminMapProps {
   onClusterClick: (index: number | null) => void;
   showHeatmap?: boolean;
   heatPoints?: [number, number, number][];
+  noisePoints?: { latitude: number; longitude: number }[];
   onMapBoundsChange?: (bounds: {
     north: number;
     south: number;
@@ -83,7 +84,7 @@ interface AdminMapProps {
   }) => void;
 }
 
-function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHeatmap = false, heatPoints, onMapBoundsChange, }: AdminMapProps) {
+function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHeatmap = false, heatPoints, noisePoints = [], onMapBoundsChange, }: AdminMapProps) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const isDark = theme === "dark";
@@ -210,8 +211,8 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
       clickable: false,
     }} />
 
-    {/* Density Boundary Circles */}
-    {clusters.map((cluster, i) => {
+    {/* Density circles only after Heatmap is turned on. Pins stay visible either way. */}
+    {showHeatmap && clusters.map((cluster, i) => {
       const fill = clusterFillColor(cluster.count);
       const radius = clusterRadiusMeters(cluster.count);
       const selectedHere = selectedCluster === i;
@@ -235,6 +236,22 @@ function AdminMapInnerLoaded({ clusters, selectedCluster, onClusterClick, showHe
         onClick={() => onClusterClick(i)}
       />);
     })}
+
+    {noisePoints.map((point, i) => (
+      <MarkerF
+        key={`noise-${i}`}
+        position={{ lat: point.latitude, lng: point.longitude }}
+        icon={{
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 5,
+          fillColor: "#059669",
+          fillOpacity: 0.9,
+          strokeColor: "#ffffff",
+          strokeWeight: 1,
+        }}
+        zIndex={40}
+      />
+    ))}
 
     {/* Exact Hotspot Pinpoint Markers */}
     {clusters.map((cluster, i) => {

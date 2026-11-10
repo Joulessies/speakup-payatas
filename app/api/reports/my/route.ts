@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeActionHistory } from "@/lib/server-db";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { accountReporterHashFromSession } from "@/lib/reporter-identity";
 
 function serverErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to load reports";
@@ -10,17 +11,27 @@ function serverErrorResponse(err: unknown) {
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const reporter_hash = searchParams.get("reporter_hash");
-        if (!reporter_hash || reporter_hash.length < 8) {
+        const deviceHash = searchParams.get("reporter_hash")?.trim() || "";
+        const accountHash = await accountReporterHashFromSession();
+        const supabase = getSupabaseAdmin();
+
+        // Reports filed on this browser before the account was linked still use the device code.
+        // Move them onto the account so the same resident sees them on every browser.
+        if (accountHash && deviceHash.length >= 8 && deviceHash !== accountHash) {
+            await supabase.from("reports").update({ reporter_hash: accountHash }).eq("reporter_hash", deviceHash);
+        }
+
+        const hashes = [accountHash, deviceHash].filter((hash) => hash && hash.length >= 8);
+        if (hashes.length === 0) {
             return NextResponse.json({ error: "reporter_hash required (min 8 chars)" }, { status: 400 });
         }
-        
-        const { data, error } = await getSupabaseAdmin()
+
+        const { data, error } = await supabase
             .from("reports")
             .select("id, receipt_id, category, description, severity, status, verification_status, submitted_at, created_at, action_history")
-            .ilike("reporter_hash", `${reporter_hash}%`)
+            .in("reporter_hash", hashes)
             .order("created_at", { ascending: false });
-            
+
         if (error) throw new Error(error.message);
 
         const myReports = (data ?? []).map((r) => ({

@@ -633,6 +633,11 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<Reco
                                                             className={`h-12 rounded-lg px-4 font-mono tracking-[0.3em] text-center ${isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-[#e2dbc8]"}`}
                                                         />
                                                     </div>
+                                                    {forgotHint && (
+                                                        <div className={`text-[11px] px-3 py-2 rounded-xl border ${isDark ? "text-amber-300 border-amber-500/30 bg-amber-500/10" : "text-amber-800 border-amber-200 bg-amber-50"}`}>
+                                                            {forgotHint}
+                                                        </div>
+                                                    )}
                                                     <div className="flex items-center justify-between">
                                                         <span className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
                                                             {otpResendTimer > 0 ? `Resend in ${otpResendTimer}s` : "Didn't receive SMS?"}

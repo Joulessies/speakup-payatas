@@ -24,6 +24,14 @@ function randomSixDigits() {
     return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function normalizePhoneLast10(phone: string) {
+    return phone.replace(/\D/g, "").slice(-10);
+}
+
+function normalizeCode(code: string | number) {
+    return String(code ?? "").replace(/\D/g, "").slice(0, 6);
+}
+
 async function deleteExpiredSessions(): Promise<void> {
     const supabase = getSupabaseAdmin();
     await supabase.from("sms_otp_sessions").delete().lt("expires_at", new Date().toISOString());
@@ -48,22 +56,28 @@ function cleanMemorySessions() {
 }
 
 export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string } | { error: string }> {
+    const phone = normalizePhoneLast10(phoneLast10);
+    if (!/^\d{10}$/.test(phone)) {
+        return { error: "Invalid phone number." };
+    }
     const now = Date.now();
     cleanMemorySessions();
 
     try {
-        await deleteExpiredSessions();
+        await deleteExpiredSessions().catch((err) => {
+            console.warn("[sms-otp] Could not clear expired codes:", err instanceof Error ? err.message : err);
+        });
         const supabase = getSupabaseAdmin();
 
         const { data: existing, error: fetchErr } = await supabase
             .from("sms_otp_sessions")
             .select("last_sent_at")
-            .eq("phone_last10", phoneLast10)
+            .eq("phone_last10", phone)
             .maybeSingle();
 
         if (fetchErr) {
-            console.warn("[sms-otp] Supabase fetch error, using memory fallback:", fetchErr.message);
-            throw new Error(fetchErr.message);
+            console.error("[sms-otp] Supabase fetch error:", fetchErr.message);
+            return { error: explainOtpDbError(fetchErr.message) };
         }
 
         if (existing?.last_sent_at) {
@@ -80,7 +94,7 @@ export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string }
 
         const { error: upsertErr } = await supabase.from("sms_otp_sessions").upsert(
             {
-                phone_last10: phoneLast10,
+                phone_last10: phone,
                 code,
                 expires_at: expiresAt,
                 last_sent_at: lastSentAt,
@@ -90,11 +104,11 @@ export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string }
         );
 
         if (upsertErr) {
-            console.warn("[sms-otp] Supabase upsert error, using memory fallback:", upsertErr.message);
-            throw new Error(upsertErr.message);
+            console.error("[sms-otp] Supabase upsert error:", upsertErr.message);
+            return { error: explainOtpDbError(upsertErr.message) };
         }
 
-        memoryOtpSessions.set(phoneLast10, {
+        memoryOtpSessions.set(phone, {
             code,
             expiresAt: now + OTP_TTL_MS,
             lastSentAt: now,
@@ -103,29 +117,18 @@ export async function issueSmsOtp(phoneLast10: string): Promise<{ code: string }
 
         return { code };
     } catch (err) {
-        // Fallback to memory store if Supabase fails
-        const mem = memoryOtpSessions.get(phoneLast10);
-        if (mem && now - mem.lastSentAt < RESEND_COOLDOWN_MS) {
-            const waitSec = Math.ceil((RESEND_COOLDOWN_MS - (now - mem.lastSentAt)) / 1000);
-            return { error: `Please wait ${waitSec}s before requesting another OTP.` };
-        }
-
-        const code = randomSixDigits();
-        memoryOtpSessions.set(phoneLast10, {
-            code,
-            expiresAt: now + OTP_TTL_MS,
-            lastSentAt: now,
-            attemptsLeft: MAX_ATTEMPTS,
-        });
-        return { code };
+        const message = err instanceof Error ? err.message : "";
+        console.error("[sms-otp] issue failed:", message);
+        return { error: message ? explainOtpDbError(message) : "Unable to issue OTP right now. Check the server log for [sms-otp]." };
     }
 }
 
 export async function invalidateSmsOtp(phoneLast10: string): Promise<void> {
-    memoryOtpSessions.delete(phoneLast10);
+    const phone = normalizePhoneLast10(phoneLast10);
+    memoryOtpSessions.delete(phone);
     try {
         const supabase = getSupabaseAdmin();
-        await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phoneLast10);
+        await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phone);
     } catch {
         // Ignored
     }
@@ -136,87 +139,94 @@ export async function verifySmsOtp(
     submittedCode: string,
     options?: { consumeOnSuccess?: boolean }
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const phone = normalizePhoneLast10(phoneLast10);
+    const code = normalizeCode(submittedCode);
+    if (!/^\d{10}$/.test(phone) || !/^\d{6}$/.test(code)) {
+        return { ok: false, error: "Invalid OTP. Enter the 6-digit code." };
+    }
     const now = Date.now();
     const consume = options?.consumeOnSuccess !== false;
     cleanMemorySessions();
 
     try {
-        await deleteExpiredSessions();
+        await deleteExpiredSessions().catch((err) => {
+            console.warn("[sms-otp] Could not clear expired codes:", err instanceof Error ? err.message : err);
+        });
         const supabase = getSupabaseAdmin();
         const { data: rec, error } = await supabase
             .from("sms_otp_sessions")
             .select("code, expires_at, attempts_left")
-            .eq("phone_last10", phoneLast10)
+            .eq("phone_last10", phone)
             .maybeSingle();
 
         if (error || !rec) {
-            // Check memory store
-            const mem = memoryOtpSessions.get(phoneLast10);
+            const mem = memoryOtpSessions.get(phone);
             if (!mem) {
                 return { ok: false, error: "No OTP found for this number. Please request a new code." };
             }
             if (now > mem.expiresAt) {
-                memoryOtpSessions.delete(phoneLast10);
+                memoryOtpSessions.delete(phone);
                 return { ok: false, error: "OTP expired. Please request a new code." };
             }
-            if (mem.code !== submittedCode) {
+            if (normalizeCode(mem.code) !== code) {
                 mem.attemptsLeft -= 1;
                 if (mem.attemptsLeft <= 0) {
-                    memoryOtpSessions.delete(phoneLast10);
+                    memoryOtpSessions.delete(phone);
                     return { ok: false, error: "Too many failed attempts. Request a new OTP." };
                 }
                 return { ok: false, error: `Invalid OTP. ${mem.attemptsLeft} attempt(s) left.` };
             }
             if (consume) {
-                memoryOtpSessions.delete(phoneLast10);
+                memoryOtpSessions.delete(phone);
             }
             return { ok: true };
         }
 
         if (new Date(rec.expires_at).getTime() <= now) {
-            await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phoneLast10);
-            memoryOtpSessions.delete(phoneLast10);
+            await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phone);
+            memoryOtpSessions.delete(phone);
             return { ok: false, error: "OTP expired. Please request a new code." };
         }
 
-        if (rec.code !== submittedCode) {
-            const attemptsLeft = rec.attempts_left - 1;
+        if (normalizeCode(rec.code) !== code) {
+            const attemptsLeft = Number(rec.attempts_left) - 1;
             if (attemptsLeft <= 0) {
-                await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phoneLast10);
-                memoryOtpSessions.delete(phoneLast10);
+                await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phone);
+                memoryOtpSessions.delete(phone);
                 return { ok: false, error: "Too many failed attempts. Request a new OTP." };
             }
             await supabase
                 .from("sms_otp_sessions")
                 .update({ attempts_left: attemptsLeft })
-                .eq("phone_last10", phoneLast10);
+                .eq("phone_last10", phone);
             return { ok: false, error: `Invalid OTP. ${attemptsLeft} attempt(s) left.` };
         }
 
         if (consume) {
-            await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phoneLast10);
-            memoryOtpSessions.delete(phoneLast10);
+            await supabase.from("sms_otp_sessions").delete().eq("phone_last10", phone);
+            memoryOtpSessions.delete(phone);
         }
         return { ok: true };
-    } catch {
-        const mem = memoryOtpSessions.get(phoneLast10);
+    } catch (err) {
+        console.error("[sms-otp] verify failed:", err instanceof Error ? err.message : err);
+        const mem = memoryOtpSessions.get(phone);
         if (!mem) {
             return { ok: false, error: "No OTP found for this number. Please request a new code." };
         }
         if (now > mem.expiresAt) {
-            memoryOtpSessions.delete(phoneLast10);
+            memoryOtpSessions.delete(phone);
             return { ok: false, error: "OTP expired. Please request a new code." };
         }
-        if (mem.code !== submittedCode) {
+        if (normalizeCode(mem.code) !== code) {
             mem.attemptsLeft -= 1;
             if (mem.attemptsLeft <= 0) {
-                memoryOtpSessions.delete(phoneLast10);
+                memoryOtpSessions.delete(phone);
                 return { ok: false, error: "Too many failed attempts. Request a new OTP." };
             }
             return { ok: false, error: `Invalid OTP. ${mem.attemptsLeft} attempt(s) left.` };
         }
         if (consume) {
-            memoryOtpSessions.delete(phoneLast10);
+            memoryOtpSessions.delete(phone);
         }
         return { ok: true };
     }

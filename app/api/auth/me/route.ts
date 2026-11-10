@@ -7,6 +7,7 @@ export async function GET(request: Request) {
 
     try {
         const { auth } = await import("@/lib/better-auth");
+        if (!auth) throw new Error("Better Auth database is not configured.");
         const betterSession = await auth.api.getSession({
             headers: await headers(),
         });

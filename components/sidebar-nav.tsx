@@ -109,7 +109,6 @@ export default function SidebarNav() {
                     { href: "/staff/map", label: "Hotspot Map", icon: Map },
                     { href: "/staff", label: "Verification Queue", icon: Shield },
                     { href: "/staff/intake", label: "Encode Report", icon: ClipboardPen },
-                    { href: "/report", label: "File Report", icon: FileWarning },
                     { href: "/staff/summary", label: "Monthly Summary", icon: BarChart3 },
                 ];
             case "admin":
@@ -183,11 +182,13 @@ export default function SidebarNav() {
                             <div className="min-w-0">
                                 <h1 className="font-bold text-white leading-none text-sm tracking-wide uppercase">SpeakUp Payatas</h1>
                                 <p className="text-[10px] text-emerald-300/80 font-medium tracking-wide mt-1">Barangay Payatas</p>
-                                <span className={`mt-1 inline-block text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                    session?.role === "admin" ? "bg-red-500/20 text-red-300 border border-red-500/30" : session?.role === "staff" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                }`}>
-                                    {session?.role || "Admin"}
-                                </span>
+                                {session && (
+                                    <span className={`mt-1 inline-block text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                        session.role === "admin" ? "bg-red-500/20 text-red-300 border border-red-500/30" : session.role === "staff" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                    }`}>
+                                        {session.role === "user" ? "Resident" : session.role === "staff" ? "Staff" : "Admin"}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     )}

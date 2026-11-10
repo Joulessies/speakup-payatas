@@ -4,10 +4,18 @@ import { normalizeActionHistory } from "@/lib/server-db";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function serverErrorResponse(err: unknown) {
     const message = err instanceof Error ? err.message : "Track lookup failed";
     console.error("[/api/track] Error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Could not fetch reports right now. Please try again." }, { status: 500 });
+}
+
+/** PostgREST splits filters on commas, so the typed text has to be quoted. */
+function ilikeFilter(column: string, query: string) {
+    const pattern = `%${query.replace(/[%_]/g, (char) => `\\${char}`)}%`;
+    return `${column}.ilike."${pattern.replaceAll('"', "")}"`;
 }
 
 export async function GET(request: Request) {
@@ -28,16 +36,16 @@ export async function GET(request: Request) {
 
         // Allow searching across all reports for all users (Report History is public)
         if (query && query.toLowerCase() !== "all") {
-            const prefix = `%${query}%`;
-            dbQuery = dbQuery.or(
-                [
-                    `id.ilike.${prefix}`,
-                    `reporter_hash.ilike.${prefix}`,
-                    `receipt_id.ilike.${prefix}`,
-                    `category.ilike.${prefix}`,
-                    `description.ilike.${prefix}`,
-                ].join(",")
-            );
+            const filters = [
+                ilikeFilter("reporter_hash", query),
+                ilikeFilter("receipt_id", query),
+                ilikeFilter("category", query),
+                ilikeFilter("description", query),
+            ];
+            // id is a uuid, and ILIKE is not valid on that type.
+            if (UUID_RE.test(query))
+                filters.unshift(`id.eq.${query}`);
+            dbQuery = dbQuery.or(filters.join(","));
         }
 
         const { data, error } = await dbQuery;

@@ -62,7 +62,7 @@ export default function TrendChart({ data, isDark, }: {
     return (
         <div className="w-full">
             <div className="w-full h-[152px] mt-2" style={{ fontFamily: "inherit" }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={152} minWidth={0}>
                     <BarChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }} barSize={12}>
                         <XAxis 
                             dataKey="formattedDate" 

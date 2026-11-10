@@ -94,6 +94,24 @@ interface IntakeFormState {
 // Matches the server's allowance for clock differences between devices.
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
+function padTime(value: number) {
+    return String(value).padStart(2, "0");
+}
+
+/** Value for <input type="datetime-local">, in the computer's local time. */
+function toDatetimeLocal(date: Date) {
+    return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
+}
+
+/** datetime-local has no timezone. Read its parts as local time instead of letting Date parse them as UTC. */
+function parseDatetimeLocal(value: string) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+    if (!match)
+        return new Date(NaN);
+    const [, year, month, day, hour, minute] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), 0, 0);
+}
+
 function createEmptyForm(): IntakeFormState {
     return {
         source: "",
@@ -151,6 +169,10 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
         }
     }, [saved, error]);
 
+    useEffect(() => {
+        setForm((prev) => (prev.receivedAt ? prev : { ...prev, receivedAt: toDatetimeLocal(new Date()) }));
+    }, []);
+
     const update = <K extends keyof IntakeFormState>(key: K, value: IntakeFormState[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
         setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
@@ -177,7 +199,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        const receivedAt = form.receivedAt ? new Date(form.receivedAt) : new Date();
+        const receivedAt = form.receivedAt ? parseDatetimeLocal(form.receivedAt) : new Date();
         const errors: FieldErrors = {};
         if (!form.source)
             errors.source = "Choose where the concern was received.";
@@ -336,8 +358,12 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="intake-received" className={labelClass}>Date and time received</Label>
-                            <Input id="intake-received" type="datetime-local" aria-invalid={Boolean(fieldErrors.receivedAt)} value={form.receivedAt} onChange={(e) => update("receivedAt", e.target.value)} className={`${fieldClass} ${isDark ? "[color-scheme:dark]" : ""}`} />
-                            {fieldError("receivedAt") ?? <p className={hintClass}>Leave blank if it came in just now.</p>}
+                            <Input id="intake-received" type="datetime-local" max={toDatetimeLocal(new Date())} aria-invalid={Boolean(fieldErrors.receivedAt)} value={form.receivedAt} onChange={(e) => {
+                                const value = e.target.value;
+                                const parsed = value ? parseDatetimeLocal(value) : null;
+                                update("receivedAt", parsed && parsed.getTime() > Date.now() + CLOCK_SKEW_MS ? toDatetimeLocal(new Date()) : value);
+                            }} className={`${fieldClass} ${isDark ? "[color-scheme:dark]" : ""}`} />
+                            {fieldError("receivedAt") ?? <p className={hintClass}>Starts at the current time. Set it earlier if the concern came in before now.</p>}
                         </div>
                         <div className="space-y-1.5">
                             <span className={`block ${labelClass}`}>Nature of concern *</span>

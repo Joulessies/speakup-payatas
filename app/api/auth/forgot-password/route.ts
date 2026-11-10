@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
-import { sendSemaphoreTransactionalSms } from "@/lib/semaphore";
-import { createPasswordResetToken, verifyPasswordResetToken, invalidatePasswordResetToken } from "@/lib/password-reset";
-import { getSmsBackend, isMockSmsDelivery } from "@/lib/sms-provider";
+import { verifyPasswordResetToken, invalidatePasswordResetToken, createPasswordResetToken } from "@/lib/password-reset";
+import { sendBrevoEmail } from "@/lib/brevo-email";
+import { sendVonageSms } from "@/lib/vonage-sms";
 import { validatePassword } from "@/lib/password-validation";
 
 // In-memory rate limiting map for password reset requests (1 request per 30s per user)
@@ -57,10 +57,9 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: "Invalid or expired reset code. Please request a new one." }, { status: 400 });
             }
 
-            // Verify token without consuming it yet so the user can submit the new password in Step 3
-            const tokenCheck = await verifyPasswordResetToken(user.phone_e164, token, false);
-            if (!tokenCheck.ok) {
-                return NextResponse.json({ error: tokenCheck.error }, { status: 401 });
+            const local = await verifyPasswordResetToken(user.phone_e164, token, false);
+            if (!local.ok) {
+                return NextResponse.json({ error: local.error }, { status: 401 });
             }
 
             return NextResponse.json({
@@ -105,53 +104,47 @@ export async function POST(request: Request) {
         // Record timestamp
         forgotPasswordRateLimits.set(user.id, now);
 
-        // Create reset token
-        const tokenResult = await createPasswordResetToken(user.id, user.phone_e164);
-        if ("error" in tokenResult) {
-            return NextResponse.json({ error: tokenResult.error }, { status: 429 });
-        }
-
-        const token = tokenResult.token;
         const phoneNumber = `+63${user.phone_e164}`;
-        const message = `SpeakUp Payatas: Your password reset code is ${token}. Valid for 5 minutes. Do not share this code.`;
-
-        const mockMode = isMockSmsDelivery();
-        const backend = getSmsBackend();
-
-        if (mockMode) {
-            console.warn(
-                `[forgot-password] MOCK SMS — backend=${backend}. ` +
-                `Code for ${phoneNumber}: ${token}. Set SEMAPHORE_API_KEY or MESSAGEBIRD_ACCESS_KEY in .env.local to send real SMS.`
-            );
-        } else {
-            try {
-                await sendSemaphoreTransactionalSms(user.phone_e164, message);
-            } catch (err) {
-                console.error("[forgot-password] SMS error:", err);
-                return NextResponse.json({
-                    error: err instanceof Error ? err.message : "SMS provider failed to send code. Please try again.",
-                }, { status: 500 });
+        try {
+            if (rawIdentifier.includes("@") && user.email) {
+                const issued = await createPasswordResetToken(user.id, user.phone_e164);
+                if ("error" in issued) {
+                    return NextResponse.json({ error: issued.error }, { status: 429 });
+                }
+                await sendBrevoEmail({
+                    to: user.email,
+                    subject: "SpeakUp Payatas password reset code",
+                    text: `Your SpeakUp Payatas reset code is ${issued.token}. It is valid for 5 minutes. If you did not ask for this, ignore this email.`,
+                });
+            } else {
+                const issued = await createPasswordResetToken(user.id, user.phone_e164);
+                if ("error" in issued) {
+                    return NextResponse.json({ error: issued.error }, { status: 429 });
+                }
+                await sendVonageSms(
+                    user.phone_e164,
+                    `Your SpeakUp Payatas reset code is ${issued.token}. It is valid for 5 minutes.`,
+                );
             }
+        } catch (err) {
+            console.error("[forgot-password] send error:", err);
+            return NextResponse.json({
+                error: err instanceof Error ? err.message : "Could not send the reset code.",
+            }, { status: 503 });
         }
 
-        // Mask phone number for display (e.g., +63 9XX XXX X879)
         const maskedPhone = phoneNumber.slice(0, 6) + " XXX X" + phoneNumber.slice(-3);
-        const baseMessage = `A password reset code has been sent to your registered mobile number ending in ${phoneNumber.slice(-4)}.`;
-        const hint = mockMode
-            ? `Dev mode: Mock OTP code is [ ${token} ] (or check terminal log).`
-            : null;
+        const sentToEmail = rawIdentifier.includes("@") && Boolean(user.email);
+        const baseMessage = sentToEmail
+            ? "A password reset code has been sent to your email."
+            : `A password reset code has been sent to your mobile number ending in ${phoneNumber.slice(-4)}.`;
 
         return NextResponse.json({
             success: true,
             message: baseMessage,
             maskedPhone,
             identifier: user.email || user.phone_e164,
-            delivery: {
-                backend,
-                mock: mockMode,
-                hint,
-                mock_code: mockMode ? token : undefined,
-            },
+            delivery: { backend: sentToEmail ? "brevo" : "vonage", mock: false },
         });
     } catch (e) {
         console.error("[forgot-password] error:", e);

@@ -11,7 +11,6 @@ function getAuthSecret() {
     return process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "speakup-dev-secret-change-me";
 }
 
-export { auth } from "@/lib/better-auth";
 async function digestHex(input: string) {
     const bytes = encoder.encode(input);
     const hash = await crypto.subtle.digest("SHA-256", bytes);

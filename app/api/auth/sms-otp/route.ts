@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { issueSmsOtp, invalidateSmsOtp } from "@/lib/sms-otp";
-import { sendSemaphoreOtpSms } from "@/lib/semaphore";
-import { isMockSmsDelivery } from "@/lib/sms-provider";
+import { invalidateSmsOtp, issueSmsOtp } from "@/lib/sms-otp";
+import { sendVonageSms } from "@/lib/vonage-sms";
 
 export async function POST(request: Request) {
     try {
@@ -15,30 +14,19 @@ export async function POST(request: Request) {
         if ("error" in issued) {
             return NextResponse.json({ error: issued.error }, { status: 429 });
         }
-
         try {
-            await sendSemaphoreOtpSms(phone, issued.code);
-        } catch (err) {
+            await sendVonageSms(phone, `Your SpeakUp Payatas code is ${issued.code}. It is valid for 5 minutes.`);
+        } catch (sendError) {
             await invalidateSmsOtp(phone);
-            const message = err instanceof Error ? err.message : "Failed to send OTP";
-            return NextResponse.json({ error: message }, { status: 503 });
+            throw sendError;
         }
-
-        const mock = isMockSmsDelivery();
         return NextResponse.json({
             success: true,
-            message: mock
-                ? `OTP generated (Dev mock code: ${issued.code}).`
-                : "Verification code sent to your mobile number via SMS.",
-            mock_sms: mock || undefined,
-            mock_code: mock ? issued.code : undefined,
-            hint: mock ? `Dev mode: Mock OTP code is [ ${issued.code} ] (or check server terminal).` : undefined,
+            channel: "vonage",
+            message: "Verification code sent to your mobile number.",
         });
     } catch (e) {
-        const msg = e instanceof Error ? e.message : "";
-        if (msg.includes("Missing Supabase configuration")) {
-            return NextResponse.json({ error: "Server missing Supabase credentials for OTP storage." }, { status: 503 });
-        }
-        return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+        const message = e instanceof Error ? e.message : "Failed to send SMS.";
+        return NextResponse.json({ error: message }, { status: 503 });
     }
 }

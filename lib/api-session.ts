@@ -14,6 +14,7 @@ export async function getSessionFromCookies(): Promise<
 > {
     try {
         const { auth } = await import("@/lib/better-auth");
+        if (!auth) throw new Error("Better Auth database is not configured.");
         const { headers } = await import("next/headers");
         const betterSession = await auth.api.getSession({
             headers: await headers(),

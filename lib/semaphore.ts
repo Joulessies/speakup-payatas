@@ -1,3 +1,4 @@
+import { sendBrevoSms } from "@/lib/brevo-sms";
 import { sendMessageBirdSmsToPhLast10 } from "@/lib/messagebird-sms";
 import { sendTextbeltSms } from "@/lib/textbelt-sms";
 import { sendTextbeeSms } from "@/lib/textbee-sms";
@@ -33,6 +34,11 @@ export async function sendSemaphoreOtpSms(phoneLast10: string, code: string) {
         return;
     }
 
+    if (backend === "brevo") {
+        await sendBrevoSms(phoneLast10, otpMessageBody(code));
+        return;
+    }
+
     if (backend === "textbelt") {
         await sendTextbeltSms(phoneLast10, otpMessageBody(code));
         return;
@@ -49,7 +55,7 @@ export async function sendSemaphoreOtpSms(phoneLast10: string, code: string) {
     }
 
     const number = normalizeTo63(phoneLast10);
-    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim();
+    const sendername = (process.env.SEMAPHORE_SENDERNAME?.trim() || "SPKPAYATAS").slice(0, 11);
     const messageBody = otpMessageBody(code);
 
     const payload = new URLSearchParams();
@@ -109,6 +115,11 @@ export async function sendSemaphoreTransactionalSms(phoneLast10: string, message
         return;
     }
 
+    if (backend === "brevo") {
+        await sendBrevoSms(phoneLast10, message.trim());
+        return;
+    }
+
     if (backend === "textbelt") {
         await sendTextbeltSms(phoneLast10, message.trim());
         return;
@@ -125,7 +136,7 @@ export async function sendSemaphoreTransactionalSms(phoneLast10: string, message
     }
 
     const number = normalizeTo63(phoneLast10);
-    const sendername = process.env.SEMAPHORE_SENDERNAME?.trim();
+    const sendername = (process.env.SEMAPHORE_SENDERNAME?.trim() || "SPKPAYATAS").slice(0, 11);
 
     const payload = new URLSearchParams();
     payload.set("apikey", apiKey);
