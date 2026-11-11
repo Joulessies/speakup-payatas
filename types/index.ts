@@ -29,6 +29,29 @@ export const REPORT_CATEGORIES = [
 
 export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
 
+/** Type of Concern column from the barangay logbook, in that sheet's order. */
+export const INTAKE_CONCERN_TYPES = [
+    "safety_concern",
+    "threats_harassment",
+    "fire_hazard",
+    "medical_health",
+    "road_traffic",
+    "road_accidents",
+    "noise_nuisance",
+    "electrical_concerns",
+    "animal_concerns",
+    "family_domestic",
+    "substance_concerns",
+    "social_welfare",
+    "legal_mediation",
+    "infrastructure",
+    "clearance_concerns",
+    "service_assistance",
+    "environmental",
+    "inquiries",
+    "garbage_concerns",
+] as const satisfies readonly ReportCategory[];
+
 export function isReportCategory(value: unknown): value is ReportCategory {
     return typeof value === "string" && (REPORT_CATEGORIES as readonly string[]).includes(value);
 }
@@ -40,7 +63,7 @@ export const CATEGORY_LABELS: Record<ReportCategory, string> = {
     medical_health: "Medical and Health",
     road_traffic: "Road and Traffic",
     road_accidents: "Road Accidents",
-    noise_nuisance: "Public Disturbance / Noise",
+    noise_nuisance: "Public Disturbance",
     electrical_concerns: "Electrical Concerns",
     animal_concerns: "Animal Related Concerns",
     family_domestic: "Family and Domestic Concerns",
@@ -182,20 +205,23 @@ export type IntakeSource = (typeof INTAKE_SOURCES)[number];
 
 export const INTAKE_SOURCE_LABELS: Record<IntakeSource, string> = {
     web: "SpeakUp website",
-    facebook_page: "Facebook Page / Messenger",
-    text_messages: "Text message (SMS)",
-    phone_call: "Phone call",
-    walk_ins: "Walk-in",
+    facebook_page: "Facebook Page",
+    text_messages: "Text Messages",
+    phone_call: "Phone Call",
+    walk_ins: "Walk Ins",
     referral: "Referral",
 };
 
-export const NATURE_OF_CONCERN_OPTIONS = ["complaint", "report", "inquiry"] as const;
+/** Source of Concern column, in the logbook's order. */
+export const STAFF_INTAKE_SOURCES = ["facebook_page", "phone_call", "text_messages", "referral", "walk_ins"] as const;
+
+export const NATURE_OF_CONCERN_OPTIONS = ["inquiry", "complaint", "report"] as const;
 export type NatureOfConcern = (typeof NATURE_OF_CONCERN_OPTIONS)[number];
 
 export const NATURE_OF_CONCERN_LABELS: Record<NatureOfConcern, string> = {
-    complaint: "Complaint",
+    complaint: "Complaints",
     report: "Report",
-    inquiry: "Inquiry",
+    inquiry: "Inquiries",
 };
 
 export const BARANGAY_AREAS = ["area_a", "area_b", "lupang_pangako", "group_13", "others"] as const;
@@ -206,7 +232,7 @@ export const BARANGAY_AREA_LABELS: Record<BarangayArea, string> = {
     area_b: "Area B",
     lupang_pangako: "Lupang Pangako",
     group_13: "Group 13",
-    others: "Other areas",
+    others: "Others",
 };
 
 export const CONCERN_DEPARTMENTS = [
@@ -232,8 +258,33 @@ export const CONCERN_DEPARTMENTS = [
     "Sector 5",
     "Traffic Base",
     "Secretary",
-    "Others",
+    "BDRRM",
+    "OTHERS",
 ] as const;
+
+/** Status column from the barangay logbook. Stored on the intake row; reports.status stays the app workflow. */
+export const EOC_STATUSES = ["pending", "transferred", "pending_with_mission_order", "responded"] as const;
+export type EocStatus = (typeof EOC_STATUSES)[number];
+
+export const EOC_STATUS_LABELS: Record<EocStatus, string> = {
+    pending: "Pending",
+    transferred: "Transferred",
+    pending_with_mission_order: "Pending with Mission Order",
+    responded: "Responded",
+};
+
+/** Urgency column: Low, Medium, High. Values stay on the 1–5 severity scale the rest of the app uses. */
+export const EOC_URGENCY_LEVELS = [
+    { value: 1, label: "Low" },
+    { value: 3, label: "Medium" },
+    { value: 5, label: "High" },
+] as const;
+
+export function reportStatusForEoc(status: EocStatus): ReportStatus {
+    if (status === "responded") return "resolved";
+    if (status === "pending") return "pending";
+    return "in_progress";
+}
 
 export type ConcernDepartment = (typeof CONCERN_DEPARTMENTS)[number];
 
@@ -252,6 +303,8 @@ export interface ReportIntakeDetails {
     reporter_gender: Gender | null;
     responders: string | null;
     remarks: string | null;
+    eoc_staff: string | null;
+    eoc_status: EocStatus | null;
     encoded_by: string | null;
     created_at: string;
 }

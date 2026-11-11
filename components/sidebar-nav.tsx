@@ -31,6 +31,7 @@ import {
     TrendingUp,
     Settings,
     ClipboardPen,
+    ScrollText,
 } from "lucide-react";
 
 interface NavItem {
@@ -109,6 +110,7 @@ export default function SidebarNav() {
                     { href: "/staff/map", label: "Hotspot Map", icon: Map },
                     { href: "/staff", label: "Verification Queue", icon: Shield },
                     { href: "/staff/intake", label: "Encode Report", icon: ClipboardPen },
+                    { href: "/staff/log", label: "Concern Log", icon: ScrollText },
                     { href: "/staff/summary", label: "Monthly Summary", icon: BarChart3 },
                 ];
             case "admin":
@@ -117,6 +119,7 @@ export default function SidebarNav() {
                     { href: "/admin", label: "Hotspot Map", icon: Map },
                     { href: "/admin/reports", label: "Manage Reports", icon: FileWarning },
                     { href: "/admin/intake", label: "Encode Report", icon: ClipboardPen },
+                    { href: "/admin/log", label: "Concern Log", icon: ScrollText },
                     { href: "/admin/users", label: "Manage Users", icon: Users },
                     { href: "/analytics", label: "Analytics", icon: BarChart3 },
                 ];

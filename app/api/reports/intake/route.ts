@@ -9,6 +9,8 @@ import {
   BARANGAY_AREAS,
   CATEGORY_LABELS,
   CONCERN_DEPARTMENTS,
+  EOC_STATUS_LABELS,
+  EOC_STATUSES,
   INTAKE_SOURCE_LABELS,
   INTAKE_SOURCES,
   NATURE_OF_CONCERN_OPTIONS,
@@ -17,6 +19,8 @@ import {
   isGender,
   isReportCategory,
   parseReporterAge,
+  reportStatusForEoc,
+  type EocStatus,
   type ReportAction,
   type ReportIntakeDetails,
   type ReportStatus,
@@ -94,9 +98,16 @@ export async function POST(request: Request) {
   }
   const severity = isBlank(body.severity) ? 3 : Number(body.severity);
   if (!Number.isInteger(severity) || severity < 1 || severity > 5) {
-    return badRequest("Urgency must be from 1 to 5.");
+    return badRequest("Urgency must be Low, Medium, or High.");
   }
-  const initialStatus = isBlank(status) ? "pending" : status;
+  let eocStatus: EocStatus | null = null;
+  if (!isBlank(body.eoc_status)) {
+    if (!isOneOf(EOC_STATUSES, body.eoc_status)) {
+      return badRequest("Unknown status.");
+    }
+    eocStatus = body.eoc_status;
+  }
+  const initialStatus = eocStatus ? reportStatusForEoc(eocStatus) : (isBlank(status) ? "pending" : status);
   if (!isOneOf(INITIAL_STATUSES, initialStatus)) {
     return badRequest("Unknown status.");
   }
@@ -146,7 +157,7 @@ export async function POST(request: Request) {
       actionHistory.push({
         id: randomUUID(),
         status: initialStatus,
-        note: `Status set to ${initialStatus.replace("_", " ")} when the concern was encoded.`,
+        note: `Status set to ${eocStatus ? EOC_STATUS_LABELS[eocStatus] : initialStatus.replace("_", " ")} when the concern was encoded.`,
         actor: auth.role === "admin" ? "Admin" : "Staff",
         created_at: nowIso,
       });
@@ -196,15 +207,18 @@ export async function POST(request: Request) {
       reporter_gender: isBlank(reporter_gender) ? null : reporter_gender,
       responders: optionalText(body.responders, 300),
       remarks: optionalText(body.remarks, 2000),
+      eoc_staff: optionalText(body.eoc_staff, 120),
+      eoc_status: eocStatus,
       encoded_by: auth.username,
     });
 
     if (detailsError) {
       // Without its details row, an unpinned report would show up as a hotspot at the placeholder location.
       await supabase.from("reports").delete().eq("id", report.id);
+      const missingColumn = /eoc_staff|eoc_status/i.test(detailsError.message);
       return NextResponse.json(
-        { error: isMissingTable(detailsError) ? MISSING_MIGRATION_MESSAGE : detailsError.message },
-        { status: isMissingTable(detailsError) ? 503 : 500 },
+        { error: isMissingTable(detailsError) || missingColumn ? MISSING_MIGRATION_MESSAGE : detailsError.message },
+        { status: isMissingTable(detailsError) || missingColumn ? 503 : 500 },
       );
     }
 

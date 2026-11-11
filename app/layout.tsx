@@ -25,6 +25,12 @@ export const metadata: Metadata = {
         shortcut: "/payatas-logo.png",
         apple: "/payatas-logo.png",
     },
+    verification: {
+        google: "GH8iAA7xBcqdI3Yih1g9xe36x7BLegL5z-qjozGh0cE",
+        other: {
+            "strix-verification": "strix-verify-29282743077cac0cf99b70d4658b72c9",
+        },
+    },
 };
 
 // Determine if role should use sidebar (all roles now use sidebar for consistency)

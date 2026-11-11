@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { LockKeyhole } from "lucide-react";
 import {
     BARANGAY_AREA_LABELS,
+    EOC_STATUS_LABELS,
     GENDER_LABELS,
     INTAKE_SOURCE_LABELS,
     NATURE_OF_CONCERN_LABELS,
@@ -37,10 +38,12 @@ export function IntakeDetailsCard({ reportId, isDark }: { reportId: string; isDa
     const fields: [string, string | null | undefined][] = [
         ["Received via", details.source === "web" ? null : INTAKE_SOURCE_LABELS[details.source]],
         ["Nature", details.nature_of_concern ? NATURE_OF_CONCERN_LABELS[details.nature_of_concern] : null],
+        ["EOC staff", details.eoc_staff],
+        ["Log status", details.eoc_status ? EOC_STATUS_LABELS[details.eoc_status] : null],
         ["Complainant", details.reporter_name],
         ["Contact", details.reporter_contact],
         ["Age", details.reporter_age != null ? String(details.reporter_age) : null],
-        ["Gender", details.reporter_gender ? GENDER_LABELS[details.reporter_gender] : null],
+        ["Sex", details.reporter_gender ? GENDER_LABELS[details.reporter_gender] : null],
         ["Area", details.area ? BARANGAY_AREA_LABELS[details.area] : null],
         ["Concern department", details.concern_department],
         ["Responders", details.responders],

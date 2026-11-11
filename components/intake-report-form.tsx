@@ -18,22 +18,25 @@ import {
     BARANGAY_AREA_LABELS,
     CATEGORY_LABELS,
     CONCERN_DEPARTMENTS,
+    EOC_STATUS_LABELS,
+    EOC_STATUSES,
+    EOC_URGENCY_LEVELS,
     GENDER_LABELS,
     GENDER_OPTIONS,
-    INTAKE_SOURCES,
+    INTAKE_CONCERN_TYPES,
     INTAKE_SOURCE_LABELS,
     NATURE_OF_CONCERN_LABELS,
     NATURE_OF_CONCERN_OPTIONS,
     REPORTER_AGE_MAX,
     REPORTER_AGE_MIN,
-    REPORT_CATEGORIES,
+    STAFF_INTAKE_SOURCES,
     parseReporterAge,
     type BarangayArea,
+    type EocStatus,
     type Gender,
     type IntakeSource,
     type NatureOfConcern,
     type ReportCategory,
-    type ReportStatus,
 } from "@/types";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
@@ -44,9 +47,7 @@ const ReportLocationPicker = dynamic(() => import("@/components/report-location-
 // Radix Select items can't have an empty value, so "not specified" needs its own key.
 const NOT_SPECIFIED = "__not_specified";
 
-type StaffSource = Exclude<IntakeSource, "web">;
-
-const STAFF_SOURCES = INTAKE_SOURCES.filter((source): source is StaffSource => source !== "web");
+type StaffSource = (typeof STAFF_INTAKE_SOURCES)[number];
 
 const SOURCE_ICONS: Record<StaffSource, LucideIcon> = {
     facebook_page: MessageCircle,
@@ -56,22 +57,15 @@ const SOURCE_ICONS: Record<StaffSource, LucideIcon> = {
     referral: Forward,
 };
 
-const URGENCY_LEVELS = [
-    { value: 1, label: "Low", color: "bg-emerald-500" },
-    { value: 2, label: "Minor", color: "bg-lime-500" },
-    { value: 3, label: "Moderate", color: "bg-amber-500" },
-    { value: 4, label: "High", color: "bg-orange-500" },
-    { value: 5, label: "Critical", color: "bg-red-500" },
-];
-
-const STATUS_OPTIONS: { value: ReportStatus; label: string; hint: string }[] = [
-    { value: "pending", label: "Pending", hint: "Not acted on yet" },
-    { value: "in_progress", label: "In progress", hint: "Transferred / with mission order" },
-    { value: "resolved", label: "Resolved", hint: "Already responded to" },
-];
+const URGENCY_COLORS: Record<(typeof EOC_URGENCY_LEVELS)[number]["value"], string> = {
+    1: "bg-emerald-500",
+    3: "bg-amber-500",
+    5: "bg-red-500",
+};
 
 interface IntakeFormState {
     source: IntakeSource | "";
+    eocStaff: string;
     receivedAt: string;
     nature: NatureOfConcern | "";
     reporterName: string;
@@ -86,7 +80,7 @@ interface IntakeFormState {
     department: string;
     latitude: number | null;
     longitude: number | null;
-    status: ReportStatus;
+    status: EocStatus;
     responders: string;
     remarks: string;
 }
@@ -115,6 +109,7 @@ function parseDatetimeLocal(value: string) {
 function createEmptyForm(): IntakeFormState {
     return {
         source: "",
+        eocStaff: "",
         // Blank means "just now". A clock-based default would differ between the server render and the browser.
         receivedAt: "",
         nature: "",
@@ -232,6 +227,8 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     source: form.source,
+                    eoc_staff: form.eocStaff,
+                    eoc_status: form.status,
                     received_at: receivedAt.toISOString(),
                     nature_of_concern: form.nature,
                     reporter_name: form.reporterName,
@@ -345,9 +342,9 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                         <span className={`block ${labelClass}`}>Source of concern *</span>
                         {/* Five options only fill a two- or three-column grid when the first one spans two columns. */}
                         <div id="intake-source" role="radiogroup" aria-label="Source of concern" aria-invalid={Boolean(fieldErrors.source)} className={`grid grid-cols-2 @md:grid-cols-3 gap-2 ${invalidGroupClass("source")}`}>
-                            {STAFF_SOURCES.map((source) => {
+                            {STAFF_INTAKE_SOURCES.map((source) => {
                                 const Icon = SOURCE_ICONS[source];
-                                return (<button key={source} type="button" role="radio" aria-checked={form.source === source} onClick={() => update("source", source)} className={`${chipClass(form.source === source)} first:col-span-2 flex items-center justify-center gap-2 text-center leading-tight`}>
+                                return (<button key={source} type="button" role="radio" aria-checked={form.source === source} onClick={() => update("source", source)} className={`${chipClass(form.source === source)} flex items-center justify-center gap-2 text-center leading-tight`}>
                                     <Icon className="h-4 w-4 shrink-0" />
                                     {INTAKE_SOURCE_LABELS[source]}
                                 </button>);
@@ -357,7 +354,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="intake-received" className={labelClass}>Date and time received</Label>
+                            <Label htmlFor="intake-received" className={labelClass}>Date and time</Label>
                             <Input id="intake-received" type="datetime-local" max={toDatetimeLocal(new Date())} aria-invalid={Boolean(fieldErrors.receivedAt)} value={form.receivedAt} onChange={(e) => {
                                 const value = e.target.value;
                                 const parsed = value ? parseDatetimeLocal(value) : null;
@@ -366,6 +363,10 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                             {fieldError("receivedAt") ?? <p className={hintClass}>Starts at the current time. Set it earlier if the concern came in before now.</p>}
                         </div>
                         <div className="space-y-1.5">
+                            <Label htmlFor="intake-eoc-staff" className={labelClass}>EOC staff</Label>
+                            <Input id="intake-eoc-staff" autoComplete="name" maxLength={120} value={form.eocStaff} onChange={(e) => update("eocStaff", e.target.value)} className={fieldClass} />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
                             <span className={`block ${labelClass}`}>Nature of concern *</span>
                             <div id="intake-nature" role="radiogroup" aria-label="Nature of concern" aria-invalid={Boolean(fieldErrors.nature)} className={`grid grid-cols-3 gap-2 ${invalidGroupClass("nature")}`}>
                                 {NATURE_OF_CONCERN_OPTIONS.map((nature) => (<button key={nature} type="button" role="radio" aria-checked={form.nature === nature} onClick={() => update("nature", nature)} className={`${chipClass(form.nature === nature)} text-center`}>
@@ -391,7 +392,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                             <Input id="intake-name" autoComplete="off" maxLength={200} value={form.reporterName} onChange={(e) => update("reporterName", e.target.value)} className={fieldClass} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="intake-contact" className={labelClass}>Contact number / Messenger name</Label>
+                            <Label htmlFor="intake-contact" className={labelClass}>Contact number</Label>
                             <Input id="intake-contact" autoComplete="off" maxLength={100} value={form.reporterContact} onChange={(e) => update("reporterContact", e.target.value)} className={fieldClass} />
                         </div>
                         <div className="space-y-1.5">
@@ -401,7 +402,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                                     <Input id="intake-age" inputMode="numeric" autoComplete="off" maxLength={3} aria-invalid={Boolean(fieldErrors.reporterAge)} value={form.reporterAge} onChange={(e) => update("reporterAge", e.target.value.replace(/\D/g, ""))} className={fieldClass} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="intake-gender" className={labelClass}>Gender</Label>
+                                    <Label htmlFor="intake-gender" className={labelClass}>Sex</Label>
                                     <Select value={form.reporterGender} onValueChange={(v) => update("reporterGender", v === NOT_SPECIFIED ? "" : (v as Gender))}>
                                         <SelectTrigger id="intake-gender" className={triggerClass}>
                                             <SelectValue placeholder="Not specified" />
@@ -436,7 +437,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                             <Input id="intake-address" autoComplete="off" maxLength={300} value={form.reporterAddress} onChange={(e) => update("reporterAddress", e.target.value)} className={fieldClass} />
                         </div>
                     </div>
-                    <p className={hintClass}>Age and gender feed the population report on the Analytics page. Leave them blank if the complainant didn&apos;t say.</p>
+                    <p className={hintClass}>Age and sex feed the population report on the Analytics page. Leave them blank if the complainant didn&apos;t say.</p>
                 </section>
 
                 <section className={cardClass}>
@@ -449,7 +450,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                                     <SelectValue placeholder="Choose a type" />
                                 </SelectTrigger>
                                 <SelectContent position="popper" className={`max-h-80 ${contentClass}`}>
-                                    {REPORT_CATEGORIES.map((key) => (<SelectItem key={key} value={key} className={itemClass}>
+                                    {INTAKE_CONCERN_TYPES.map((key) => (<SelectItem key={key} value={key} className={itemClass}>
                                         <CategoryIcon category={key} className="h-4 w-4" />
                                         {CATEGORY_LABELS[key]}
                                     </SelectItem>))}
@@ -479,11 +480,11 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                     </div>
                     <div className="space-y-1.5">
                         <span className={`block ${labelClass}`}>Urgency</span>
-                        <div role="radiogroup" aria-label="Urgency" className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                            {URGENCY_LEVELS.map((level) => {
+                        <div role="radiogroup" aria-label="Urgency" className="grid grid-cols-3 gap-2">
+                            {EOC_URGENCY_LEVELS.map((level) => {
                                 const selected = form.severity === level.value;
                                 return (<button key={level.value} type="button" role="radio" aria-checked={selected} onClick={() => update("severity", level.value)} className={`${chipClass(selected)} flex items-center justify-center gap-1.5`}>
-                                    <span className={`w-2.5 h-2.5 rounded-full ${level.color} ${selected ? "opacity-100" : "opacity-40"}`} />
+                                    <span className={`w-2.5 h-2.5 rounded-full ${URGENCY_COLORS[level.value]} ${selected ? "opacity-100" : "opacity-40"}`} />
                                     {level.label}
                                 </button>);
                             })}
@@ -509,10 +510,9 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
 
                 <section className={cardClass}>
                     <h2 className={sectionTitleClass}>Status</h2>
-                    <div role="radiogroup" aria-label="Status" className="grid gap-2 sm:grid-cols-3">
-                        {STATUS_OPTIONS.map((option) => (<button key={option.value} type="button" role="radio" aria-checked={form.status === option.value} onClick={() => update("status", option.value)} className={`${chipClass(form.status === option.value)} text-left`}>
-                            <span className="block font-semibold">{option.label}</span>
-                            <span className="block text-[11px] opacity-70">{option.hint}</span>
+                    <div role="radiogroup" aria-label="Status" className="grid gap-2 sm:grid-cols-2">
+                        {EOC_STATUSES.map((status) => (<button key={status} type="button" role="radio" aria-checked={form.status === status} onClick={() => update("status", status)} className={`${chipClass(form.status === status)} text-left`}>
+                            <span className="block font-semibold">{EOC_STATUS_LABELS[status]}</span>
                         </button>))}
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
