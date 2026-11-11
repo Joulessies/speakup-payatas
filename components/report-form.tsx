@@ -16,7 +16,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import GpsHelpDialog from "@/components/gps-help-dialog";
 import { CATEGORY_ICONS } from "@/components/category-icon";
-import { CATEGORY_COLORS, GENDER_OPTIONS, REPORT_CATEGORIES, isGender, parseReporterAge, type Gender, type ReportCategory, type OfflineReport } from "@/types";
+import { CATEGORY_COLORS, GENDER_OPTIONS, isGender, parseReporterAge, type Gender, type ReportCategory, type OfflineReport } from "@/types";
 import { translateCategory } from "@/lib/i18n";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
@@ -28,19 +28,15 @@ const ReportLocationPicker = dynamic(() => import("@/components/report-location-
     loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30" />,
 });
 
-// Shown before "More categories"; the rest of REPORT_CATEGORIES follow in their usual order.
-const FEATURED_CATEGORIES: ReportCategory[] = [
-    "garbage_concerns",
+const REPORT_FORM_CATEGORIES: ReportCategory[] = [
     "drainage_flooding",
-    "noise_nuisance",
-    "infrastructure",
-    "electrical_concerns",
-    "safety_concern",
     "fire_hazard",
-];
-const ALL_CATEGORIES_ORDERED: ReportCategory[] = [
-    ...FEATURED_CATEGORIES,
-    ...REPORT_CATEGORIES.filter((key) => !FEATURED_CATEGORIES.includes(key)),
+    "safety_concern",
+    "infrastructure",
+    "sanitation_health",
+    "noise_nuisance",
+    "environmental",
+    "other",
 ];
 
 const getRandomPayatasLocation = () => {
@@ -79,7 +75,6 @@ export default function ReportForm() {
     const [pendingCount, setPendingCount] = useState(0);
     const [category, setCategory] = useState<ReportCategory | "">("");
     const [autoCategory, setAutoCategory] = useState(true);
-    const [showAllCategories, setShowAllCategories] = useState(false);
     const [reporterAge, setReporterAge] = useState("");
     const [reporterGender, setReporterGender] = useState<Gender | "">("");
     const [description, setDescription] = useState("");
@@ -178,12 +173,6 @@ export default function ReportForm() {
         reader.onerror = () => reject(new Error("Failed to read image"));
         reader.readAsDataURL(file);
     }), []);
-    // Collapsed view keeps a selected non-featured category visible.
-    const visibleCategories = showAllCategories
-        ? ALL_CATEGORIES_ORDERED
-        : category && !FEATURED_CATEGORIES.includes(category)
-            ? [...FEATURED_CATEGORIES, category]
-            : FEATURED_CATEGORIES;
     const GENDER_TEXT: Record<Gender, string> = {
         male: t.genderMale,
         female: t.genderFemale,
@@ -608,7 +597,7 @@ export default function ReportForm() {
                         {t.reportWhatHappened}
                     </Label>
                     <div className="grid grid-cols-2 min-[420px]:grid-cols-4 gap-1.5 md:gap-2">
-                        {visibleCategories.map((key) => {
+                        {REPORT_FORM_CATEGORIES.map((key) => {
                             const isSelected = category === key;
                             const label = translateCategory(key, t);
                             const Icon = CATEGORY_ICONS[key];
@@ -623,12 +612,6 @@ export default function ReportForm() {
                                 </span>
                             </button>);
                         })}
-                        <button type="button" aria-expanded={showAllCategories} onClick={() => setShowAllCategories((prev) => !prev)} className={`flex min-h-14 flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl border border-dashed text-center transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${isDark ? "border-white/15 text-white/60 hover:bg-white/[0.06]" : "border-black/15 text-gray-500 hover:bg-black/[0.03]"}`}>
-                            {showAllCategories ? <ChevronUp className="h-5 w-5 shrink-0" /> : <ChevronDown className="h-5 w-5 shrink-0" />}
-                            <span className="w-full px-0.5 text-[10px] font-medium leading-tight">
-                                {showAllCategories ? t.reportFewerCategories : t.reportMoreCategories}
-                            </span>
-                        </button>
                     </div>
                 </div>
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Circle, GoogleMap, InfoWindow, Polygon, MarkerF } from "@react-google-maps/api";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { PAYATAS_CENTER } from "@/lib/payatas-boundary";
 import {
   clusterFillColor,
@@ -13,11 +14,25 @@ import {
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
 import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import type { ClusterResult } from "@/types";
-import { CATEGORY_LABELS } from "@/types";
+import { CATEGORY_LABELS, resolveCategory } from "@/types";
 import { useTheme } from "./theme-provider";
 import { useLanguage } from "./language-provider";
 import MapsMissingKey from "./maps-missing-key";
 import { translateCategory } from "@/lib/i18n";
+import { CategoryIcon } from "./category-icon";
+
+const MAP_FILTER_CATEGORIES = [
+  { key: "drainage_flooding", label: "Drainage / Flooding" },
+  { key: "fire_hazard", label: "Fire Hazard" },
+  { key: "safety_concern", label: "Safety Concern" },
+  { key: "infrastructure", label: "Infrastructure" },
+  { key: "sanitation_health", label: "Sanitation / Health" },
+  { key: "noise_nuisance", label: "Noise Nuisance" },
+  { key: "environmental", label: "Environmental" },
+  { key: "other", label: "Other" },
+] as const;
+
+const ALL_FILTER_CATEGORIES: readonly string[] = MAP_FILTER_CATEGORIES.map((c) => c.key);
 
 function createClusterPinSvg(count: number, color: string, isSelected: boolean) {
   const width = isSelected ? 42 : 34;
@@ -54,7 +69,10 @@ function MapInnerLoaded() {
   const [noiseCount, setNoiseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [popupIndex, setPopupIndex] = useState<number | null>(null);
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set(ALL_FILTER_CATEGORIES));
+  const [filterOpen, setFilterOpen] = useState(true);
   const boundaryPath = payatasBoundaryPath();
+
   useEffect(() => {
     (async () => {
       try {
@@ -70,6 +88,55 @@ function MapInnerLoaded() {
       }
     })();
   }, []);
+
+  const toggleCategory = (key: string) => {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (activeCategories.size === ALL_FILTER_CATEGORIES.length) {
+      setActiveCategories(new Set());
+    } else {
+      setActiveCategories(new Set(ALL_FILTER_CATEGORIES));
+    }
+  };
+
+  const filteredClusters = useMemo(() => {
+    if (activeCategories.size === ALL_FILTER_CATEGORIES.length) return clusters;
+    return clusters
+      .map((c) => {
+        let matchingCount = 0;
+        const matchingBreakdown: Record<string, number> = {};
+        for (const [cat, count] of Object.entries(c.category_breakdown || {})) {
+          const norm = resolveCategory(cat) ?? "other";
+          if (activeCategories.has(norm) || activeCategories.has(cat)) {
+            matchingCount += count;
+            matchingBreakdown[cat] = count;
+          }
+        }
+        if (matchingCount === 0) return null;
+        return {
+          ...c,
+          count: matchingCount,
+          category_breakdown: matchingBreakdown,
+        };
+      })
+      .filter((c): c is ClusterResult => c !== null);
+  }, [clusters, activeCategories]);
+
+  const filteredReportsCount = useMemo(() => {
+    if (activeCategories.size === ALL_FILTER_CATEGORIES.length) return totalReports;
+    return filteredClusters.reduce((acc, c) => acc + c.count, 0);
+  }, [filteredClusters, activeCategories, totalReports]);
+
   if (authFailed) {
     return <MapsMissingKey reason="auth-failed" errorCode={errorCode} />;
   }
@@ -88,15 +155,71 @@ function MapInnerLoaded() {
         ) : (
           <>
             <p>
-              <span className="text-white/60">{t.adminReports}:</span> {totalReports}
+              <span className="text-white/60">{t.adminReports}:</span> {filteredReportsCount}
             </p>
             <p>
-              <span className="text-white/60">{t.adminHotspots}:</span> {clusters.length}
+              <span className="text-white/60">{t.adminHotspots}:</span> {filteredClusters.length}
             </p>
             <p>
               <span className="text-white/60">{t.adminScattered}:</span> {noiseCount}
             </p>
           </>
+        )}
+      </div>
+
+      {/* Category Filter on Resident Map */}
+      <div className="absolute top-4 right-4 z-[1] max-w-[calc(100vw-2rem)] sm:max-w-sm rounded-2xl border border-emerald-500/30 bg-[#04241d]/90 p-3 sm:p-4 text-xs text-white backdrop-blur-md shadow-2xl space-y-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              {t.adminFilterCategory || "Filter by Category"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              {activeCategories.size === ALL_FILTER_CATEGORIES.length ? "Clear all" : "Select all"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              aria-label="Toggle category filter panel"
+              className="p-1 rounded-md text-white/60 hover:text-white transition-colors"
+            >
+              {filterOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        </div>
+
+        {filterOpen && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto pr-0.5">
+              {MAP_FILTER_CATEGORIES.map((item) => {
+                const isActive = activeCategories.has(item.key);
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => toggleCategory(item.key)}
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-left border transition-all min-h-10 ${
+                      isActive
+                        ? "bg-[#06382b] text-emerald-100 border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/30"
+                        : "bg-white/[0.04] text-white/40 border-white/[0.08] hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <CategoryIcon category={item.key} className="h-4 w-4 shrink-0" />
+                    <span className="leading-tight truncate" title={item.label}>
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 
@@ -137,7 +260,7 @@ function MapInnerLoaded() {
           }}
         />
 
-        {clusters.map((cluster, i) => {
+        {filteredClusters.map((cluster, i) => {
           const fill = clusterFillColor(cluster.count);
           const radius = clusterRadiusMeters(cluster.count);
           const isSelected = popupIndex === i;
@@ -160,7 +283,7 @@ function MapInnerLoaded() {
           );
         })}
 
-        {clusters.map((cluster, i) => {
+        {filteredClusters.map((cluster, i) => {
           const fill = clusterFillColor(cluster.count);
           const isSelected = popupIndex === i;
           return (
@@ -174,11 +297,11 @@ function MapInnerLoaded() {
           );
         })}
 
-        {popupIndex !== null && clusters[popupIndex] && (
+        {popupIndex !== null && filteredClusters[popupIndex] && (
           <InfoWindow
             position={{
-              lat: clusters[popupIndex].latitude,
-              lng: clusters[popupIndex].longitude,
+              lat: filteredClusters[popupIndex].latitude,
+              lng: filteredClusters[popupIndex].longitude,
             }}
             options={{
               pixelOffset: typeof google !== "undefined" ? new google.maps.Size(0, -48) : undefined,
@@ -186,15 +309,15 @@ function MapInnerLoaded() {
             onCloseClick={() => setPopupIndex(null)}
           >
             <div className="min-w-[140px] space-y-1 text-sm">
-              <p className="font-semibold">{t.mapReportsCount(clusters[popupIndex].count)}</p>
-              {Object.entries(clusters[popupIndex].category_breakdown).map(([cat, count]) => (
+              <p className="font-semibold">{t.mapReportsCount(filteredClusters[popupIndex].count)}</p>
+              {Object.entries(filteredClusters[popupIndex].category_breakdown).map(([cat, count]) => (
                 <p key={cat} className="text-xs text-gray-600">
                   {translateCategory(cat, t)}: {count}
                 </p>
               ))}
               <p className="font-mono text-xs text-gray-400">
-                {clusters[popupIndex].latitude.toFixed(5)},{" "}
-                {clusters[popupIndex].longitude.toFixed(5)}
+                {filteredClusters[popupIndex].latitude.toFixed(5)},{" "}
+                {filteredClusters[popupIndex].longitude.toFixed(5)}
               </p>
             </div>
           </InfoWindow>

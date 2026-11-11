@@ -791,6 +791,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                 return (
                                     <button
                                         key={item.key}
+                                        type="button"
                                         onClick={() => toggleCategory(item.key)}
                                         className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-left border min-h-10 ${
                                             isActive
@@ -803,7 +804,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                         }`}
                                     >
                                         <CategoryIcon category={item.key} className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="leading-tight">{item.label}</span>
+                                        <span className="leading-tight truncate" title={item.label}>{item.label}</span>
                                     </button>
                                 );
                             })}
