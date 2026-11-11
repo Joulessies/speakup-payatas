@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, FileSpreadsheet, Loader2, ScrollText, Upload } from "lucide-react";
+import { Loader2, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme-provider";
 import {
@@ -60,21 +60,6 @@ function clock(iso: string) {
     }).format(new Date(iso));
 }
 
-async function downloadSheet(path: string, filename: string) {
-    const res = await fetch(path);
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(typeof data.error === "string" ? data.error : "Could not download the sheet.");
-    }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-}
-
 export default function ConcernLog() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
@@ -82,7 +67,6 @@ export default function ConcernLog() {
     const [rows, setRows] = useState<LogRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [importing, setImporting] = useState(false);
     const [savingId, setSavingId] = useState<string | null>(null);
 
     const load = useCallback(async (selected: string) => {
@@ -125,30 +109,6 @@ export default function ConcernLog() {
         }
     };
 
-    const upload = async (file: File) => {
-        setImporting(true);
-        try {
-            const body = new FormData();
-            body.set("file", file);
-            const res = await fetch("/api/reports/log/import", { method: "POST", body });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not import the sheet.");
-            const imported = typeof data.imported === "number" ? data.imported : 0;
-            const problems = Array.isArray(data.errors) ? data.errors as { row: number; message: string }[] : [];
-            if (imported > 0) toast.success(`Imported ${imported} concern${imported === 1 ? "" : "s"}.`);
-            if (problems.length > 0) {
-                toast.error(problems.slice(0, 3).map((problem) => problem.row ? `Row ${problem.row}: ${problem.message}` : problem.message).join(" "));
-            } else if (imported === 0) {
-                toast.error("No concerns were imported.");
-            }
-            await load(date);
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Could not import the sheet.");
-        } finally {
-            setImporting(false);
-        }
-    };
-
     const card = isDark ? "bg-[#06382b] border-emerald-500/20 text-white" : "bg-white border-emerald-200 text-[#064e3b]";
     const muted = isDark ? "text-white/50" : "text-gray-500";
     const field = `h-10 rounded-lg border px-3 text-sm ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-gray-200 text-gray-800"}`;
@@ -163,28 +123,11 @@ export default function ConcernLog() {
                         </div>
                         <div>
                             <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>Concern Log</h1>
-                            <p className={`text-sm mt-1 ${muted}`}>The barangay sheet for this day. Change the status here, or upload and download the same columns.</p>
+                            <p className={`text-sm mt-1 ${muted}`}>Concerns encoded for this day. Change the status here.</p>
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={field} aria-label="Log date" />
-                        <button type="button" className={`h-10 px-3 rounded-lg border text-sm font-medium inline-flex items-center gap-1.5 ${isDark ? "border-white/10 hover:bg-white/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} onClick={() => downloadSheet("/api/reports/log/export?template=1", "PAYATAS SPEAK UP.xlsx").catch((err) => toast.error(err.message))}>
-                            <FileSpreadsheet className="h-4 w-4" />
-                            Blank sheet
-                        </button>
-                        <button type="button" className={`h-10 px-3 rounded-lg border text-sm font-medium inline-flex items-center gap-1.5 ${isDark ? "border-white/10 hover:bg-white/5" : "border-gray-200 bg-white hover:bg-gray-50"}`} onClick={() => downloadSheet(`/api/reports/log/export?date=${date}`, `PAYATAS SPEAK UP ${date}.xlsx`).catch((err) => toast.error(err.message))}>
-                            <Download className="h-4 w-4" />
-                            Download this day
-                        </button>
-                        <label className={`h-10 px-3 rounded-lg text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer bg-[#059669] text-white hover:bg-[#047857] ${importing ? "opacity-70 pointer-events-none" : ""}`}>
-                            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            Upload Excel
-                            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                event.target.value = "";
-                                if (file) void upload(file);
-                            }} />
-                        </label>
                     </div>
                 </div>
 
@@ -197,7 +140,7 @@ export default function ConcernLog() {
                     ) : error ? (
                         <p className="p-6 text-sm text-red-500">{error}</p>
                     ) : rows.length === 0 ? (
-                        <p className={`p-6 text-sm ${muted}`}>No encoded concerns on this day. Upload a filled sheet, or add one in Encode Report.</p>
+                        <p className={`p-6 text-sm ${muted}`}>No encoded concerns on this day. Add one in Encode Report.</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-[1500px] w-full text-left text-xs">

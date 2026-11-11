@@ -16,7 +16,7 @@ import {
     Map,
     UserRound,
     ClipboardPen,
-    ScrollText,
+    BarChart3,
 } from "lucide-react";
 
 interface NavItem {
@@ -78,7 +78,7 @@ export default function BottomNav() {
                     { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
                     { href: "/staff", label: "Verify", icon: Shield },
                     { href: "/staff/intake", label: "Encode", icon: ClipboardPen },
-                    { href: "/staff/log", label: "Log", icon: ScrollText },
+                    { href: "/staff/summary", label: "Summary", icon: BarChart3 },
                 ];
             case "admin":
                 return [
