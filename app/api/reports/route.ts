@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { classifyReport } from "@/lib/classification";
+import { predictWithHF } from "@/lib/huggingface";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { addNotification, fetchIntakeSummaries, INTAKE_DETAILS_TABLE, normalizeActionHistory } from "@/lib/server-db";
 import { getReportsListLimitCap } from "@/lib/api-session";
@@ -113,6 +114,18 @@ export async function POST(request: Request) {
       },
     ];
 
+    // Hugging Face Random Forest Classification (with local fallback)
+    let aiCategory = classifyReport(description || "");
+    let hfPrediction: Awaited<ReturnType<typeof predictWithHF>> = null;
+    try {
+      hfPrediction = await predictWithHF(description || "");
+      if (hfPrediction?.category) {
+        aiCategory = hfPrediction.category;
+      }
+    } catch (_hfErr) {
+      // Local fallback already assigned
+    }
+
     const { data, error } = await getSupabaseAdmin()
       .from("reports")
       .insert({
@@ -127,7 +140,7 @@ export async function POST(request: Request) {
         verification_status: "unreviewed",
         is_flagged: modResult.flagged,
         flag_reason: modResult.flagged ? modResult.reasons.join("; ") : null,
-        ai_category: classifyReport(description || ""),
+        ai_category: aiCategory,
         submitted_at: now,
         action_history: actionHistory,
         photo_url: cleanedPhotoUrl,
@@ -143,6 +156,23 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json({ error: error?.message ?? "Failed to create report" }, { status: 500 });
+    }
+
+    // --- Hugging Face AI enrichment (urgency + department routing) ---
+    if (hfPrediction && data.id) {
+      try {
+        const enrichment: Record<string, unknown> = {};
+        if (hfPrediction.urgency)    enrichment.ai_urgency    = hfPrediction.urgency;
+        if (hfPrediction.department) enrichment.ai_department = hfPrediction.department;
+        if (Object.keys(enrichment).length > 0) {
+          await getSupabaseAdmin()
+            .from("reports")
+            .update(enrichment)
+            .eq("id", data.id);
+        }
+      } catch (_hfErr) {
+        // Enrichment is best-effort; never block response
+      }
     }
 
     // Demographics are optional; never fail the report because of them.

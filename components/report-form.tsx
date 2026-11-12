@@ -188,12 +188,34 @@ export default function ReportForm() {
     ];
 
     useEffect(() => {
-        if (autoCategory && description.length > 5) {
-            const suggested = classifyReport(description);
-            if (suggested !== "other") {
-                setCategory(suggested);
-            }
+        if (!autoCategory || description.trim().length <= 5) return;
+
+        // Immediate local classification for instant responsiveness
+        const immediate = classifyReport(description);
+        if (immediate !== "other") {
+            setCategory(immediate);
         }
+
+        // Asynchronous Hugging Face AI classification with 400ms debounce
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch("/api/classify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ description }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.category && data.category !== "other" && (data.confidence == null || data.confidence > 0.3)) {
+                        setCategory(data.category);
+                    }
+                }
+            } catch {
+                // Keep local suggestion
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
     }, [description, autoCategory]);
 
     useEffect(() => {

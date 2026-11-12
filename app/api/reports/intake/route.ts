@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { classifyReport } from "@/lib/classification";
+import { predictWithHF } from "@/lib/huggingface";
 import { requireStaffSession } from "@/lib/api-session";
 import { isWithinPayatas, PAYATAS_CENTER } from "@/lib/payatas-boundary";
 import { addNotification, INTAKE_DETAILS_TABLE, MISSING_MIGRATION_MESSAGE } from "@/lib/server-db";
@@ -163,6 +164,16 @@ export async function POST(request: Request) {
       });
     }
 
+    let aiCategory = classifyReport(description);
+    try {
+      const hf = await predictWithHF(description, typeof area === "string" ? area : undefined);
+      if (hf?.category) {
+        aiCategory = hf.category;
+      }
+    } catch {
+      // Local fallback already assigned
+    }
+
     const { data: report, error: reportError } = await supabase
       .from("reports")
       .insert({
@@ -178,7 +189,7 @@ export async function POST(request: Request) {
         verification_status: "valid",
         verified_at: nowIso,
         is_flagged: false,
-        ai_category: classifyReport(description),
+        ai_category: aiCategory,
         created_at: receivedIso,
         submitted_at: receivedIso,
         action_history: actionHistory,

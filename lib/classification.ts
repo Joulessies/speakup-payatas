@@ -136,36 +136,17 @@ const SLANG_MAP: Record<string, string> = {
 };
 
 function tagalogStem(word: string): string {
-    let w = word.toLowerCase().trim();
+    const w = word.toLowerCase().trim();
     if (w.length <= 4) return w;
 
+    // Conservative verbal prefix stripping (only for long verbal forms)
     const prefixes = [
         "nagkaka", "nakaka", "pinagka", "ipinag", "magpa", "pagka",
-        "nagka", "naka", "maki", "naki", "paki", "nag", "mag", "pag",
-        "pan", "pam", "pang", "ipa", "ika", "ma", "na", "ka"
+        "nagka", "naka", "maki", "naki", "paki", "nag", "mag", "pag"
     ];
     for (const p of prefixes) {
-        if (w.startsWith(p) && w.length - p.length >= 3) {
-            w = w.slice(p.length);
-            break;
-        }
-    }
-
-    if (w.length >= 6 && (w.startsWith("bum") || w.startsWith("bin"))) {
-        w = w[0] + w.slice(3);
-    } else if (w.length >= 7 && (w.slice(1, 3) === "um" || w.slice(1, 3) === "in")) {
-        w = w[0] + w.slice(3);
-    }
-
-    if (w.length >= 6 && w.slice(0, 2) === w.slice(2, 4)) {
-        w = w.slice(2);
-    }
-
-    const suffixes = ["han", "hin", "an", "in"];
-    for (const s of suffixes) {
-        if (w.endsWith(s) && w.length - s.length >= 3) {
-            w = w.slice(0, -s.length);
-            break;
+        if (w.startsWith(p) && w.length - p.length >= 4) {
+            return w.slice(p.length);
         }
     }
 
@@ -183,11 +164,7 @@ function cleanAndNormalizeTokens(text: string): string[] {
     const tokens: string[] = [];
     for (const rw of rawWords) {
         const expanded = SLANG_MAP[rw] || rw;
-        tokens.push(expanded);
-        const stem = tagalogStem(expanded);
-        if (stem !== expanded && stem.length >= 3) {
-            tokens.push(stem);
-        }
+        tokens.push(tagalogStem(expanded));
     }
     return tokens;
 }
@@ -220,6 +197,16 @@ function predictTrainedModel(description: string): { category: ReportCategory; c
             const bigram = `${words[i]} ${words[i + 1]}`;
             if (model.vocabulary[bigram] !== undefined) {
                 const idx = model.vocabulary[bigram];
+                termCounts[idx] = (termCounts[idx] || 0) + 1;
+                matchedFeatures++;
+            }
+        }
+
+        // Trigram
+        if (i < words.length - 2) {
+            const trigram = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
+            if (model.vocabulary[trigram] !== undefined) {
+                const idx = model.vocabulary[trigram];
                 termCounts[idx] = (termCounts[idx] || 0) + 1;
                 matchedFeatures++;
             }
@@ -374,4 +361,27 @@ export function classifyReportWithConfidence(description: string): {
         is_ai_trained: false,
         model_type: "Rule-Based Keyword Fallback",
     };
+}
+
+/**
+ * Server-side classification that tries the HF Space first, then falls back
+ * to the local classifier.  Import this in server-side code (API routes,
+ * server components) — never in client components, since it uses `fetch`
+ * against a server-side env var.
+ *
+ * NOTE: This is an async function because it makes a network call.
+ */
+export async function classifyReportWithHF(
+    description: string,
+    area?: string,
+): Promise<{
+    category: ReportCategory;
+    confidence: number;
+    urgency: string | null;
+    department: string | null;
+    source: string;
+}> {
+    // Dynamic import to avoid pulling server-only code into client bundles
+    const { classifyViaHF } = await import("@/lib/huggingface");
+    return classifyViaHF(description, area);
 }
