@@ -22,6 +22,7 @@ import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
 import { isWithinPayatas, PRESENTATION_MODE } from "@/lib/payatas-boundary";
 import { detectPlatform, type PlatformInfo } from "@/lib/geolocation-help";
+import { trackEvent } from "@/lib/posthog";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
     ssr: false,
@@ -508,6 +509,7 @@ export default function ReportForm() {
         };
         if (!online) {
             await db.reports.add(report);
+            trackEvent("report_submitted", { category, severity, online: false });
             toast.info(t.toastSavedOffline);
             playSubmitSound();
             setReceiptId(nextReceiptId);
@@ -527,6 +529,7 @@ export default function ReportForm() {
                 report.is_synced = 1;
                 report.synced_at = new Date().toISOString();
                 await db.reports.add(report);
+                trackEvent("report_submitted", { category, severity, online: true });
                 toast.success(t.toastReportSubmitted);
                 playSubmitSound();
                 setReceiptId(nextReceiptId);
