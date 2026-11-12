@@ -54,5 +54,5 @@ __pycache__/
 
 # security test runs & scanner artifacts
 strix_runs/
-reports/
+/reports/
 

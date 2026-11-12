@@ -174,6 +174,11 @@ export async function POST(request: Request) {
       // Local fallback already assigned
     }
 
+    const cleanedPhotoUrl =
+      typeof body.photo_url === "string" && body.photo_url.trim().length > 0
+        ? (body.photo_url.length > 3_000_000 ? null : body.photo_url.trim())
+        : null;
+
     const { data: report, error: reportError } = await supabase
       .from("reports")
       .insert({
@@ -185,6 +190,7 @@ export async function POST(request: Request) {
         latitude: hasPin ? latitude : PAYATAS_CENTER.lat,
         longitude: hasPin ? longitude : PAYATAS_CENTER.lng,
         severity,
+        photo_url: cleanedPhotoUrl,
         status: initialStatus,
         verification_status: "valid",
         verified_at: nowIso,
