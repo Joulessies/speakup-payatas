@@ -1,0 +1,24 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.env": true,
+    "**/.env.local": true,
+    "**/.env.*.local": true,
+    "**/.env.development": true,
+    "**/.env.test": true,
+    "**/.env.production": true
+  },
+  "search.exclude": {
+    "**/.env": true,
+    "**/.env.local": true,
+    "**/.env.*.local": true,
+    "**/.env.development": true,
+    "**/.env.test": true,
+    "**/.env.production": true
+  }
+}
