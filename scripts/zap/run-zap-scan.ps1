@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Runs OWASP ZAP Baseline Pentesting Scan against the SpeakUp Payatas web application.
 
@@ -19,9 +19,12 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Resolve paths
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = (Get-Item $ScriptDir).Parent.Parent.FullName
-$ReportDir = Join-Path $ProjectDir "reports\zap"
+$ReportDir = Join-Path $ProjectDir "reports"
+$ReportDir = Join-Path $ReportDir "zap"
 
 if (-not (Test-Path $ReportDir)) {
     New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
@@ -32,14 +35,14 @@ $HtmlReport = "zap-report-$Timestamp.html"
 $JsonReport = "zap-report-$Timestamp.json"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " SpeakUp Payatas — OWASP ZAP Automated Pentesting Scan" -ForegroundColor Cyan
+Write-Host " SpeakUp Payatas - OWASP ZAP Automated Pentesting Scan" -ForegroundColor Cyan
 Write-Host " Target URL: $TargetUrl" -ForegroundColor Yellow
 Write-Host " Report Dir: $ReportDir" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # Check if Docker is available
 try {
-    docker version | Out-Null
+    $null = docker version 2>&1
 } catch {
     Write-Host "[!] Docker is not running or not installed." -ForegroundColor Red
     Write-Host "    Please start Docker Desktop to run the automated ZAP container." -ForegroundColor Yellow
@@ -50,16 +53,25 @@ try {
 Write-Host "[+] Pulling latest OWASP ZAP stable container..." -ForegroundColor Green
 docker pull zaproxy/zap-stable:latest
 
-Write-Host "[+] Executing ZAP Baseline Scan..." -ForegroundColor Green
-docker run --rm `
-    -v "${ReportDir}:/zap/wrk/:rw" `
-    -t zaproxy/zap-stable `
-    zap-baseline.py `
-    -t $TargetUrl `
-    -g gen.conf `
-    -r $HtmlReport `
-    -J $JsonReport `
-    -I
+# Convert path format for Docker volume mount on Windows
+$DockerMountPath = $ReportDir.Replace('\', '/')
+$VolumeArg = "${DockerMountPath}:/zap/wrk/:rw"
+
+Write-Host "[+] Executing ZAP Baseline Scan against $TargetUrl..." -ForegroundColor Green
+
+$zapArgs = @(
+    "run", "--rm",
+    "-v", $VolumeArg,
+    "-t", "zaproxy/zap-stable",
+    "zap-baseline.py",
+    "-t", $TargetUrl,
+    "-g", "gen.conf",
+    "-r", $HtmlReport,
+    "-J", $JsonReport,
+    "-I"
+)
+
+& docker $zapArgs
 
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host "[SUCCESS] Pentesting scan completed!" -ForegroundColor Green
