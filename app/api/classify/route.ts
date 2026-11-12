@@ -14,14 +14,17 @@ import { classifyReportWithConfidence } from "@/lib/classification";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { description, area } = body as { description?: string; area?: string };
+    const rawText = (body.description || body.text || "") as string;
+    const area = (body.area || "") as string;
 
-    if (!description || typeof description !== "string" || description.trim().length === 0) {
-      return NextResponse.json({ error: "Missing or empty 'description'" }, { status: 400 });
+    if (!rawText || typeof rawText !== "string" || rawText.trim().length === 0) {
+      return NextResponse.json({ error: "Missing or empty 'description' or 'text'" }, { status: 400 });
     }
 
+    const description = rawText.trim();
+
     // Try the HF Space first
-    const hf = await predictWithHF(description.trim(), area);
+    const hf = await predictWithHF(description, area);
 
     if (hf) {
       return NextResponse.json({

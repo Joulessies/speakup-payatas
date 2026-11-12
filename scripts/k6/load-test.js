@@ -49,6 +49,7 @@ export default function () {
   // ── 2. Test Random Forest AI Classification API ──
   const randomSample = SAMPLE_REPORTS[Math.floor(Math.random() * SAMPLE_REPORTS.length)];
   const classifyPayload = JSON.stringify({
+    description: randomSample.text,
     text: randomSample.text,
     area: randomSample.area,
   });
@@ -95,3 +96,4 @@ export default function () {
 
   sleep(1);
 }
+

@@ -22,8 +22,12 @@ const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || proc
 const HF_MODEL_ID = process.env.HF_MODEL_ID || "facebook/bart-large-mnli";
 const HF_SPACE_URL = process.env.HF_SPACE_URL || process.env.NEXT_PUBLIC_HF_SPACE_URL || "https://joulessies-speakup-payatas-classifier.hf.space";
 
-/** Timeout in ms for HF requests. */
-const HF_TIMEOUT_MS = 6_000;
+/** Timeout in ms for HF requests. Kept lean so stress bursts never freeze server. */
+const HF_TIMEOUT_MS = 1_500;
+
+/** Circuit breakers to prevent socket exhaustion during heavy traffic. */
+let spaceDownUntil = 0;
+let inferenceDownUntil = 0;
 
 /** Candidate labels mapped to official SpeakUp Payatas categories. */
 export const CANDIDATE_LABELS_MAP: { label: string; key: ReportCategory }[] = [
@@ -129,73 +133,81 @@ async function callInferenceApi(
   area: string,
   signal: AbortSignal,
 ): Promise<HFPrediction | null> {
+  if (Date.now() < inferenceDownUntil) {
+    return null;
+  }
+
   const url = `https://router.huggingface.co/hf-inference/models/${HF_MODEL_ID}`;
   const candidateLabels = CANDIDATE_LABELS_MAP.map((c) => c.label);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${HF_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      inputs: description,
-      parameters: { candidate_labels: candidateLabels },
-    }),
-    signal,
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${HF_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: description,
+        parameters: { candidate_labels: candidateLabels },
+      }),
+      signal,
+    });
 
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => "");
-    console.warn(`[HF Inference API] Error ${res.status}: ${errorText}`);
-    return null;
-  }
-
-  const data = (await res.json()) as {
-    labels: string[];
-    scores: number[];
-  };
-
-  if (!data.labels || !data.scores || data.labels.length === 0) {
-    return null;
-  }
-
-  // Top category
-  const topLabel = data.labels[0];
-  const matched = CANDIDATE_LABELS_MAP.find((c) => c.label === topLabel);
-  const categoryKey: ReportCategory = matched ? matched.key : "other";
-  const confidence = Math.round((data.scores[0] || 0) * 1000) / 1000;
-
-  // Build probability map
-  const allProbs: Record<string, number> = {};
-  for (let i = 0; i < data.labels.length; i++) {
-    const item = CANDIDATE_LABELS_MAP.find((c) => c.label === data.labels[i]);
-    if (item) {
-      allProbs[item.key] = Math.round((data.scores[i] || 0) * 1000) / 1000;
+    if (!res.ok) {
+      inferenceDownUntil = Date.now() + 30_000;
+      return null;
     }
+
+    const data = (await res.json()) as {
+      labels: string[];
+      scores: number[];
+    };
+
+    if (!data.labels || !data.scores || data.labels.length === 0) {
+      return null;
+    }
+
+    // Top category
+    const topLabel = data.labels[0];
+    const matched = CANDIDATE_LABELS_MAP.find((c) => c.label === topLabel);
+    const categoryKey: ReportCategory = matched ? matched.key : "other";
+    const confidence = Math.round((data.scores[0] || 0) * 1000) / 1000;
+
+    // Build probability map
+    const allProbs: Record<string, number> = {};
+    for (let i = 0; i < data.labels.length; i++) {
+      const item = CANDIDATE_LABELS_MAP.find((c) => c.label === data.labels[i]);
+      if (item) {
+        allProbs[item.key] = Math.round((data.scores[i] || 0) * 1000) / 1000;
+      }
+    }
+
+    // Routing and Urgency
+    let department = CATEGORY_DEPT_MAP[categoryKey] || "Secretary";
+    const normalizedArea = area.trim().toUpperCase();
+    if (
+      normalizedArea &&
+      AREA_BASE_MAP[normalizedArea] &&
+      ["safety_concern", "threats_harassment", "noise_nuisance"].includes(categoryKey)
+    ) {
+      department = AREA_BASE_MAP[normalizedArea];
+    }
+
+    const urgency = CATEGORY_URGENCY_MAP[categoryKey] || "MEDIUM";
+
+    return {
+      category: categoryKey,
+      urgency,
+      department,
+      confidence,
+      all_probabilities: allProbs,
+      source: `Hugging Face Inference API (${HF_MODEL_ID})`,
+    };
+  } catch {
+    inferenceDownUntil = Date.now() + 30_000;
+    return null;
   }
-
-  // Routing and Urgency
-  let department = CATEGORY_DEPT_MAP[categoryKey] || "Secretary";
-  const normalizedArea = area.trim().toUpperCase();
-  if (
-    normalizedArea &&
-    AREA_BASE_MAP[normalizedArea] &&
-    ["safety_concern", "threats_harassment", "noise_nuisance"].includes(categoryKey)
-  ) {
-    department = AREA_BASE_MAP[normalizedArea];
-  }
-
-  const urgency = CATEGORY_URGENCY_MAP[categoryKey] || "MEDIUM";
-
-  return {
-    category: categoryKey,
-    urgency,
-    department,
-    confidence,
-    all_probabilities: allProbs,
-    source: `Hugging Face Inference API (${HF_MODEL_ID})`,
-  };
 }
 
 /**
@@ -206,34 +218,43 @@ async function callSpaceApi(
   area: string,
   signal: AbortSignal,
 ): Promise<HFPrediction | null> {
-  const res = await fetch(`${HF_SPACE_URL}/api/predict`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: description, area }),
-    signal,
-  });
-
-  if (!res.ok) {
-    console.warn(`[HF Space API] Space returned ${res.status}: ${res.statusText}`);
+  if (Date.now() < spaceDownUntil) {
     return null;
   }
 
-  const data = (await res.json()) as {
-    category: string;
-    urgency: string;
-    department: string;
-    confidence: number;
-    all_probabilities: Record<string, number>;
-  };
+  try {
+    const res = await fetch(`${HF_SPACE_URL}/api/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: description, area }),
+      signal,
+    });
 
-  return {
-    category: data.category as ReportCategory,
-    urgency: data.urgency,
-    department: data.department,
-    confidence: data.confidence,
-    all_probabilities: data.all_probabilities,
-    source: "Hugging Face Space (Random Forest)",
-  };
+    if (!res.ok) {
+      spaceDownUntil = Date.now() + 30_000;
+      return null;
+    }
+
+    const data = (await res.json()) as {
+      category: string;
+      urgency: string;
+      department: string;
+      confidence: number;
+      all_probabilities: Record<string, number>;
+    };
+
+    return {
+      category: data.category as ReportCategory,
+      urgency: data.urgency,
+      department: data.department,
+      confidence: data.confidence,
+      all_probabilities: data.all_probabilities,
+      source: "Hugging Face Space (Random Forest)",
+    };
+  } catch {
+    spaceDownUntil = Date.now() + 30_000;
+    return null;
+  }
 }
 
 /**

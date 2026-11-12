@@ -29,6 +29,7 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 export default function () {
   const payload = JSON.stringify({
+    description: "May sunog po sa may bandang Phase 3 malapit sa talipapa tulong!",
     text: "May sunog po sa may bandang Phase 3 malapit sa talipapa tulong!",
     area: "Phase 3",
   });
@@ -46,3 +47,4 @@ export default function () {
 
   sleep(0.5);
 }
+
