@@ -13,6 +13,7 @@ import {
     NATURE_OF_CONCERN_LABELS,
     type EocStatus,
 } from "@/types";
+import posthog from "posthog-js";
 
 function urgencyText(severity: number) {
     if (severity >= 4) return "High";
@@ -101,6 +102,12 @@ export default function ConcernLog() {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not update the status.");
+            if (posthog.__loaded) {
+                posthog.capture("concern_log_status_updated", {
+                    previous_status: previous,
+                    status: eocStatus,
+                });
+            }
         } catch (err) {
             setRows((current) => current.map((item) => item.id === row.id ? { ...item, eoc_status: previous } : item));
             toast.error(err instanceof Error ? err.message : "Could not update the status.");

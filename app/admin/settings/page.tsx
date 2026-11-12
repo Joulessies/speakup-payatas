@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import posthog from "posthog-js";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { User, Lock, Palette, Globe, Eye, EyeOff, LogOut, AlertTriangle, Loader2, Info } from "lucide-react";
@@ -74,6 +75,9 @@ export default function AccountSettingsPage() {
         } catch (error) {
             console.error("Logout error", error);
         } finally {
+            if (posthog.__loaded) {
+                posthog.reset();
+            }
             setLoading(false);
             window.location.href = "/login";
         }

@@ -7,7 +7,6 @@ import { LanguageProvider } from "@/components/language-provider";
 import NavBar from "@/components/nav-bar";
 import SidebarNav from "@/components/sidebar-nav";
 import BottomNav from "@/components/bottom-nav";
-import { PostHogProvider } from "@/components/posthog-provider";
 import { Toaster } from "sonner";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, verifyAuthToken, type UserRole } from "@/lib/auth";
@@ -58,19 +57,17 @@ export default async function RootLayout({ children }: Readonly<{
                 <link rel="apple-touch-icon" href="/payatas-logo.png" />
             </head>
             <body className="h-dvh overflow-hidden flex flex-col md:flex-row font-sans">
-                <PostHogProvider>
-                    <ThemeProvider>
-                        <LanguageProvider>
-                            {isLoggedIn && useSidebar && <SidebarNav />}
-                            {isLoggedIn && !useSidebar && <NavBar />}
-                            <main className={`flex-1 min-h-0 h-full overflow-y-auto ${isLoggedIn ? "pb-14 md:pb-0" : "pb-0"}`}>
-                                {children}
-                            </main>
-                            {isLoggedIn && useSidebar && <BottomNav />}
-                            <Toaster richColors position="top-center" />
-                        </LanguageProvider>
-                    </ThemeProvider>
-                </PostHogProvider>
+                <ThemeProvider>
+                    <LanguageProvider>
+                        {isLoggedIn && useSidebar && <SidebarNav />}
+                        {isLoggedIn && !useSidebar && <NavBar />}
+                        <main className={`flex-1 min-h-0 h-full overflow-y-auto ${isLoggedIn ? "pb-14 md:pb-0" : "pb-0"}`}>
+                            {children}
+                        </main>
+                        {isLoggedIn && useSidebar && <BottomNav />}
+                        <Toaster richColors position="top-center" />
+                    </LanguageProvider>
+                </ThemeProvider>
             </body>
         </html>
     );

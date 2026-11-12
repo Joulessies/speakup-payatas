@@ -12,6 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import StatusUpdateDialog, { type StaffStatus } from "@/components/status-update-dialog";
 import { ImageLightbox } from "@/components/image-lightbox";
+import posthog from "posthog-js";
 
 const STATUS_OPTIONS = [
     { value: "pending", label: "Pending", color: "text-amber-500" },
@@ -227,6 +228,15 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             });
 
             const data = await res.json().catch(() => ({ error: "Server error" }));
+            if (!res.ok) {
+                throw new Error(typeof data?.error === "string" ? data.error : "Verification update failed.");
+            }
+            if (posthog.__loaded) {
+                posthog.capture("report_verification_updated", {
+                    verification_status: status,
+                    operation: "single",
+                });
+            }
 
             const statusLabels: Record<string, string> = {
                 unreviewed: "Unreviewed",
@@ -272,6 +282,9 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                 }),
             });
             if (res.ok) {
+                if (posthog.__loaded) {
+                    posthog.capture("report_rejected");
+                }
                 toast.success("Report rejected & removed from queue", {
                     description: "User notification dispatched."
                 });
@@ -300,7 +313,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
         if (!note) return;
         setSaving(`note_${reportId}`);
         try {
-            await fetch("/api/reports/notes", {
+            const res = await fetch("/api/reports/notes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -310,6 +323,10 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                     content: note,
                 }),
             });
+            if (!res.ok) throw new Error("Could not add note.");
+            if (posthog.__loaded) {
+                posthog.capture("report_note_added");
+            }
             setNotes({ ...notes, [reportId]: "" });
             setExpandedNote(null);
             // Optionally reload notes
@@ -323,7 +340,7 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
         if (role !== "admin") return;
         setSaving(reportId);
         try {
-            await fetch("/api/reports", {
+            const res = await fetch("/api/reports", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -332,6 +349,10 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
                     actor: "Admin",
                 }),
             });
+            if (!res.ok) throw new Error("Could not override category.");
+            if (posthog.__loaded) {
+                posthog.capture("report_category_overridden", { category: newCategory });
+            }
             await loadReports();
         } catch { }
         finally {
@@ -361,6 +382,13 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             const data = await res.json().catch(() => ({ error: "Server error" }));
             if (!res.ok) {
                 throw new Error(typeof data?.error === "string" ? data.error : "Status update failed.");
+            }
+            if (posthog.__loaded) {
+                posthog.capture("report_status_updated", {
+                    status,
+                    has_note: Boolean(note),
+                    has_photo: Boolean(photoDataUrl),
+                });
             }
             toast.success(`Report marked as ${status.replace("_", " ")}`, {
                 description: photoDataUrl ? "Photo attached to the action history." : undefined,
@@ -399,6 +427,13 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
             });
 
             await Promise.all(promises);
+            if (posthog.__loaded) {
+                posthog.capture("report_verification_updated", {
+                    verification_status: status,
+                    operation: "bulk",
+                    report_count: count,
+                });
+            }
 
             const statusLabels: Record<string, string> = {
                 valid: "Valid",
@@ -465,6 +500,14 @@ export default function VerificationPanel({ role }: { role: "admin" | "staff" })
         a.download = `reports-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
+        if (posthog.__loaded) {
+            posthog.capture("reports_exported", {
+                verification_queue: filter,
+                category_filter: categoryFilter,
+                sort_by: sortBy,
+                report_count: data.length,
+            });
+        }
     };
 
     const allCategories = Array.from(new Set(reports.flatMap(r => [r.category, r.admin_category].filter(Boolean))));

@@ -6,6 +6,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 
 interface Props {
     reportId: string;
@@ -76,6 +77,12 @@ export default function ReportFeedback({ reportId, defaultOpen = false }: Props)
             const data = await res.json();
             if (!res.ok) throw new Error(data?.error || "Could not save feedback.");
             setExisting({ rating, comment, updated_at: new Date().toISOString() });
+            if (posthog.__loaded) {
+                posthog.capture("report_feedback_submitted", {
+                    rating,
+                    is_update: Boolean(existing),
+                });
+            }
             toast.success(existing ? "Feedback updated. Thank you!" : "Feedback submitted. Thank you!");
             if (!defaultOpen) setOpen(false);
         } catch (err) {

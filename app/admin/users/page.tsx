@@ -4,6 +4,7 @@ import { Loader2, Trash2, Plus, X, UserX, ShieldOff } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import posthog from "posthog-js";
 
 interface User {
     id: string;
@@ -55,6 +56,12 @@ export default function AdminUsersPage() {
         try {
             const res = await fetch(`/api/users?id=${id}`, { method: "DELETE" });
             if (res.ok) {
+                const deletedUser = users.find((user) => user.id === id);
+                if (posthog.__loaded) {
+                    posthog.capture("user_account_deleted", {
+                        account_role: deletedUser?.role ?? "unknown",
+                    });
+                }
                 toast.success("User deleted successfully");
                 setUsers(users.filter((u) => u.id !== id));
             } else {
@@ -91,6 +98,9 @@ export default function AdminUsersPage() {
             const data = await res.json();
 
             if (res.ok) {
+                if (!editingUser && posthog.__loaded) {
+                    posthog.capture("staff_account_created", { account_role: formData.role });
+                }
                 toast.success(editingUser ? "User updated" : "User created");
                 setIsModalOpen(false);
                 loadUsers();
@@ -117,6 +127,9 @@ export default function AdminUsersPage() {
             });
             const data = await res.json();
             if (res.ok) {
+                if (posthog.__loaded) {
+                    posthog.capture("user_account_suspended", { offense_level: offenseNumber });
+                }
                 const labels = { 1: "24-hour suspension", 2: "3-day suspension", 3: "permanent block" };
                 toast.success(`User given ${labels[offenseNumber]}`);
                 setSuspendTarget(null);

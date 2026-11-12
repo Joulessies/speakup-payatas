@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { emitPosthogLog } from "@/lib/posthog-logs";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 function configErrorResponse(err: unknown) {
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
             if (error || !data) {
                 return NextResponse.json({ error: error?.message ?? "Failed to save feedback" }, { status: 500 });
             }
+            emitPosthogLog("feedback saved", {
+                operation: "update",
+                rating: payload.rating,
+            });
             return NextResponse.json({ success: true, feedback: data, updated: true });
         }
 
@@ -59,6 +64,10 @@ export async function POST(request: Request) {
         if (error || !data) {
             return NextResponse.json({ error: error?.message ?? "Failed to save feedback" }, { status: 500 });
         }
+        emitPosthogLog("feedback saved", {
+            operation: "create",
+            rating: payload.rating,
+        });
         return NextResponse.json({ success: true, feedback: data }, { status: 201 });
     } catch (err) {
         if (err instanceof SyntaxError) {

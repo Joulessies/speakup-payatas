@@ -22,6 +22,7 @@ import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
 import { isWithinPayatas, PRESENTATION_MODE } from "@/lib/payatas-boundary";
 import { detectPlatform, type PlatformInfo } from "@/lib/geolocation-help";
+import posthog from "posthog-js";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
     ssr: false,
@@ -115,6 +116,15 @@ export default function ReportForm() {
             void ctx.close();
         };
     }, []);
+    const captureReportSubmitted = (submissionMode: "online" | "offline") => {
+        if (!posthog.__loaded) return;
+        posthog.capture("report_submitted", {
+            category,
+            severity,
+            has_photo: Boolean(photoPreview),
+            submission_mode: submissionMode,
+        });
+    };
     const generateReceiptId = useCallback(() => {
         const ts = Date.now().toString(36).toUpperCase();
         const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -509,6 +519,7 @@ export default function ReportForm() {
         if (!online) {
             await db.reports.add(report);
             toast.info(t.toastSavedOffline);
+            captureReportSubmitted("offline");
             playSubmitSound();
             setReceiptId(nextReceiptId);
             setSubmitting(false);
@@ -528,6 +539,7 @@ export default function ReportForm() {
                 report.synced_at = new Date().toISOString();
                 await db.reports.add(report);
                 toast.success(t.toastReportSubmitted);
+                captureReportSubmitted("online");
                 playSubmitSound();
                 setReceiptId(nextReceiptId);
                 setSubmitted(true);
@@ -542,6 +554,7 @@ export default function ReportForm() {
                 else {
                     await db.reports.add(report);
                     toast.info(t.toastSavedOffline);
+                    captureReportSubmitted("offline");
                     playSubmitSound();
                     setReceiptId(nextReceiptId);
                     setSubmitted(true);
@@ -553,6 +566,7 @@ export default function ReportForm() {
         catch {
             await db.reports.add(report);
             toast.info(t.toastSavedOffline);
+            captureReportSubmitted("offline");
             playSubmitSound();
             setReceiptId(nextReceiptId);
             setSubmitted(true);

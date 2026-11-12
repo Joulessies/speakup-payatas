@@ -4,6 +4,7 @@ import { Loader2, Star, MessageSquare, Send } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 
 export default function FeedbackPage() {
     const { theme } = useTheme();
@@ -29,6 +30,9 @@ export default function FeedbackPage() {
                 body: JSON.stringify({ reporter_hash: hash, rating, comment }),
             });
             if (res.ok) {
+                if (posthog.__loaded) {
+                    posthog.capture("platform_feedback_submitted", { rating });
+                }
                 setSubmitted(true);
                 toast.success("Thank you for your feedback!");
             } else {

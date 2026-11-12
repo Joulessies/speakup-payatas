@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { classifyReport } from "@/lib/classification";
+import { emitPosthogLog } from "@/lib/posthog-logs";
 import { predictWithHF } from "@/lib/huggingface";
 import { requireStaffSession } from "@/lib/api-session";
 import { isWithinPayatas, PAYATAS_CENTER } from "@/lib/payatas-boundary";
@@ -244,6 +245,13 @@ export async function POST(request: Request) {
       });
     }
 
+    emitPosthogLog("staff intake report created", {
+      source,
+      category,
+      severity,
+      initial_status: initialStatus,
+      location_known: hasPin,
+    });
     return NextResponse.json({ success: true, report }, { status: 201 });
   } catch (err) {
     return jsonFromCaught(err);

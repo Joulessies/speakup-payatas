@@ -1,6 +1,25 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { AUTH_COOKIE_NAME, verifyAuthToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getAllowedCredentials, verifyAuthToken } from "@/lib/auth";
+import { getUserByEmail, getUserByPhoneLast10 } from "@/lib/app-users";
+
+async function getLegacyUser(username: string, role: "admin" | "staff" | "user") {
+    if (username.includes("@")) {
+        return getUserByEmail(username);
+    }
+
+    const phoneLast10 = username.replace(/\D/g, "").slice(-10);
+    if (/^\d{10}$/.test(phoneLast10)) {
+        return getUserByPhoneLast10(phoneLast10);
+    }
+
+    if (role === "admin" || role === "staff") {
+        const credentials = getAllowedCredentials()[role];
+        return getUserByEmail(`${credentials.username}@speakup.local`);
+    }
+
+    return null;
+}
 
 export async function GET(request: Request) {
     void request;
@@ -29,10 +48,19 @@ export async function GET(request: Request) {
     if (!session) {
         return NextResponse.json({ authenticated: false }, { status: 401 });
     }
+    let user = null;
+    try {
+        user = await getLegacyUser(session.username, session.role);
+    } catch {
+        // Authentication remains valid if the profile database is temporarily unavailable.
+    }
+
     return NextResponse.json({
         authenticated: true,
         role: session.role,
         username: session.username,
+        email: user?.email,
+        id: user?.id,
         exp: session.exp,
     });
 }

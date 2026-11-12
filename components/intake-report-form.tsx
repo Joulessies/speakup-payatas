@@ -38,6 +38,7 @@ import {
     type NatureOfConcern,
     type ReportCategory,
 } from "@/types";
+import posthog from "posthog-js";
 
 const ReportLocationPicker = dynamic(() => import("@/components/report-location-picker"), {
     ssr: false,
@@ -254,6 +255,15 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                 return;
             }
             const receiptId = typeof data.report?.receipt_id === "string" ? data.report.receipt_id : "";
+            if (posthog.__loaded) {
+                posthog.capture("intake_report_created", {
+                    source: form.source,
+                    category: form.category,
+                    severity: form.severity,
+                    status: form.status,
+                    has_location: form.latitude !== null && form.longitude !== null,
+                });
+            }
             setSaved({ id: typeof data.report?.id === "string" ? data.report.id : "", receiptId });
             setForm(createEmptyForm());
             toast.success("Report encoded", receiptId ? { description: `Reference no. ${receiptId}` } : undefined);

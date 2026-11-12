@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { useTheme } from "./theme-provider";
 import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
@@ -60,6 +61,12 @@ export default function SidebarNav() {
                 const data = await res.json();
                 if (data?.authenticated) {
                     setSession({ role: data.role, username: data.username, reporter_hash: data.reporter_hash });
+                    if (typeof data.id === "string" && posthog.__loaded) {
+                        posthog.identify(data.id, {
+                            role: data.role,
+                            ...(typeof data.email === "string" && data.email ? { email: data.email } : {}),
+                        });
+                    }
                 } else {
                     setSession(null);
                 }
@@ -67,7 +74,7 @@ export default function SidebarNav() {
                 setSession(null);
             }
         })();
-    }, [pathname]);
+    }, []);
 
     const handleLogout = async () => {
         setLoggingOut(true);
@@ -75,6 +82,9 @@ export default function SidebarNav() {
             await fetch("/api/auth/logout", { method: "POST" });
         } catch {
         } finally {
+            if (posthog.__loaded) {
+                posthog.reset();
+            }
             setLoggingOut(false);
             setShowLogoutConfirm(false);
             window.location.href = "/login";

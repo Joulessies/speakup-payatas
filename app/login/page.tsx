@@ -14,6 +14,7 @@ import GoogleSignupDialog from "@/components/google-signup-dialog";
 import { getSupabaseBrowser } from "@/lib/supabase";
 import { safeNextPath } from "@/lib/safe-next-path";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthBg, type PasswordValidationResult } from "@/lib/password-validation";
+import posthog from "posthog-js";
 
 type AuthMode = "login" | "register";
 type AuthMethod = "password" | "sms_otp" | "email_otp";
@@ -260,6 +261,9 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<Reco
             if (!res.ok) {
                 throw new Error(data.error || "Invalid OTP code.");
             }
+            if (posthog.__loaded) {
+                posthog.capture("authentication_completed", { flow: mode, method: "sms_otp" });
+            }
             router.push(nextPath || data.redirect_to || "/dashboard");
             router.refresh();
         } catch (e) {
@@ -464,6 +468,9 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<Reco
                 localStorage.removeItem("speakup_remember_me");
             }
 
+            if (posthog.__loaded) {
+                posthog.capture("authentication_completed", { flow: mode, method: "password" });
+            }
             router.push(nextPath || data.redirect_to || "/dashboard");
             router.refresh();
         } catch (e) {

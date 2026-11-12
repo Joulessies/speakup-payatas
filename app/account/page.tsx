@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import {
     Loader2,
     UserRound,
@@ -69,6 +70,9 @@ export default function AccountSettingsPage() {
             toast.success("Logged out successfully");
         } catch {
         } finally {
+            if (posthog.__loaded) {
+                posthog.reset();
+            }
             setLoggingOutState(false);
             window.location.href = "/login";
         }
@@ -200,6 +204,9 @@ export default function AccountSettingsPage() {
                 throw new Error(data?.error || "Unable to complete request.");
             }
             toast.success(showDangerConfirm === "delete" ? "Account deleted." : "Account deactivated.");
+            if (posthog.__loaded) {
+                posthog.reset();
+            }
             window.location.href = "/login";
         } catch (err) {
             const msg = err instanceof Error ? err.message : "Something went wrong.";
