@@ -53,3 +53,4 @@ To test role-based access control (RBAC) across **Resident**, **Staff**, and **A
    - A super admin
 5. In the ZAP Sites tree, right-click `/api/reports/intake` or `/admin/users` and select **Attack -> Active Scan**.
 6. Check the **Alerts** tab for any unauthorized escalation or data leaks.
+

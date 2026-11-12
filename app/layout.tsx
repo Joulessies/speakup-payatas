@@ -28,9 +28,6 @@ export const metadata: Metadata = {
     },
     verification: {
         google: "GH8iAA7xBcqdI3Yih1g9xe36x7BLegL5z-qjozGh0cE",
-        other: {
-            "strix-verification": "strix-verify-29282743077cac0cf99b70d4658b72c9",
-        },
     },
 };
 
