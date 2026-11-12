@@ -11,6 +11,7 @@
     "train:ai": "node scripts/sync_db_reports.js && python scripts/train_ai_model.py",
     "test:load": "k6 run scripts/k6/load-test.js",
     "test:stress": "k6 run scripts/k6/stress-test.js",
+    "test:high-scale": "k6 run scripts/k6/high-scale-test.js",
     "test:security": "powershell -ExecutionPolicy Bypass -File scripts/zap/run-zap-scan.ps1"
   },
   "dependencies": {
