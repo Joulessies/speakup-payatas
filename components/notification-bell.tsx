@@ -4,7 +4,6 @@ import {
     Bell,
     X,
     Check,
-    AlertTriangle,
     ClipboardPen,
     FileWarning,
     RefreshCw,
@@ -213,26 +212,28 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
         startY: 0,
         startPosX: 0,
         startPosY: 0,
-        panelWidth: 384,
-        panelHeight: 500,
+        panelWidth: 380,
+        panelHeight: 460,
         currentX: 0,
         currentY: 0,
     });
 
-    // Initialize position from localStorage or default centered layout
+    // Initialize position from localStorage or smart laptop top-right docking
     useEffect(() => {
         if (!open || typeof window === "undefined") return;
 
         if (!position) {
             let loaded = false;
+            const modalWidth = Math.min(window.innerWidth * 0.92, 380);
+            const modalHeight = panelRef.current ? panelRef.current.offsetHeight : 460;
+            const maxX = Math.max(12, window.innerWidth - modalWidth - 16);
+            const maxY = Math.max(12, window.innerHeight - modalHeight - 16);
+
             try {
                 const saved = localStorage.getItem("speakup_notif_pos");
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     if (typeof parsed.x === "number" && typeof parsed.y === "number") {
-                        const modalWidth = Math.min(window.innerWidth * 0.95, 420);
-                        const maxX = Math.max(12, window.innerWidth - modalWidth - 12);
-                        const maxY = Math.max(12, window.innerHeight - 80);
                         const clampedX = Math.min(Math.max(12, parsed.x), maxX);
                         const clampedY = Math.min(Math.max(12, parsed.y), maxY);
                         setPosition({ x: clampedX, y: clampedY });
@@ -240,23 +241,27 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                     }
                 }
             } catch {
-                // Ignore parsing errors
+                // Ignore storage errors
             }
 
             if (!loaded) {
-                const modalWidth = Math.min(window.innerWidth * 0.95, 420);
-                const initialX = Math.max(12, (window.innerWidth - modalWidth) / 2);
-                const initialY = 56;
-                setPosition({ x: initialX, y: initialY });
+                // On laptops & desktop (>= 768px): dock cleanly in the top right corner
+                // On mobile (< 768px): center horizontally
+                const defaultX = window.innerWidth >= 768
+                    ? Math.max(16, window.innerWidth - modalWidth - 20)
+                    : Math.max(12, (window.innerWidth - modalWidth) / 2);
+                const defaultY = 60;
+                setPosition({ x: defaultX, y: defaultY });
             }
         }
 
         const handleResize = () => {
             setPosition((prev) => {
                 if (!prev) return null;
-                const modalWidth = panelRef.current ? panelRef.current.offsetWidth : Math.min(window.innerWidth * 0.95, 420);
-                const maxX = Math.max(12, window.innerWidth - modalWidth - 12);
-                const maxY = Math.max(12, window.innerHeight - 80);
+                const modalWidth = panelRef.current ? panelRef.current.offsetWidth : Math.min(window.innerWidth * 0.92, 380);
+                const modalHeight = panelRef.current ? panelRef.current.offsetHeight : 460;
+                const maxX = Math.max(12, window.innerWidth - modalWidth - 16);
+                const maxY = Math.max(12, window.innerHeight - modalHeight - 16);
                 return {
                     x: Math.min(Math.max(12, prev.x), maxX),
                     y: Math.min(Math.max(12, prev.y), maxY),
@@ -325,7 +330,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             }
 
             const maxX = Math.max(12, window.innerWidth - dragRef.current.panelWidth - 12);
-            const maxY = Math.max(12, window.innerHeight - 80);
+            const maxY = Math.max(12, window.innerHeight - dragRef.current.panelHeight - 12);
             const targetX = Math.min(Math.max(12, dragRef.current.startPosX + deltaX), maxX);
             const targetY = Math.min(Math.max(12, dragRef.current.startPosY + deltaY), maxY);
 
@@ -368,9 +373,11 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const resetPosition = () => {
         if (typeof window === "undefined") return;
-        const modalWidth = panelRef.current ? panelRef.current.offsetWidth : Math.min(window.innerWidth * 0.95, 420);
-        const initialX = Math.max(12, (window.innerWidth - modalWidth) / 2);
-        const initialY = 56;
+        const modalWidth = panelRef.current ? panelRef.current.offsetWidth : Math.min(window.innerWidth * 0.92, 380);
+        const initialX = window.innerWidth >= 768
+            ? Math.max(16, window.innerWidth - modalWidth - 20)
+            : Math.max(12, (window.innerWidth - modalWidth) / 2);
+        const initialY = 60;
         setPosition({ x: initialX, y: initialY });
         try {
             localStorage.removeItem("speakup_notif_pos");
@@ -556,7 +563,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                     if (!open) fetchNotifications();
                 }}
                 aria-label="Open notifications"
-                className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
+                className={`relative inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl transition-all ${
                     isDark
                         ? "text-white/70 hover:bg-white/[0.08] hover:text-white"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -564,24 +571,24 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[17px] h-4 px-1 text-[9px] font-extrabold text-white bg-gradient-to-r from-red-500 to-rose-600 rounded-full shadow-sm animate-pulse">
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-extrabold text-white bg-gradient-to-r from-red-500 to-rose-600 rounded-full shadow-sm animate-pulse">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 )}
             </button>
 
-            {/* Draggable Popover Panel */}
+            {/* Draggable Popover Panel - Laptop & Desktop Responsive */}
             {open && (
                 <div
                     ref={panelRef}
                     style={{
                         transform: position
                             ? `translate3d(${position.x}px, ${position.y}px, 0)`
-                            : "translate3d(calc(50vw - 50%), 56px, 0)",
+                            : "translate3d(calc(100vw - 396px), 60px, 0)",
                         willChange: isDragging ? "transform" : "auto",
                         transition: isDragging ? "none" : "box-shadow 0.2s, border-color 0.2s",
                     }}
-                    className={`fixed top-0 left-0 z-[999] w-[95vw] max-w-sm sm:max-w-md max-h-[82vh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl ${
+                    className={`fixed top-0 left-0 z-[999] w-[92vw] sm:w-[370px] max-w-[390px] h-auto max-h-[72vh] sm:max-h-[530px] flex flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl ${
                         isDragging
                             ? "ring-2 ring-emerald-500/50 shadow-emerald-500/20 shadow-2xl cursor-grabbing"
                             : ""
@@ -595,47 +602,64 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                     <div
                         onPointerDown={handlePointerDown}
                         onDoubleClick={resetPosition}
-                        title="Drag to move anywhere • Double-click to center"
-                        className={`w-full py-1.5 flex items-center justify-center cursor-grab active:cursor-grabbing border-b transition-colors select-none ${
+                        title="Drag to move anywhere • Double-click to dock top-right"
+                        className={`w-full py-1.5 flex items-center justify-center cursor-grab active:cursor-grabbing border-b transition-colors select-none shrink-0 ${
                             isDark
                                 ? "bg-white/[0.03] hover:bg-white/[0.06] border-white/5"
                                 : "bg-gray-50/70 hover:bg-gray-100/70 border-gray-100"
                         }`}
                     >
-                        <div className="w-12 h-1 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors" />
+                        <div className="w-10 h-1 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors" />
                     </div>
 
                     {/* Draggable Header */}
                     <div
                         onPointerDown={handlePointerDown}
                         onDoubleClick={resetPosition}
-                        title="Drag header to move • Double-click to center"
-                        className={`flex items-center justify-between px-4 py-2.5 border-b select-none cursor-grab active:cursor-grabbing ${
+                        title="Drag header to move • Double-click to dock top-right"
+                        className={`flex items-center justify-between px-3.5 py-2 border-b select-none cursor-grab active:cursor-grabbing shrink-0 ${
                             isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-100 bg-gray-50/50"
                         }`}
                     >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
                             <GripHorizontal
-                                className={`h-4 w-4 shrink-0 transition-colors ${
+                                className={`h-3.5 w-3.5 shrink-0 transition-colors ${
                                     isDragging ? "text-emerald-400" : isDark ? "text-white/30" : "text-gray-400"
                                 }`}
                             />
-                            <h3 className={`text-sm font-semibold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <h3 className={`text-xs sm:text-sm font-semibold tracking-tight truncate ${isDark ? "text-white" : "text-gray-900"}`}>
                                 Notifications
                             </h3>
                             {unreadCount > 0 && (
                                 <span
-                                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
                                         isDark ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-rose-100 text-rose-700"
                                     }`}
                                 >
-                                    {unreadCount} new
+                                    {unreadCount}
                                 </span>
                             )}
                         </div>
 
-                        {/* Top Action Buttons */}
-                        <div className="flex items-center gap-1">
+                        {/* Top Action Buttons - Compact Laptop Spacing */}
+                        <div className="flex items-center gap-0.5 shrink-0">
+                            {/* Mark All Read */}
+                            {unreadCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={markAllRead}
+                                    title="Mark all notifications as read"
+                                    className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-1 rounded-md transition-colors ${
+                                        isDark
+                                            ? "text-emerald-400 hover:bg-emerald-500/10"
+                                            : "text-emerald-600 hover:bg-emerald-50"
+                                    }`}
+                                >
+                                    <Check className="h-3 w-3" />
+                                    <span className="hidden xs:inline">Read all</span>
+                                </button>
+                            )}
+
                             {/* Chime Sound Toggle */}
                             <button
                                 type="button"
@@ -644,7 +668,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                     if (!soundEnabled) playNotificationChime();
                                 }}
                                 title={soundEnabled ? "Mute notification chime" : "Enable notification chime"}
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                className={`p-1 rounded-md transition-colors ${
                                     soundEnabled
                                         ? isDark
                                             ? "text-emerald-400 hover:bg-emerald-500/10"
@@ -657,41 +681,24 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                 {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
                             </button>
 
-                            {/* Re-center Position */}
+                            {/* Re-center / Dock Position */}
                             <button
                                 type="button"
                                 onClick={resetPosition}
-                                title="Center notification window"
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                title="Dock to top-right"
+                                className={`p-1 rounded-md transition-colors ${
                                     isDark ? "text-white/40 hover:bg-white/[0.06] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
                                 }`}
                             >
                                 <RotateCcw className="h-3.5 w-3.5" />
                             </button>
 
-                            {/* Mark All Read */}
-                            {unreadCount > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={markAllRead}
-                                    title="Mark all notifications as read"
-                                    className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors ${
-                                        isDark
-                                            ? "text-white/60 hover:text-white hover:bg-white/[0.08]"
-                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                                    }`}
-                                >
-                                    <Check className="h-3 w-3 text-emerald-400" />
-                                    <span>Read all</span>
-                                </button>
-                            )}
-
                             {/* Close Button */}
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}
                                 aria-label="Close notifications"
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                className={`p-1 rounded-md transition-colors ${
                                     isDark ? "text-white/40 hover:bg-white/[0.08] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
                                 }`}
                             >
@@ -700,17 +707,17 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                         </div>
                     </div>
 
-                    {/* Quick Filter Tabs */}
+                    {/* Quick Filter Tabs - Compact */}
                     <div
-                        className={`flex items-center justify-between px-3 py-1.5 border-b overflow-x-auto text-[11px] font-medium gap-1 ${
+                        className={`flex items-center justify-between px-3 py-1.5 border-b overflow-x-auto text-[10px] font-medium gap-1 shrink-0 ${
                             isDark ? "border-white/[0.06] bg-black/25" : "border-gray-100 bg-gray-50/70"
                         }`}
                     >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-0">
                             <button
                                 type="button"
                                 onClick={() => setActiveFilter("all")}
-                                className={`px-2.5 py-1 rounded-lg transition-all ${
+                                className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap ${
                                     activeFilter === "all"
                                         ? "bg-emerald-500 text-white font-semibold shadow-sm"
                                         : isDark
@@ -723,7 +730,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                             <button
                                 type="button"
                                 onClick={() => setActiveFilter("unread")}
-                                className={`px-2.5 py-1 rounded-lg transition-all ${
+                                className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap ${
                                     activeFilter === "unread"
                                         ? "bg-emerald-500 text-white font-semibold shadow-sm"
                                         : isDark
@@ -736,7 +743,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                             <button
                                 type="button"
                                 onClick={() => setActiveFilter("urgent")}
-                                className={`px-2.5 py-1 rounded-lg transition-all ${
+                                className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap ${
                                     activeFilter === "urgent"
                                         ? "bg-rose-500 text-white font-semibold shadow-sm"
                                         : isDark
@@ -749,7 +756,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                             <button
                                 type="button"
                                 onClick={() => setActiveFilter("reports")}
-                                className={`px-2.5 py-1 rounded-lg transition-all ${
+                                className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap ${
                                     activeFilter === "reports"
                                         ? "bg-blue-500 text-white font-semibold shadow-sm"
                                         : isDark
@@ -767,25 +774,25 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                 type="button"
                                 onClick={clearReadNotifications}
                                 title="Clear all read notifications"
-                                className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-colors shrink-0 ${
+                                className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md transition-colors shrink-0 whitespace-nowrap ${
                                     isDark
                                         ? "text-white/40 hover:text-rose-300 hover:bg-rose-500/10"
                                         : "text-gray-500 hover:text-rose-600 hover:bg-rose-50"
                                 }`}
                             >
-                                <Trash2 className="h-3 w-3" />
-                                <span>Clear read</span>
+                                <Trash2 className="h-2.5 w-2.5" />
+                                <span>Clear</span>
                             </button>
                         )}
                     </div>
 
-                    {/* Scrollable Notification List */}
-                    <div className="overflow-y-auto max-h-[62vh] divide-y divide-white/[0.04]">
+                    {/* Scrollable Notification List - Flex-1 auto height */}
+                    <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-white/[0.04]">
                         {filteredItems.length === 0 ? (
-                            <div className={`py-12 px-6 text-center text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
-                                <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                <p className="font-medium text-sm mb-1">No notifications</p>
-                                <p className="text-[11px] opacity-75">
+                            <div className={`py-10 px-4 text-center text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                                <Bell className="h-7 w-7 mx-auto mb-2 opacity-20" />
+                                <p className="font-medium text-xs mb-0.5">No notifications</p>
+                                <p className="text-[10px] opacity-75">
                                     {activeFilter === "unread"
                                         ? "You are all caught up!"
                                         : activeFilter === "urgent"
@@ -800,7 +807,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                     <div
                                         key={n.id}
                                         onClick={() => handleNotifClick(n)}
-                                        className={`group relative w-full text-left flex items-start gap-3 px-4 py-3 cursor-pointer transition-all ${
+                                        className={`group relative w-full text-left flex items-start gap-2.5 px-3.5 py-2.5 cursor-pointer transition-all ${
                                             !n.read
                                                 ? isDark
                                                     ? "bg-emerald-500/[0.06] hover:bg-emerald-500/[0.10]"
@@ -808,7 +815,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                                 : isDark
                                                     ? "hover:bg-white/[0.03]"
                                                     : "hover:bg-gray-50"
-                                        } ${cat.isUrgent && !n.read ? "border-l-4 border-rose-500" : !n.read ? "border-l-4 border-emerald-500" : "border-l-4 border-transparent"}`}
+                                        } ${cat.isUrgent && !n.read ? "border-l-[3px] border-rose-500" : !n.read ? "border-l-[3px] border-emerald-500" : "border-l-[3px] border-transparent"}`}
                                     >
                                         {/* Icon */}
                                         <div className="mt-0.5 shrink-0">{cat.icon}</div>
@@ -816,26 +823,26 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                         {/* Content */}
                                         <div className="flex-1 min-w-0 pr-1">
                                             {/* Category Badge & Relative Time */}
-                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                                                 <span
-                                                    className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cat.badgeClass}`}
+                                                    className={`inline-flex items-center text-[9px] font-semibold px-1.5 py-0.2 rounded border ${cat.badgeClass}`}
                                                 >
                                                     {cat.label}
                                                 </span>
                                                 <span
                                                     title={new Date(n.created_at).toLocaleString("en-PH")}
-                                                    className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}
+                                                    className={`text-[9px] ${isDark ? "text-white/40" : "text-gray-400"}`}
                                                 >
                                                     {formatRelativeTime(n.created_at)}
                                                 </span>
                                                 {!n.read && (
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                                                 )}
                                             </div>
 
                                             {/* Title */}
                                             <p
-                                                className={`text-xs font-semibold leading-snug line-clamp-1 ${
+                                                className={`text-[11px] font-semibold leading-snug line-clamp-1 ${
                                                     isDark ? "text-white/90" : "text-gray-800"
                                                 }`}
                                             >
@@ -844,7 +851,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
                                             {/* Message */}
                                             <p
-                                                className={`text-[11px] mt-0.5 line-clamp-2 leading-relaxed ${
+                                                className={`text-[10px] mt-0.5 line-clamp-2 leading-relaxed ${
                                                     isDark ? "text-white/60" : "text-gray-600"
                                                 }`}
                                             >
@@ -853,36 +860,36 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                         </div>
 
                                         {/* Hover Actions */}
-                                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {!n.read && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => markSingleRead(n.id, e)}
                                                     title="Mark as read"
-                                                    className={`p-1 rounded-lg transition-colors ${
+                                                    className={`p-1 rounded transition-colors ${
                                                         isDark
                                                             ? "text-emerald-400 hover:bg-emerald-500/20"
                                                             : "text-emerald-600 hover:bg-emerald-100"
                                                     }`}
                                                 >
-                                                    <Check className="h-3.5 w-3.5" />
+                                                    <Check className="h-3 w-3" />
                                                 </button>
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={(e) => deleteNotification(n.id, e)}
                                                 title="Dismiss notification"
-                                                className={`p-1 rounded-lg transition-colors ${
+                                                className={`p-1 rounded transition-colors ${
                                                     isDark
                                                         ? "text-white/40 hover:text-rose-400 hover:bg-rose-500/20"
                                                         : "text-gray-400 hover:text-rose-600 hover:bg-rose-100"
                                                 }`}
                                             >
-                                                <Trash2 className="h-3.5 w-3.5" />
+                                                <Trash2 className="h-3 w-3" />
                                             </button>
                                             {n.report_id && (
                                                 <ExternalLink
-                                                    className={`h-3.5 w-3.5 ${
+                                                    className={`h-3 w-3 ${
                                                         isDark ? "text-white/40" : "text-gray-400"
                                                     }`}
                                                 />
@@ -899,7 +906,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
             {/* Premium Toast Popup for incoming real-time notifications */}
             {activeToast && (
                 <div
-                    className={`fixed top-4 right-4 z-[9999] w-[92vw] max-w-sm p-4 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-0 scale-100 animate-in slide-in-from-top-10 ${
+                    className={`fixed top-4 right-4 z-[9999] w-[90vw] max-w-sm p-3.5 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-0 scale-100 animate-in slide-in-from-top-10 ${
                         isDark
                             ? "bg-[#0d0d12]/95 border-white/10 text-white shadow-black/50"
                             : "bg-white/95 border-gray-200 text-gray-900 shadow-gray-200/50"
@@ -916,12 +923,12 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                 setActiveToast(null);
                             }}
                         >
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500 mb-0.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-500 mb-0.5">
                                 Bagong Ulat / New Alert
                             </p>
                             <h4 className="text-xs font-bold truncate">{activeToast.title}</h4>
                             <p
-                                className={`text-[11px] mt-0.5 line-clamp-2 leading-relaxed ${
+                                className={`text-[10px] mt-0.5 line-clamp-2 leading-relaxed ${
                                     isDark ? "text-white/70" : "text-gray-600"
                                 }`}
                             >
@@ -936,7 +943,7 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                                     : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
                             }`}
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-3.5 w-3.5" />
                         </button>
                     </div>
                 </div>

@@ -433,3 +433,4 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
         totalReports: reports.length,
     };
 }
+
