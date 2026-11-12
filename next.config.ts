@@ -1,6 +1,7 @@
 import withSerwist from "@serwist/next";
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
+    poweredByHeader: false,
     turbopack: {
         root: __dirname,
     },
@@ -15,6 +16,8 @@ const nextConfig: NextConfig = {
                     { key: "X-Frame-Options", value: "DENY" },
                     { key: "X-Content-Type-Options", value: "nosniff" },
                     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                    { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+                    { key: "Permissions-Policy", value: "camera=(self), geolocation=(self), microphone=()" },
                 ],
             },
         ];
