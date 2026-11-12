@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Bell, X, Check, AlertTriangle, ClipboardPen, FileWarning, RefreshCw, ExternalLink } from "lucide-react";
+import { Bell, X, Check, AlertTriangle, ClipboardPen, FileWarning, RefreshCw, ExternalLink, GripHorizontal } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
 
@@ -27,6 +27,138 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
     const prevItemsRef = useRef<NotifItem[]>([]);
     const isFirstFetchRef = useRef(true);
+
+    // Draggable popover state
+    const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const dragStartRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
+    const hasDraggedRef = useRef(false);
+
+    // Initialize or clamp position when panel opens or window resizes
+    useEffect(() => {
+        if (!open || typeof window === "undefined") return;
+
+        if (!position) {
+            const modalWidth = Math.min(window.innerWidth * 0.95, 384);
+            const initialX = Math.max(16, (window.innerWidth - modalWidth) / 2);
+            const initialY = 56;
+            setPosition({ x: initialX, y: initialY });
+        }
+
+        const handleResize = () => {
+            setPosition((prev) => {
+                if (!prev) return null;
+                const modalWidth = panelRef.current ? panelRef.current.offsetWidth : Math.min(window.innerWidth * 0.95, 384);
+                const modalHeight = panelRef.current ? panelRef.current.offsetHeight : 400;
+                const maxX = Math.max(8, window.innerWidth - modalWidth - 8);
+                const maxY = Math.max(8, window.innerHeight - modalHeight - 16);
+                return {
+                    x: Math.min(Math.max(8, prev.x), maxX),
+                    y: Math.min(Math.max(8, prev.y), maxY),
+                };
+            });
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [open, position]);
+
+    const handleStartDrag = (clientX: number, clientY: number) => {
+        if (!panelRef.current) return;
+        const rect = panelRef.current.getBoundingClientRect();
+        setIsDragging(true);
+        hasDraggedRef.current = false;
+        dragStartRef.current = {
+            mouseX: clientX,
+            mouseY: clientY,
+            startX: rect.left,
+            startY: rect.top,
+        };
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest("button")) return;
+        e.preventDefault();
+        handleStartDrag(e.clientX, e.clientY);
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        const touch = e.touches[0];
+        if (touch) {
+            handleStartDrag(touch.clientX, touch.clientY);
+        }
+    };
+
+    const resetPosition = () => {
+        if (typeof window === "undefined") return;
+        const modalWidth = Math.min(window.innerWidth * 0.95, 384);
+        setPosition({
+            x: Math.max(16, (window.innerWidth - modalWidth) / 2),
+            y: 56,
+        });
+    };
+
+    // Global drag event listeners for mouse and touch
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const updatePosition = (clientX: number, clientY: number) => {
+            if (!dragStartRef.current || !panelRef.current) return;
+            const deltaX = clientX - dragStartRef.current.mouseX;
+            const deltaY = clientY - dragStartRef.current.mouseY;
+
+            if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+                hasDraggedRef.current = true;
+            }
+
+            const modalWidth = panelRef.current.offsetWidth;
+            const modalHeight = panelRef.current.offsetHeight;
+            const maxX = Math.max(8, window.innerWidth - modalWidth - 8);
+            const maxY = Math.max(8, window.innerHeight - modalHeight - 16);
+
+            const nextX = dragStartRef.current.startX + deltaX;
+            const nextY = dragStartRef.current.startY + deltaY;
+
+            setPosition({
+                x: Math.min(Math.max(8, nextX), maxX),
+                y: Math.min(Math.max(8, nextY), maxY),
+            });
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            e.preventDefault();
+            updatePosition(e.clientX, e.clientY);
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+            const touch = e.touches[0];
+            if (touch) {
+                updatePosition(touch.clientX, touch.clientY);
+            }
+        };
+
+        const onEndDrag = () => {
+            setIsDragging(false);
+            dragStartRef.current = null;
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onEndDrag);
+        window.addEventListener("touchmove", onTouchMove, { passive: true });
+        window.addEventListener("touchend", onEndDrag);
+        window.addEventListener("touchcancel", onEndDrag);
+
+        return () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onEndDrag);
+            window.removeEventListener("touchmove", onTouchMove);
+            window.removeEventListener("touchend", onEndDrag);
+            window.removeEventListener("touchcancel", onEndDrag);
+        };
+    }, [isDragging]);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -149,12 +281,46 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
 
             {open && (
                 <>
-                    <div className="fixed inset-0 z-[998]" onClick={() => setOpen(false)} />
-                    {/* Top slide-down panel */}
-                    <div className={`fixed left-1/2 -translate-x-1/2 top-14 z-[999] w-[95vw] max-w-sm max-h-[75vh] overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 duration-200 ${isDark ? "bg-[#0d0d12]/98 border-white/10" : "bg-white border-gray-200"
-                        }`}>
-                        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}>
+                    <div
+                        className="fixed inset-0 z-[998]"
+                        onClick={() => {
+                            if (!hasDraggedRef.current) {
+                                setOpen(false);
+                            }
+                        }}
+                    />
+                    {/* Draggable Notifications Panel */}
+                    <div
+                        ref={panelRef}
+                        style={
+                            position
+                                ? { left: `${position.x}px`, top: `${position.y}px` }
+                                : undefined
+                        }
+                        className={`fixed z-[999] w-[95vw] max-w-sm max-h-[75vh] overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl ${
+                            !position ? "left-1/2 -translate-x-1/2 top-14" : ""
+                        } ${
+                            isDragging
+                                ? "ring-2 ring-emerald-500/40 shadow-emerald-500/10 shadow-2xl scale-[1.01] select-none"
+                                : ""
+                        } transition-[box-shadow,transform,ring] duration-150 ${
+                            isDark ? "bg-[#0d0d12]/98 border-white/10" : "bg-white border-gray-200"
+                        }`}
+                    >
+                        {/* Draggable Header */}
+                        <div
+                            onMouseDown={handleMouseDown}
+                            onTouchStart={handleTouchStart}
+                            onDoubleClick={resetPosition}
+                            title="Drag header to move • Double-click to reset position"
+                            className={`flex items-center justify-between px-4 py-3 border-b select-none cursor-grab active:cursor-grabbing transition-colors ${
+                                isDragging ? "cursor-grabbing bg-emerald-500/5" : ""
+                            } ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}
+                        >
                             <div className="flex items-center gap-2">
+                                <GripHorizontal className={`h-4 w-4 shrink-0 transition-colors ${
+                                    isDragging ? "text-emerald-400" : isDark ? "text-white/30" : "text-gray-400"
+                                }`} />
                                 <h3 className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                                     Notifications
                                 </h3>
@@ -166,12 +332,20 @@ export default function NotificationBell({ role, reporterHash }: { role?: string
                             </div>
                             <div className="flex items-center gap-1">
                                 {unreadCount > 0 && (
-                                    <button onClick={markAllRead} className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${isDark ? "text-white/50 hover:bg-white/[0.06]" : "text-gray-500 hover:bg-gray-100"
-                                        }`}>
+                                    <button
+                                        type="button"
+                                        onClick={markAllRead}
+                                        className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${isDark ? "text-white/50 hover:bg-white/[0.06]" : "text-gray-500 hover:bg-gray-100"}`}
+                                    >
                                         <Check className="h-3 w-3 inline mr-1" />Mark all read
                                     </button>
                                 )}
-                                <button onClick={() => setOpen(false)} className={`p-1 rounded-lg ${isDark ? "text-white/40 hover:bg-white/[0.06]" : "text-gray-400 hover:bg-gray-100"}`}>
+                                <button
+                                    type="button"
+                                    onClick={() => setOpen(false)}
+                                    aria-label="Close notifications"
+                                    className={`p-1 rounded-lg transition-colors ${isDark ? "text-white/40 hover:bg-white/[0.06] hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"}`}
+                                >
                                     <X className="h-3.5 w-3.5" />
                                 </button>
                             </div>
