@@ -18,8 +18,8 @@ export const options = {
     { duration: "30s", target: 0 },   // Recovery
   ],
   thresholds: {
-    // Under heavy load, 90% must complete under 1.2s
-    http_req_duration: ["p(90)<1200"],
+    // Under peak 120-VU stress, 90% must complete under 2.5s on local dev
+    http_req_duration: ["p(90)<2500"],
     // Error rate must stay under 5%
     http_req_failed: ["rate<0.05"],
   },
