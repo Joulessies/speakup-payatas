@@ -187,3 +187,69 @@ export async function PATCH(request: Request) {
         return configErrorResponse(err);
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get("id");
+        const clear_read = searchParams.get("clear_read") === "true";
+        const clear_all = searchParams.get("clear_all") === "true";
+        const role = searchParams.get("role");
+        const reporter_hash = searchParams.get("reporter_hash")?.trim();
+
+        if (id) {
+            const index = memoryNotifications.findIndex(n => n.id === id);
+            if (index !== -1) memoryNotifications.splice(index, 1);
+
+            try {
+                await getSupabaseAdmin().from("notifications").delete().eq("id", id);
+            } catch {
+                // Ignore DB error
+            }
+            return NextResponse.json({ success: true, deleted_id: id });
+        }
+
+        if (clear_read || clear_all) {
+            const accountHash = role === "user" || !role ? await accountReporterHashFromSession() : null;
+            const hashes = [reporter_hash, accountHash].filter((h): h is string => Boolean(h));
+
+            for (let i = memoryNotifications.length - 1; i >= 0; i--) {
+                const n = memoryNotifications[i];
+                const isTarget = role === "admin"
+                    ? n.recipient_role === "admin"
+                    : role === "staff"
+                        ? n.recipient_role === "staff"
+                        : hashes.length > 0
+                            ? matchesResident(n, hashes)
+                            : n.recipient_role === "user";
+                if (isTarget && (clear_all || n.read)) {
+                    memoryNotifications.splice(i, 1);
+                }
+            }
+
+            try {
+                let delQuery = getSupabaseAdmin().from("notifications").delete();
+                if (clear_read && !clear_all) {
+                    delQuery = delQuery.eq("read", true);
+                }
+                if (role === "admin") {
+                    delQuery = delQuery.eq("recipient_role", "admin");
+                } else if (role === "staff") {
+                    delQuery = delQuery.eq("recipient_role", "staff");
+                } else if (hashes.length > 0) {
+                    delQuery = delQuery.in("recipient_hash", hashes);
+                } else {
+                    delQuery = delQuery.eq("recipient_role", "user");
+                }
+                await delQuery;
+            } catch {
+                // Ignore DB error
+            }
+            return NextResponse.json({ success: true, cleared: clear_all ? "all" : "read" });
+        }
+
+        return NextResponse.json({ error: "Missing id, clear_read, or clear_all parameter" }, { status: 400 });
+    } catch (err) {
+        return configErrorResponse(err);
+    }
+}
