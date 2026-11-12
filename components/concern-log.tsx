@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, ScrollText } from "lucide-react";
+import { Loader2, ScrollText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme-provider";
 import {
@@ -68,6 +68,33 @@ export default function ConcernLog() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
+
+    const exportExcel = async (targetDate: string) => {
+        setExporting(true);
+        const toastId = toast.loading("Generating logbook Excel sheet...");
+        try {
+            const res = await fetch(`/api/reports/log/export?date=${targetDate}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to download logbook Excel file.");
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `PAYATAS_SPEAK_UP_${targetDate}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Logbook Excel downloaded!", { id: toastId });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error exporting logbook", { id: toastId });
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const load = useCallback(async (selected: string) => {
         setLoading(true);
@@ -128,6 +155,16 @@ export default function ConcernLog() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={field} aria-label="Log date" />
+                        <button
+                            type="button"
+                            onClick={() => exportExcel(date)}
+                            disabled={exporting}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-sm transition-colors"
+                            title="Export this day's concerns into the official Barangay Payatas Excel Logbook"
+                        >
+                            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                            <span>{exporting ? "Exporting..." : "Export Excel (.xlsx)"}</span>
+                        </button>
                     </div>
                 </div>
 

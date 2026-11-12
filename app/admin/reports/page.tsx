@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, MapPinOff, ExternalLink, Maximize2, ClipboardPen } from "lucide-react";
+import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, MapPinOff, ExternalLink, Maximize2, ClipboardPen, FileSpreadsheet, Download } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { BARANGAY_AREA_LABELS, CATEGORY_LABELS, INTAKE_SOURCE_LABELS, type BarangayArea, type IntakeSource } from "@/types";
 import { toast } from "sonner";
@@ -36,7 +36,40 @@ export default function AdminReportsPage() {
     const [editTarget, setEditTarget] = useState<Report | null>(null);
     const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
     const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
+    const [exportingExcel, setExportingExcel] = useState(false);
     const pageSize = 10;
+
+    const handleExportExcel = async () => {
+        setExportingExcel(true);
+        const toastId = toast.loading("Generating Excel workbook for Payatas reports...");
+        try {
+            const res = await fetch("/api/reports/export");
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to generate Excel export.");
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const disposition = res.headers.get("Content-Disposition");
+            let filename = `Payatas_Reports_Master_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            if (disposition && disposition.includes("filename=")) {
+                const match = disposition.match(/filename="?([^"]+)"?/);
+                if (match?.[1]) filename = match[1];
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Excel report downloaded successfully!", { id: toastId });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error exporting to Excel", { id: toastId });
+        } finally {
+            setExportingExcel(false);
+        }
+    };
 
     const totalPages = Math.ceil(reports.length / pageSize);
     const paginatedReports = reports.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -197,13 +230,29 @@ export default function AdminReportsPage() {
                             Full CRUD access for all submitted reports.
                         </p>
                     </div>
-                    <Link
-                        href="/admin/intake"
-                        className="flex items-center gap-2 self-start sm:self-auto px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors"
-                    >
-                        <ClipboardPen className="h-4 w-4" />
-                        Encode Report
-                    </Link>
+                    <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+                        <button
+                            type="button"
+                            onClick={handleExportExcel}
+                            disabled={exportingExcel}
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-700/80 hover:bg-emerald-600 disabled:opacity-50 text-white shadow-sm transition-all border border-emerald-500/30"
+                            title="Export all reports to Excel (.xlsx)"
+                        >
+                            {exportingExcel ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-emerald-200" />
+                            ) : (
+                                <FileSpreadsheet className="h-4 w-4 text-emerald-300" />
+                            )}
+                            <span>{exportingExcel ? "Generating Excel..." : "Export Excel (.xlsx)"}</span>
+                        </button>
+                        <Link
+                            href="/admin/intake"
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors"
+                        >
+                            <ClipboardPen className="h-4 w-4" />
+                            Encode Report
+                        </Link>
+                    </div>
                 </div>
 
                 <div className={`rounded-2xl border overflow-hidden shadow-xl ${isDark ? "bg-white/[0.03] border-white/[0.08]" : "bg-white border-gray-100"}`}>
