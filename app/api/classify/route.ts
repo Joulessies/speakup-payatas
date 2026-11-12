@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { predictWithHF } from "@/lib/huggingface";
+import { predictWithHF, CATEGORY_URGENCY_MAP, CATEGORY_DEPT_MAP } from "@/lib/huggingface";
 import { classifyReportWithConfidence } from "@/lib/classification";
 
 /**
@@ -38,11 +38,14 @@ export async function POST(request: Request) {
     }
 
     // Fallback: local classifier
-    const local = classifyReportWithConfidence(description.trim());
+    const local = classifyReportWithConfidence(description);
+    const urgency = CATEGORY_URGENCY_MAP[local.category] || "MEDIUM";
+    const department = CATEGORY_DEPT_MAP[local.category] || "Secretary";
+
     return NextResponse.json({
       category: local.category,
-      urgency: null,
-      department: null,
+      urgency,
+      department,
       confidence: local.confidence,
       all_probabilities: null,
       source: local.model_type,

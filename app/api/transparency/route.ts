@@ -16,11 +16,27 @@ interface FeedbackRow {
     updated_at?: string | null;
 }
 
+// In-memory cache to prevent Supabase connection saturation during traffic spikes
+interface CacheEntry {
+    data: unknown;
+    expiresAt: number;
+}
+const transparencyCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 15_000; // 15 seconds
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
         const limit = Number(searchParams.get("limit") ?? "20");
+
+        const cacheKey = `${category || "all"}_${limit}`;
+        const cached = transparencyCache.get(cacheKey);
+        if (cached && Date.now() < cached.expiresAt) {
+            return NextResponse.json(cached.data, {
+                headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
+            });
+        }
 
         let query = getSupabaseAdmin()
             .from("reports")
@@ -111,13 +127,22 @@ export async function GET(request: Request) {
 
         const overallAverage = ratingCount > 0 ? Math.round((totalRating / ratingCount) * 10) / 10 : null;
 
-        return NextResponse.json({
+        const payload = {
             reports,
             total: reports.length,
             feedback_summary: {
                 total_feedback: ratingCount,
                 average_rating: overallAverage,
             },
+        };
+
+        transparencyCache.set(cacheKey, {
+            data: payload,
+            expiresAt: Date.now() + CACHE_TTL_MS,
+        });
+
+        return NextResponse.json(payload, {
+            headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
         });
     } catch (err) {
         return serverErrorResponse(err);

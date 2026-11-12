@@ -11,8 +11,18 @@ function serverErrorResponse(err: unknown) {
     return NextResponse.json({ error: message }, { status: 503 });
 }
 
+// In-memory cache to prevent re-running DBSCAN and queries on every concurrent request
+let cachedSummary: { data: unknown; expiresAt: number } | null = null;
+const CACHE_TTL_MS = 15_000; // 15 seconds
+
 export async function GET() {
     try {
+        if (cachedSummary && Date.now() < cachedSummary.expiresAt) {
+            return NextResponse.json(cachedSummary.data, {
+                headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
+            });
+        }
+
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -70,7 +80,7 @@ export async function GET() {
         const unreviewedCount = monthReports.filter((r) => r.verification_status === "unreviewed").length;
         const scheduledCount = monthReports.filter((r) => r.status === "in_progress").length;
 
-        return NextResponse.json({
+        const payload = {
             month: monthStr,
             total_reports: monthReports.length,
             resolved_count: resolvedReports.length,
@@ -117,6 +127,15 @@ export async function GET() {
                 { group: "Adult 36-59 Yrs", male: 19100, female: 20550, total: 39650 },
                 { group: "Senior 60+ Yrs", male: 6320, female: 6130, total: 12450 },
             ],
+        };
+
+        cachedSummary = {
+            data: payload,
+            expiresAt: Date.now() + CACHE_TTL_MS,
+        };
+
+        return NextResponse.json(payload, {
+            headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
         });
     } catch (err) {
         return serverErrorResponse(err);
