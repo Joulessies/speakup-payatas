@@ -1,6 +1,12 @@
 import * as XLSX from "xlsx";
 import {
+    BARANGAY_AREA_LABELS,
+    CATEGORY_LABELS,
+    CONCERN_DEPARTMENTS,
+    EOC_STATUS_LABELS,
     EOC_STATUSES,
+    INTAKE_SOURCE_LABELS,
+    NATURE_OF_CONCERN_LABELS,
     type BarangayArea,
     type EocStatus,
     type Gender,
@@ -50,6 +56,15 @@ export const LOGBOOK_HEADERS = [
     "RESPONDERS",
 ] as const;
 
+export function getQuarterName(dateStr?: string): string {
+    const d = dateStr ? new Date(dateStr) : new Date();
+    const month = d.getMonth();
+    if (month >= 9) return "4TH QUARTER";
+    if (month >= 6) return "3RD QUARTER";
+    if (month >= 3) return "2ND QUARTER";
+    return "1ST QUARTER";
+}
+
 export function manilaDayRange(date: string): { start: string; end: string } | null {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const start = new Date(`${date}T00:00:00+08:00`);
@@ -83,40 +98,86 @@ export function formatManilaDateTime(iso: string): string {
     }
 }
 
-export function urgencyLabel(severity: number): "Low" | "Medium" | "High" {
-    if (severity >= 4) return "High";
-    if (severity <= 2) return "Low";
-    return "Medium";
+export function urgencyLabel(severity: number): "LOW" | "MEDIUM" | "HIGH" {
+    if (severity >= 4) return "HIGH";
+    if (severity <= 2) return "LOW";
+    return "MEDIUM";
 }
 
+// Official template reference rows (from PAYATAS_SPEAK_UP official logbook template)
+const TEMPLATE_REFERENCE_OPTIONS: (string | null)[][] = [
+    [null, null, "INQURIES", "FACEBOOK PAGE", null, null, null, null, "AREA A", null, null, "VIOLENCE AND PUBLIC SAFETY", "LOW", "ASH / VAW", "RESPONDED"],
+    [null, null, "COMPLAINTS", "PHONE CALL", null, null, null, null, "AREA B", null, null, "THREATS AND HARASSMENT", "MEDIUM", "BADAC", "TRANSFERED"],
+    [null, null, "REPORT", "TEXT MESSAGES", null, null, null, null, "LUPANG PANGAKO", null, null, "FIRE AND DISASTER ALERT", "HIGH", "BCPC", "PENDING "],
+    [null, null, null, "REFERRAL", null, null, null, null, "GROUP 13", null, null, "MEDICAL AND HEALTH", null, "BDRRM OFFICE", "PENDING WITH MISSION ORDER"],
+    [null, null, null, "WALK INS", null, null, null, null, "OTHERS", null, null, "ROAD AND TRAFFIC", null, "BHERT"],
+    [null, null, null, null, null, null, null, null, null, null, null, "ROAD ACCIDENTS", null, "ALPHA BASE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "PUBLIC DISTURBANCE", null, "BRAVO BASE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "ELECTRICAL CONCERNS", null, "LP BASE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "ANIMAL RELATED CONCERNS", null, "GROUP 13 BASE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "FAMILY AND DOMESTIC CONCERNS", null, "CLEARANCE DEPARTMENT"],
+    [null, null, null, null, null, null, null, null, null, null, null, "SUBSTANCE RELATED CONCERNS", null, "CRO OFFICE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "SOCIAL WELFARE COCNERNS", null, "ENVIRONMENTAL PROTECTION"],
+    [null, null, null, null, null, null, null, null, null, null, null, "LEGAL AND BARANGAY MEDIATION", null, "FIRE BRIGADE"],
+    [null, null, null, null, null, null, null, null, null, null, null, "INFRASTRUCTURE AND PUBLIC WORKS", null, "GENDER AND DEVELOPMENT"],
+    [null, null, null, null, null, null, null, null, null, null, null, "CLEARANCE CONCERNS", null, "LUPON TAGAPAMAYAPA"],
+    [null, null, null, null, null, null, null, null, null, null, null, "SERVICE AND ASSISTANCE REQUESTS", null, "MAYNILAD"],
+    [null, null, null, null, null, null, null, null, null, null, null, "ENVIRONMENTAL CONCERNS", null, "MERALCO"],
+    [null, null, null, null, null, null, null, null, null, null, null, "INQUIRIES", null, "PDAO"],
+    [null, null, null, null, null, null, null, null, null, null, null, "GARBAGE CONCERNS", null, "POLICE STATION 13"],
+    [null, null, null, null, null, null, null, null, null, null, null, null, null, "SECTOR 5"],
+    [null, null, null, null, null, null, null, null, null, null, null, null, null, "TRAFFIC BASE"],
+    [null, null, null, null, null, null, null, null, null, null, null, null, null, "SECREATRY"],
+];
+
 /**
- * Builds an official Barangay Logbook sheet (.xlsx) using pure SheetJS
+ * Builds an official Barangay Logbook sheet (.xlsx) adhering 100% to PAYATAS_SPEAK_UP standards
  */
-export async function buildLogbookSheet(rows: LogbookExportRow[]): Promise<Buffer> {
+export async function buildLogbookSheet(
+    rows: LogbookExportRow[],
+    options: { date?: string; template?: boolean } = {}
+): Promise<Buffer> {
+    const quarterName = getQuarterName(options.date || (rows[0] ? rows[0].created_at : undefined));
+    const isBlankTemplate = options.template || rows.length === 0;
+
     const dataRows: (string | number | null)[][] = [
         [...LOGBOOK_HEADERS],
     ];
 
-    for (const row of rows) {
-        dataRows.push([
-            formatManilaDateTime(row.created_at),
-            row.eoc_staff ?? "",
-            row.nature ? row.nature.toUpperCase() : "",
-            row.source ? row.source.replace(/_/g, " ").toUpperCase() : "",
-            row.name ?? "",
-            row.sex ? row.sex.toUpperCase() : "",
-            row.age ?? "",
-            row.address ?? "",
-            row.area ? row.area.replace(/_/g, " ").toUpperCase() : "",
-            row.contact ?? "",
-            row.concern ?? "",
-            row.category ? row.category.replace(/_/g, " ").toUpperCase() : "",
-            urgencyLabel(row.severity).toUpperCase(),
-            row.department ?? "",
-            row.eoc_status ? row.eoc_status.replace(/_/g, " ").toUpperCase() : "PENDING",
-            row.remarks ?? "",
-            row.responders ?? "",
-        ]);
+    if (isBlankTemplate) {
+        // Output template rows with pre-defined option lists
+        for (const refRow of TEMPLATE_REFERENCE_OPTIONS) {
+            dataRows.push([...refRow]);
+        }
+    } else {
+        // Output real incident logs
+        for (const row of rows) {
+            const humanNature = row.nature ? (NATURE_OF_CONCERN_LABELS[row.nature] ?? row.nature).toUpperCase() : "REPORT";
+            const humanSource = row.source ? (INTAKE_SOURCE_LABELS[row.source] ?? row.source).toUpperCase() : "WALK INS";
+            const humanArea = row.area ? (BARANGAY_AREA_LABELS[row.area] ?? row.area).toUpperCase() : "OTHERS";
+            const humanCategory = row.category ? (CATEGORY_LABELS[row.category] ?? row.category).toUpperCase() : "OTHERS";
+            const humanStatus = row.eoc_status ? (EOC_STATUS_LABELS[row.eoc_status] ?? row.eoc_status).toUpperCase() : "PENDING";
+
+            dataRows.push([
+                formatManilaDateTime(row.created_at),
+                (row.eoc_staff || "ONLINE SYSTEM").toUpperCase(),
+                humanNature,
+                humanSource,
+                (row.name || "ANONYMOUS").toUpperCase(),
+                row.sex ? row.sex.toUpperCase() : "N/A",
+                row.age ?? "",
+                (row.address || "BARANGAY PAYATAS").toUpperCase(),
+                humanArea,
+                row.contact ?? "",
+                row.concern ?? "",
+                humanCategory,
+                urgencyLabel(row.severity),
+                (row.department || "BDRRM OFFICE").toUpperCase(),
+                humanStatus,
+                row.remarks ?? "",
+                row.responders ?? "",
+            ]);
+        }
     }
 
     const wb = XLSX.utils.book_new();
@@ -124,22 +185,36 @@ export async function buildLogbookSheet(rows: LogbookExportRow[]): Promise<Buffe
     ws["!cols"] = [
         { wch: 18 }, // DATE AND TIME
         { wch: 20 }, // EOC STAFF
-        { wch: 20 }, // NATURE OF CONCERN
-        { wch: 20 }, // SOURCE OF CONCERN
-        { wch: 22 }, // NAME
+        { wch: 22 }, // NATURE OF CONCERN
+        { wch: 22 }, // SOURCE OF CONCERN
+        { wch: 24 }, // NAME
         { wch: 10 }, // SEX
         { wch: 8 },  // AGE
-        { wch: 32 }, // ADDRESS
+        { wch: 34 }, // ADDRESS
         { wch: 22 }, // AREA
-        { wch: 16 }, // CONTACT NUMBER
-        { wch: 45 }, // CONCERN
-        { wch: 28 }, // TYPE OF CONCERN
-        { wch: 12 }, // URGENCY
-        { wch: 26 }, // CONCERN DEPARTMENT
-        { wch: 22 }, // STATUS
-        { wch: 30 }, // Remarks
-        { wch: 22 }, // RESPONDERS
+        { wch: 18 }, // CONTACT NUMBER
+        { wch: 50 }, // CONCERN
+        { wch: 32 }, // TYPE OF CONCERN
+        { wch: 14 }, // URGENCY
+        { wch: 28 }, // CONCERN DEPARTMENT
+        { wch: 26 }, // STATUS
+        { wch: 32 }, // Remarks
+        { wch: 24 }, // RESPONDERS
     ];
-    XLSX.utils.book_append_sheet(wb, ws, "Barangay Logbook");
+
+    // Main sheet matches the quarter from the official barangay logbook
+    XLSX.utils.book_append_sheet(wb, ws, quarterName);
+
+    // If exporting actual data, add a separate sheet with the official Dropdown Reference Lists
+    if (!isBlankTemplate) {
+        const refRows: (string | null)[][] = [
+            [...LOGBOOK_HEADERS],
+            ...TEMPLATE_REFERENCE_OPTIONS,
+        ];
+        const wsRef = XLSX.utils.aoa_to_sheet(refRows);
+        wsRef["!cols"] = ws["!cols"];
+        XLSX.utils.book_append_sheet(wb, wsRef, "DROPDOWN REFERENCE");
+    }
+
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }

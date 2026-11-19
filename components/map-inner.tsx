@@ -14,23 +14,17 @@ import {
 import { usePayatasGoogleMapsLoader } from "@/hooks/use-payatas-google-maps-loader";
 import { useGoogleMapsAuthState } from "@/hooks/use-google-maps-auth";
 import type { ClusterResult } from "@/types";
-import { CATEGORY_LABELS, resolveCategory } from "@/types";
 import { useTheme } from "./theme-provider";
 import { useLanguage } from "./language-provider";
 import MapsMissingKey from "./maps-missing-key";
 import { translateCategory } from "@/lib/i18n";
 import { CategoryIcon } from "./category-icon";
+import { CATEGORY_LABELS, REPORT_CATEGORIES, resolveCategory, type ReportCategory } from "@/types";
 
-const MAP_FILTER_CATEGORIES = [
-  { key: "drainage_flooding", label: "Drainage / Flooding" },
-  { key: "fire_hazard", label: "Fire Hazard" },
-  { key: "safety_concern", label: "Safety Concern" },
-  { key: "infrastructure", label: "Infrastructure" },
-  { key: "sanitation_health", label: "Sanitation / Health" },
-  { key: "noise_nuisance", label: "Noise Nuisance" },
-  { key: "environmental", label: "Environmental" },
-  { key: "other", label: "Other" },
-] as const;
+const MAP_FILTER_CATEGORIES: readonly { key: ReportCategory; label: string }[] = REPORT_CATEGORIES.map((key) => ({
+  key,
+  label: CATEGORY_LABELS[key],
+}));
 
 const ALL_FILTER_CATEGORIES: readonly string[] = MAP_FILTER_CATEGORIES.map((c) => c.key);
 
@@ -200,6 +194,7 @@ function MapInnerLoaded() {
             <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto pr-0.5">
               {MAP_FILTER_CATEGORIES.map((item) => {
                 const isActive = activeCategories.has(item.key);
+                const label = translateCategory(item.key, t) || item.label;
                 return (
                   <button
                     key={item.key}
@@ -212,8 +207,8 @@ function MapInnerLoaded() {
                     }`}
                   >
                     <CategoryIcon category={item.key} className="h-4 w-4 shrink-0" />
-                    <span className="leading-tight truncate" title={item.label}>
-                      {item.label}
+                    <span className="leading-tight truncate" title={label}>
+                      {label}
                     </span>
                   </button>
                 );

@@ -8,7 +8,7 @@ import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, 
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
 import { CategoryIcon } from "./category-icon";
-import { resolveCategory, type ClusterResult } from "@/types";
+import { CATEGORY_LABELS, REPORT_CATEGORIES, resolveCategory, type ClusterResult, type ReportCategory } from "@/types";
 import {
   Select,
   SelectContent,
@@ -24,16 +24,10 @@ const AdminMapInner = dynamic(() => import("@/components/admin-map-inner"), {
     </div>),
 });
 
-const MAP_FILTER_CATEGORIES = [
-    { key: "drainage_flooding", label: "Drainage / Flooding" },
-    { key: "fire_hazard", label: "Fire Hazard" },
-    { key: "safety_concern", label: "Safety Concern" },
-    { key: "infrastructure", label: "Infrastructure" },
-    { key: "sanitation_health", label: "Sanitation / Health" },
-    { key: "noise_nuisance", label: "Noise Nuisance" },
-    { key: "environmental", label: "Environmental" },
-    { key: "other", label: "Other" },
-] as const;
+const MAP_FILTER_CATEGORIES: readonly { key: ReportCategory; label: string }[] = REPORT_CATEGORIES.map((key) => ({
+    key,
+    label: CATEGORY_LABELS[key],
+}));
 const ALL_CATEGORIES: readonly string[] = MAP_FILTER_CATEGORIES.map((item) => item.key);
 
 function normalizeCategory(cat: string): string {
@@ -785,9 +779,10 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 max-h-64 sm:max-h-72 overflow-y-auto pr-1">
                             {MAP_FILTER_CATEGORIES.map((item) => {
                                 const isActive = activeCategories.has(item.key);
+                                const label = translateCategory(item.key, t) || item.label;
                                 return (
                                     <button
                                         key={item.key}
@@ -804,7 +799,7 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                         }`}
                                     >
                                         <CategoryIcon category={item.key} className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="leading-tight truncate" title={item.label}>{item.label}</span>
+                                        <span className="leading-tight truncate" title={label}>{label}</span>
                                     </button>
                                 );
                             })}

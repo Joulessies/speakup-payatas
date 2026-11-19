@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     try {
         const rows = template ? [] : await loadConcernLog(date);
-        const file = await buildLogbookSheet(rows);
+        const file = await buildLogbookSheet(rows, { date: date || undefined, template });
         const filename = template || rows.length === 0 ? "PAYATAS SPEAK UP.xlsx" : `PAYATAS SPEAK UP ${date}.xlsx`;
 
         return new NextResponse(new Uint8Array(file), {

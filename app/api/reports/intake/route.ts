@@ -210,7 +210,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: message }, { status: 500 });
     }
 
-    const { error: detailsError } = await supabase.from(INTAKE_DETAILS_TABLE).insert({
+    const intakePayload: Record<string, unknown> = {
       report_id: report.id,
       source,
       nature_of_concern,
@@ -227,15 +227,25 @@ export async function POST(request: Request) {
       eoc_staff: optionalText(body.eoc_staff, 120),
       eoc_status: eocStatus,
       encoded_by: auth.username,
-    });
+    };
+
+    let { error: detailsError } = await supabase.from(INTAKE_DETAILS_TABLE).insert(intakePayload);
+
+    // If eoc_staff or eoc_status column is missing in database, gracefully retry without them
+    if (detailsError && /eoc_staff|eoc_status/i.test(detailsError.message)) {
+      const fallbackPayload = { ...intakePayload };
+      delete fallbackPayload.eoc_staff;
+      delete fallbackPayload.eoc_status;
+      const retry = await supabase.from(INTAKE_DETAILS_TABLE).insert(fallbackPayload);
+      detailsError = retry.error;
+    }
 
     if (detailsError) {
       // Without its details row, an unpinned report would show up as a hotspot at the placeholder location.
       await supabase.from("reports").delete().eq("id", report.id);
-      const missingColumn = /eoc_staff|eoc_status/i.test(detailsError.message);
       return NextResponse.json(
-        { error: isMissingTable(detailsError) || missingColumn ? MISSING_MIGRATION_MESSAGE : detailsError.message },
-        { status: isMissingTable(detailsError) || missingColumn ? 503 : 500 },
+        { error: isMissingTable(detailsError) ? MISSING_MIGRATION_MESSAGE : detailsError.message },
+        { status: isMissingTable(detailsError) ? 503 : 500 },
       );
     }
 

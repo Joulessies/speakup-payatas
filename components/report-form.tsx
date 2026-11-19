@@ -16,7 +16,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import GpsHelpDialog from "@/components/gps-help-dialog";
 import { CATEGORY_ICONS } from "@/components/category-icon";
-import { CATEGORY_COLORS, GENDER_OPTIONS, isGender, parseReporterAge, type Gender, type ReportCategory, type OfflineReport } from "@/types";
+import { CATEGORY_COLORS, GENDER_OPTIONS, isGender, parseReporterAge, REPORT_CATEGORIES, type Gender, type ReportCategory, type OfflineReport } from "@/types";
 import { translateCategory } from "@/lib/i18n";
 import { classifyReport } from "@/lib/classification";
 import { getGoogleMapsApiKey } from "@/lib/payatas-google-maps";
@@ -29,7 +29,7 @@ const ReportLocationPicker = dynamic(() => import("@/components/report-location-
     loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-muted/30" />,
 });
 
-const REPORT_FORM_CATEGORIES: ReportCategory[] = [
+const COMMON_REPORT_CATEGORIES: ReportCategory[] = [
     "drainage_flooding",
     "fire_hazard",
     "safety_concern",
@@ -76,6 +76,7 @@ export default function ReportForm() {
     const [pendingCount, setPendingCount] = useState(0);
     const [category, setCategory] = useState<ReportCategory | "">("");
     const [autoCategory, setAutoCategory] = useState(true);
+    const [showAllCategories, setShowAllCategories] = useState(false);
     const [reporterAge, setReporterAge] = useState("");
     const [reporterGender, setReporterGender] = useState<Gender | "">("");
     const [description, setDescription] = useState("");
@@ -618,11 +619,37 @@ export default function ReportForm() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                    <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
-                        {t.reportWhatHappened}
-                    </Label>
+                    <div className="flex items-center justify-between">
+                        <Label className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                            {t.reportWhatHappened}
+                        </Label>
+                        <button
+                            type="button"
+                            onClick={() => setShowAllCategories((prev) => !prev)}
+                            className={`text-[11px] font-semibold inline-flex items-center gap-1 transition-colors ${
+                                isDark ? "text-emerald-400 hover:text-emerald-300" : "text-[#059669] hover:text-[#047857]"
+                            }`}
+                        >
+                            {showAllCategories ? (
+                                <>
+                                    <span>Common categories</span>
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                </>
+                            ) : (
+                                <>
+                                    <span>All classifications ({REPORT_CATEGORIES.length})</span>
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                </>
+                            )}
+                        </button>
+                    </div>
                     <div className="grid grid-cols-2 min-[420px]:grid-cols-4 gap-1.5 md:gap-2">
-                        {REPORT_FORM_CATEGORIES.map((key) => {
+                        {(showAllCategories
+                            ? REPORT_CATEGORIES
+                            : category && !COMMON_REPORT_CATEGORIES.includes(category as ReportCategory)
+                                ? [...COMMON_REPORT_CATEGORIES, category as ReportCategory]
+                                : COMMON_REPORT_CATEGORIES
+                        ).map((key) => {
                             const isSelected = category === key;
                             const label = translateCategory(key, t);
                             const Icon = CATEGORY_ICONS[key];

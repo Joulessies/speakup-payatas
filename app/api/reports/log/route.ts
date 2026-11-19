@@ -69,10 +69,10 @@ export async function PATCH(request: Request) {
             .eq("report_id", reportId);
         if (detailError) {
             const missingColumn = /eoc_status/i.test(detailError.message);
-            return NextResponse.json(
-                { error: missingColumn ? MISSING_MIGRATION_MESSAGE : detailError.message },
-                { status: missingColumn ? 503 : 500 },
-            );
+            if (!missingColumn) {
+                return NextResponse.json({ error: detailError.message }, { status: 500 });
+            }
+            // If eoc_status column does not exist yet, the main report status was already saved above
         }
         return NextResponse.json({ success: true, eoc_status: status });
     } catch (err) {

@@ -94,11 +94,12 @@ export async function POST(request: Request) {
         const windowMs = getWindowMs(selectedWindow);
         const since = new Date(now - windowMs).toISOString();
         
-        let { data, error } = await (selectedWindow === "all"
+        const { data: initialData, error } = await (selectedWindow === "all"
             ? getSupabaseAdmin().from("reports").select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description")
             : getSupabaseAdmin().from("reports").select("id, receipt_id, category, severity, created_at, latitude, longitude, status, description").gte("created_at", since));
             
         if (error) throw new Error(error.message);
+        let data = initialData;
         
         if ((!data || data.length === 0) && selectedWindow !== "all") {
             const fallback = await getSupabaseAdmin()

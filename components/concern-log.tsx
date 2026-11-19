@@ -96,6 +96,32 @@ export default function ConcernLog() {
         }
     };
 
+    const exportTemplate = async () => {
+        setExporting(true);
+        const toastId = toast.loading("Generating official blank template...");
+        try {
+            const res = await fetch("/api/reports/log/export?template=1");
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to download template.");
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "PAYATAS_SPEAK_UP_TEMPLATE.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Official blank template downloaded!", { id: toastId });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error exporting template", { id: toastId });
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const load = useCallback(async (selected: string) => {
         setLoading(true);
         setError(null);
@@ -164,6 +190,18 @@ export default function ConcernLog() {
                         >
                             {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
                             <span>{exporting ? "Exporting..." : "Export Excel (.xlsx)"}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={exportTemplate}
+                            disabled={exporting}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                                isDark ? "border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10" : "border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50"
+                            }`}
+                            title="Download blank official Barangay Payatas logbook template"
+                        >
+                            <FileSpreadsheet className="h-3.5 w-3.5" />
+                            <span>Official Template</span>
                         </button>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, FileWarning, TrendingUp, Eye } from "lucide-react";
+import { Loader2, LayoutDashboard, FileWarning, TrendingUp, Eye, ArrowRight } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { getDeviceId, generateReporterHash } from "@/lib/crypto";
 import Link from "next/link";
@@ -172,37 +172,47 @@ export default function UserDashboard() {
                 </div>
 
                 {/* Transparency Board */}
-                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
-                    <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-dashed border-emerald-500/20">
-                        <Eye className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
-                        <div>
-                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
-                                Transparency Board
-                            </h2>
-                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
-                                Resolved community reports — click any card to view details
-                            </p>
+                <div className={`rounded-2xl border overflow-hidden shadow-sm transition-all ${isDark ? "bg-[#062c22]/90 border-emerald-500/20 backdrop-blur-sm" : "bg-white border-emerald-200"}`}>
+                    <div className={`flex items-center justify-between gap-3 px-5 py-4 border-b ${isDark ? "border-emerald-500/20 bg-white/[0.02]" : "border-emerald-100 bg-[#f4fbf7]/60"}`}>
+                        <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${isDark ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[#e6f4ea] border-emerald-200 text-[#059669]"}`}>
+                                <Eye className="h-4.5 w-4.5" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h2 className={`text-base font-semibold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
+                                        Transparency Board
+                                    </h2>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-emerald-100 text-[#064e3b]"}`}>
+                                        Public Log
+                                    </span>
+                                </div>
+                                <p className={`text-xs mt-0.5 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
+                                    Resolved community reports — verified by Barangay Payatas
+                                </p>
+                            </div>
                         </div>
-                        <Link href="/transparency" className={`ml-auto text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#059669] hover:bg-[#e6f4ea]"}`}>
-                            View all
+                        <Link href="/transparency" className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${isDark ? "text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20" : "text-[#059669] bg-[#e6f4ea] hover:bg-[#d5edd9] border border-emerald-200"}`}>
+                            <span>View all directory</span>
+                            <ArrowRight className="h-3 w-3" />
                         </Link>
                     </div>
-                    <div className="px-5 pb-5">
+                    <div className="p-5">
                         <TransparencyBoard embedded reporterHash={reporterHash ?? undefined} />
                     </div>
                 </div>
 
                 {/* Predictive Analytics */}
-                <div className={`rounded-lg border overflow-hidden p-5 ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
+                <div className={`rounded-2xl border overflow-hidden p-5 shadow-sm ${isDark ? "bg-[#062c22]/90 border-emerald-500/20" : "bg-white border-emerald-200"}`}>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-emerald-500/15" : "bg-[#e6f4ea]"}`}>
-                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-[#059669]"}`} />
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${isDark ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[#e6f4ea] border-emerald-200 text-[#059669]"}`}>
+                            <TrendingUp className="h-4.5 w-4.5" />
                         </div>
                         <div>
-                            <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
+                            <h2 className={`text-base font-semibold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                 Community Trend Analysis
                             </h2>
-                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                 Algorithm-based spatial analysis & trend forecasting for Payatas-A
                             </p>
                         </div>
@@ -211,16 +221,18 @@ export default function UserDashboard() {
                 </div>
 
                 {/* Community Analytics */}
-                <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-[#06382b] border-emerald-500/20" : "bg-[#f4fbf7] border-emerald-200"}`}>
-                    <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-emerald-500/20" : "border-emerald-100"}`}>
+                <div className={`rounded-2xl border overflow-hidden shadow-sm ${isDark ? "bg-[#062c22]/90 border-emerald-500/20" : "bg-white border-emerald-200"}`}>
+                    <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-emerald-500/20 bg-white/[0.02]" : "border-emerald-100 bg-[#f4fbf7]/60"}`}>
                         <div className="flex items-center gap-3">
-                            <TrendingUp className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${isDark ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[#e6f4ea] border-emerald-200 text-[#059669]"}`}>
+                                <TrendingUp className="h-4.5 w-4.5" />
+                            </div>
                             <div>
-                                <h2 className={`text-sm font-semibold ${isDark ? "text-white" : "text-[#064e3b]"}`}>
+                                <h2 className={`text-base font-semibold tracking-tight ${isDark ? "text-white" : "text-[#064e3b]"}`}>
                                     Community Analytics
                                 </h2>
                                 {topCategory && (
-                                    <p className={`text-xs mt-0.5 ${isDark ? "text-white/60" : "text-[#047857]"}`}>
+                                    <p className={`text-xs mt-0.5 ${isDark ? "text-emerald-300/70" : "text-[#047857]"}`}>
                                         Top issue: <span className="font-medium capitalize">{topCategory[0]}</span> ({topCategory[1]} reports)
                                     </p>
                                 )}

@@ -47,6 +47,21 @@ CREATE TABLE IF NOT EXISTS report_intake_details (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Ensure EOC Logbook columns and constraints exist
+ALTER TABLE report_intake_details
+  ADD COLUMN IF NOT EXISTS eoc_staff TEXT,
+  ADD COLUMN IF NOT EXISTS eoc_status TEXT;
+
+ALTER TABLE report_intake_details
+  DROP CONSTRAINT IF EXISTS report_intake_details_eoc_status_check;
+
+ALTER TABLE report_intake_details
+  ADD CONSTRAINT report_intake_details_eoc_status_check
+  CHECK (
+    eoc_status IS NULL
+    OR eoc_status IN ('pending', 'transferred', 'pending_with_mission_order', 'responded')
+  );
+
 CREATE INDEX IF NOT EXISTS idx_report_intake_details_source ON report_intake_details (source);
 CREATE INDEX IF NOT EXISTS idx_report_intake_details_location_unknown
   ON report_intake_details (report_id) WHERE location_known = FALSE;

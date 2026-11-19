@@ -150,6 +150,23 @@ const CATEGORY_ALIASES: Record<string, ReportCategory> = {
     health: "sanitation_health",
     noise: "noise_nuisance",
     environ: "environmental",
+    // Official Excel logbook aliases
+    violence_and_public_safety: "safety_concern",
+    threats_and_harassment: "threats_harassment",
+    fire_and_disaster_alert: "fire_hazard",
+    medical_and_health: "medical_health",
+    road_and_traffic: "road_traffic",
+    public_disturbance: "noise_nuisance",
+    animal_related_concerns: "animal_concerns",
+    family_and_domestic_concerns: "family_domestic",
+    substance_related_concerns: "substance_concerns",
+    social_welfare_concerns: "social_welfare",
+    social_welfare_cocnerns: "social_welfare",
+    legal_and_barangay_mediation: "legal_mediation",
+    infrastructure_and_public_works: "infrastructure",
+    service_and_assistance_requests: "service_assistance",
+    environmental_concerns: "environmental",
+    others: "other",
 };
 
 /** Maps a stored category string to a known category key, or null if it is not recognized. */

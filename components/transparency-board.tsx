@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Search, MapPin, Calendar, CheckCircle2, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Maximize2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { CATEGORY_LABELS, CONFIDENTIAL_CATEGORIES, REPORT_CATEGORIES } from "@/types";
+import { CATEGORY_COLORS, CATEGORY_LABELS, CONFIDENTIAL_CATEGORIES, REPORT_CATEGORIES, resolveCategory } from "@/types";
 import { useRouter } from "next/navigation";
 import { ImageLightbox } from "@/components/image-lightbox";
 
@@ -123,103 +123,132 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                     {embedded ? "No resolved reports yet." : "No resolved reports found for this filter."}
                 </div>
             ) : (
-                <div className={embedded ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
-                    {displayReports.map((r) => (
-                        <div
-                            key={r.id}
-                            className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
-                                isDark
-                                    ? "bg-[#06382b] border-emerald-500/30 hover:bg-[#084837] hover:border-emerald-400/50"
-                                    : "bg-white border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-300"
-                            } ${expandedId === r.id ? "ring-1 ring-emerald-500/40" : ""}`}
-                            onClick={() => handleCardClick(r.id)}
-                        >
-                            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? "bg-[#042d22] border-emerald-500/20" : "bg-[#e6f4ea] border-emerald-200"}`}>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                    <span className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>
-                                        {CATEGORY_LABELS[r.category as keyof typeof CATEGORY_LABELS] || r.category}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    {r.feedback && r.feedback.count > 0 && r.feedback.average_rating !== null && (
-                                        <span className={`text-[10px] flex items-center gap-1 ${isDark ? "text-amber-300" : "text-amber-600"}`}>
-                                            <Star className="h-3 w-3 fill-current" />{r.feedback.average_rating.toFixed(1)}
-                                        </span>
-                                    )}
-                                    {!embedded && (
-                                        expandedId === r.id
-                                            ? <ChevronUp className="h-4 w-4 opacity-40" />
-                                            : <ChevronDown className="h-4 w-4 opacity-40" />
-                                    )}
-                                </div>
-                            </div>
-                            <div className="p-4 flex-1 space-y-3">
-                                <p className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                                    {r.description || <span className="italic opacity-50">No description provided</span>}
-                                </p>
-                                {(r.resolution_photo_url || r.photo_url) && (
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setLightboxImage({ src: (r.resolution_photo_url || r.photo_url)!, alt: "Resolution Proof" });
-                                        }}
-                                        className="group mt-2 relative rounded-xl overflow-hidden border border-emerald-500/30 max-h-40 cursor-zoom-in"
-                                        title="Click to view full screen"
-                                    >
-                                        <img
-                                            src={r.resolution_photo_url || r.photo_url}
-                                            alt="Responder proof / resolution photo"
-                                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-200"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = "none";
+                <div className={embedded ? "grid grid-cols-1 md:grid-cols-3 gap-3.5" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
+                    {displayReports.map((r) => {
+                        const catKey = resolveCategory(r.category) ?? "other";
+                        const catColor = CATEGORY_COLORS[catKey] || "#10b981";
+                        const catLabel = CATEGORY_LABELS[catKey] || r.category;
+
+                        return (
+                            <div
+                                key={r.id}
+                                className={`group rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                                    isDark
+                                        ? "bg-[#042018]/90 border-emerald-500/20 hover:border-emerald-400/40 hover:bg-[#062c22] hover:shadow-xl hover:shadow-emerald-950/50 hover:-translate-y-0.5"
+                                        : "bg-white border-emerald-200/90 shadow-sm hover:shadow-md hover:border-emerald-400 hover:bg-emerald-50/20 hover:-translate-y-0.5"
+                                } ${expandedId === r.id ? "ring-2 ring-emerald-500/50" : ""}`}
+                                onClick={() => handleCardClick(r.id)}
+                            >
+                                <div className={`px-4 py-3 border-b flex items-center justify-between gap-2 ${
+                                    isDark ? "bg-white/[0.02] border-emerald-500/15" : "bg-gray-50/70 border-emerald-100"
+                                }`}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span
+                                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full truncate"
+                                            style={{
+                                                backgroundColor: `${catColor}18`,
+                                                color: catColor,
+                                                border: `1px solid ${catColor}35`
                                             }}
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-medium backdrop-blur-[1px]">
-                                            <Maximize2 className="h-4 w-4" />
-                                            View Fullscreen
-                                        </div>
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+                                            <span className="truncate">{catLabel}</span>
+                                        </span>
                                     </div>
-                                )}
-                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                    <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                        <Calendar className="h-3 w-3" />
-                                        Resolved {new Date(r.resolved_at).toLocaleDateString()}
-                                    </div>
-                                    {!embedded && r.latitude != null && r.longitude != null && (
-                                        <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                            <MapPin className="h-3 w-3" />
-                                            Approx: {r.latitude.toFixed(4)}, {r.longitude.toFixed(4)}
-                                        </div>
-                                    )}
-                                </div>
-                                {r.feedback && r.feedback.count > 0 && (
-                                    <div className={`mt-2 p-2.5 rounded-xl border text-xs ${isDark ? "bg-emerald-500/[0.08] border-emerald-500/20 text-emerald-200" : "bg-[#e6f4ea] border-emerald-200 text-[#064e3b]"}`}>
-                                        <div className="flex items-center justify-between gap-2 font-semibold">
-                                            <span className="flex items-center gap-1.5 text-[11px]">
-                                                <MessageSquare className="h-3.5 w-3.5 text-emerald-500" /> Complainant Feedback
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {r.feedback && r.feedback.count > 0 && r.feedback.average_rating !== null ? (
+                                            <span className={`text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                                                isDark ? "bg-amber-400/15 text-amber-300 border border-amber-400/30" : "bg-amber-50 text-amber-700 border border-amber-200"
+                                            }`}>
+                                                <Star className="h-3 w-3 fill-current text-amber-400" />
+                                                <span>{r.feedback.average_rating.toFixed(1)}</span>
                                             </span>
-                                            {r.feedback.average_rating !== null && (
-                                                <div className="flex items-center gap-1 text-[11px]">
-                                                    <StarRow rating={r.feedback.average_rating} size={12} />
-                                                    <span>{r.feedback.average_rating.toFixed(1)}/5</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {r.feedback.entries[0]?.comment && (
-                                            <p className={`mt-1 text-[11px] italic line-clamp-2 ${isDark ? "text-white/80" : "text-gray-700"}`}>
-                                                &ldquo;{r.feedback.entries[0].comment}&rdquo;
-                                            </p>
+                                        ) : (
+                                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                                isDark ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                            }`}>
+                                                <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                                                <span>Resolved</span>
+                                            </span>
+                                        )}
+                                        {!embedded && (
+                                            expandedId === r.id
+                                                ? <ChevronUp className="h-4 w-4 opacity-50" />
+                                                : <ChevronDown className="h-4 w-4 opacity-50" />
                                         )}
                                     </div>
-                                )}
+                                </div>
+                                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                                    <div className="space-y-3">
+                                        <p className={`text-xs md:text-sm leading-relaxed ${embedded ? "line-clamp-3 min-h-[3.6rem]" : ""} ${
+                                            isDark ? "text-white/85" : "text-gray-700"
+                                        }`}>
+                                            {r.description || <span className="italic opacity-50">No description provided</span>}
+                                        </p>
+                                        {(r.resolution_photo_url || r.photo_url) && (
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setLightboxImage({ src: (r.resolution_photo_url || r.photo_url)!, alt: "Resolution Proof" });
+                                                }}
+                                                className="group/img relative rounded-lg overflow-hidden border border-emerald-500/25 max-h-32 cursor-zoom-in mt-1"
+                                                title="Click to view full screen"
+                                            >
+                                                <img
+                                                    src={r.resolution_photo_url || r.photo_url}
+                                                    alt="Responder proof / resolution photo"
+                                                    className="w-full h-28 object-cover group-hover/img:scale-105 transition-transform duration-200"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).style.display = "none";
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-medium backdrop-blur-[1px]">
+                                                    <Maximize2 className="h-3.5 w-3.5" />
+                                                    View Fullscreen
+                                                </div>
+                                            </div>
+                                        )}
+                                        {r.feedback && r.feedback.count > 0 && r.feedback.entries[0]?.comment && (
+                                            <div className={`p-2.5 rounded-lg border text-[11px] ${
+                                                isDark ? "bg-white/[0.03] border-white/10 text-emerald-200" : "bg-emerald-50/70 border-emerald-200 text-emerald-900"
+                                            }`}>
+                                                <div className="flex items-center gap-1.5 font-medium mb-1 text-[10px] opacity-75">
+                                                    <MessageSquare className="h-3 w-3 text-emerald-400" />
+                                                    <span>Resident Feedback</span>
+                                                </div>
+                                                <p className="italic line-clamp-2">
+                                                    &ldquo;{r.feedback.entries[0].comment}&rdquo;
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                {embedded && (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isDark ? "text-emerald-400" : "text-[#059669]"}`}>
-                                        <ArrowRight className="h-3 w-3" /> View details
-                                    </span>
-                                )}
-                            </div>
+                                    <div className={`pt-2.5 border-t flex items-center justify-between text-[11px] ${
+                                        isDark ? "border-emerald-500/15" : "border-emerald-100"
+                                    }`}>
+                                        <div className={`flex items-center gap-1.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                                            <Calendar className="h-3.5 w-3.5 opacity-70" />
+                                            <span>
+                                                {new Date(r.resolved_at).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
+                                            </span>
+                                        </div>
+                                        {embedded ? (
+                                            <span className={`inline-flex items-center gap-1 font-semibold transition-all ${
+                                                isDark ? "text-emerald-400 group-hover:text-emerald-300" : "text-[#059669] group-hover:text-[#047857]"
+                                            }`}>
+                                                <span>View details</span>
+                                                <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                                            </span>
+                                        ) : (
+                                            r.latitude != null && r.longitude != null && (
+                                                <div className={`flex items-center gap-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                                                    <MapPin className="h-3 w-3" />
+                                                    Approx location
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
 
                             {/* Expanded detail (non-embedded) */}
                             {!embedded && expandedId === r.id && (
@@ -294,17 +323,27 @@ export default function TransparencyBoard({ embedded, reporterHash }: { embedded
                                 </div>
                             )}
                         </div>
-                    ))}
+                    );
+                })}
                 </div>
             )}
 
-            {embedded && reports.length > 3 && (
-                <div className="text-center pt-1">
+            {embedded && reports.length > 0 && (
+                <div className={`mt-2 pt-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs ${
+                    isDark ? "border-emerald-500/15 text-white/55" : "border-emerald-100 text-gray-500"
+                }`}>
+                    <span className="flex items-center gap-2 text-[11px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                        <span>Showing 3 recent community resolutions &bull; {reports.length} total resolved in Payatas</span>
+                    </span>
                     <button
                         onClick={() => router.push("/transparency")}
-                        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-[#059669] hover:bg-[#e6f4ea]"}`}
+                        className={`font-semibold hover:underline flex items-center gap-1 transition-colors text-xs ${
+                            isDark ? "text-emerald-300 hover:text-emerald-200" : "text-[#059669] hover:text-[#047857]"
+                        }`}
                     >
-                        View all {reports.length} resolved reports →
+                        <span>Open public directory</span>
+                        <ArrowRight className="h-3 w-3" />
                     </button>
                 </div>
             )}

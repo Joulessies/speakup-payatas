@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { getQuarterName } from "@/lib/logbook";
 import {
     CATEGORY_LABELS,
     BARANGAY_AREA_LABELS,
@@ -414,7 +415,8 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
         { wch: 30 }, // Remarks
         { wch: 22 }, // RESPONDERS
     ];
-    XLSX.utils.book_append_sheet(wb, wsLogbook, "Barangay EOC Logbook");
+    const logbookQuarter = getQuarterName(options.startDate || options.endDate);
+    XLSX.utils.book_append_sheet(wb, wsLogbook, `${logbookQuarter} Logbook`);
 
     // Sheet 3: Summary Analytics
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
