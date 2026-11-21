@@ -20,7 +20,6 @@ import {
     RotateCcw,
     Send,
     Smartphone,
-    Sparkles,
     Upload,
     X,
     type LucideIcon,
@@ -196,7 +195,6 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
     const isDark = theme === "dark";
     const [form, setForm] = useState<IntakeFormState>(createEmptyForm);
     const [submitting, setSubmitting] = useState(false);
-    const [aiClassifying, setAiClassifying] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [saved, setSaved] = useState<{ id: string; receiptId: string; contact?: string } | null>(null);
@@ -284,45 +282,6 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
             toast.success("Photo attached and compressed");
         } catch {
             toast.error("Failed to process image. Try a smaller file.");
-        }
-    };
-
-    const handleAutoClassify = async () => {
-        if (!form.description.trim()) {
-            toast.error("Please enter a concern description first.");
-            return;
-        }
-        setAiClassifying(true);
-        try {
-            const res = await fetch("/api/classify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ description: form.description, area: form.area }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.category) {
-                    update("category", data.category);
-                    if (data.department) {
-                        update("department", data.department);
-                    }
-                    if (data.urgency) {
-                        const urgencyMap: Record<string, number> = { LOW: 1, MEDIUM: 3, HIGH: 5 };
-                        update("severity", urgencyMap[data.urgency] || 3);
-                    }
-                    toast.success(`AI Suggested: ${CATEGORY_LABELS[data.category as ReportCategory] || data.category}`, {
-                        description: `${data.department ? `Department: ${data.department} • ` : ""}${Math.round(
-                            (data.confidence || 0.9) * 100
-                        )}% match confidence`,
-                    });
-                }
-            } else {
-                toast.error("AI couldn't classify this automatically. Please select manually.");
-            }
-        } catch {
-            toast.error("Classification service unavailable.");
-        } finally {
-            setAiClassifying(false);
         }
     };
 
@@ -804,26 +763,9 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                         </div>
                     </section>
 
-                    {/* Section 3: Concern Details & AI Triage */}
+                    {/* Section 3: Concern Details */}
                     <section className={cardClass}>
-                        <div className="flex items-center justify-between">
-                            <h2 className={sectionTitleClass}>Concern details</h2>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={aiClassifying || !form.description.trim()}
-                                onClick={handleAutoClassify}
-                                className={`h-8 px-3 text-xs font-semibold gap-1.5 rounded-xl transition-all ${
-                                    isDark
-                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
-                                        : "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-                                }`}
-                            >
-                                {aiClassifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-emerald-500" />}
-                                {aiClassifying ? "AI Detecting…" : "Auto-Suggest with AI"}
-                            </Button>
-                        </div>
+                        <h2 className={sectionTitleClass}>Concern details</h2>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="intake-description" className={labelClass}>Concern description *</Label>
@@ -831,7 +773,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                                 id="intake-description"
                                 rows={4}
                                 maxLength={5000}
-                                placeholder="Type the concern in complainant's words, then click 'Auto-Suggest with AI' to automatically triage"
+                                placeholder="Type the concern in complainant's words..."
                                 aria-invalid={Boolean(fieldErrors.description)}
                                 value={form.description}
                                 onChange={(e) => update("description", e.target.value)}
@@ -845,7 +787,7 @@ export default function IntakeReportForm({ queueHref }: { queueHref: string }) {
                                 <Label htmlFor="intake-category" className={labelClass}>Type of concern *</Label>
                                 <Select value={form.category} onValueChange={(v) => update("category", v as ReportCategory)}>
                                     <SelectTrigger id="intake-category" aria-invalid={Boolean(fieldErrors.category)} className={triggerClass}>
-                                        <SelectValue placeholder="Choose a type or use AI auto-suggest" />
+                                        <SelectValue placeholder="Choose a type of concern" />
                                     </SelectTrigger>
                                     <SelectContent position="popper" className={`max-h-80 ${contentClass}`}>
                                         {INTAKE_CONCERN_TYPES.map((key) => (
