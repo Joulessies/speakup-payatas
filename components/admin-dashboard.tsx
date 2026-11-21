@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
 import { translateCategory } from "@/lib/i18n";
-import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, ShieldAlert, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, BarChart3, Flame, ShieldAlert, MapPin, Download, Layers, Radio, Navigation, Play, Pause, Compass, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import VerificationPanel from "./verification-panel";
 import { CategoryIcon } from "./category-icon";
@@ -101,6 +101,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
     const [filterInView, setFilterInView] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
+    const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
     const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set(ALL_CATEGORIES));
     const [panelOpen, setPanelOpen] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(false);
@@ -294,16 +295,28 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
     const handleClusterClick = (idx: number | null) => {
         if (idx === null) {
             setSelectedClusterId(null);
+            setSelectedReportId(null);
         } else {
             const c = filteredClusters[idx];
             setSelectedClusterId(c ? `${c.latitude.toFixed(6)}_${c.longitude.toFixed(6)}` : null);
+            setSelectedReportId(null);
         }
     };
 
     return (<div className="relative flex flex-col h-full overflow-hidden">
       
       <div className="absolute inset-0 z-0">
-        <AdminMapInner clusters={filteredClusters} selectedCluster={selectedCluster} onClusterClick={handleClusterClick} showHeatmap={showHeatmap} heatPoints={sourceHeatPoints} noisePoints={noisePoints} onMapBoundsChange={setMapBounds}/>
+        <AdminMapInner
+            clusters={filteredClusters}
+            selectedCluster={selectedCluster}
+            onClusterClick={handleClusterClick}
+            showHeatmap={showHeatmap}
+            heatPoints={sourceHeatPoints}
+            noisePoints={noisePoints}
+            onMapBoundsChange={setMapBounds}
+            selectedReportId={selectedReportId}
+            onSelectReportId={setSelectedReportId}
+        />
       </div>
 
       {clusterError && (
@@ -396,6 +409,8 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
               sidebarTab={sidebarTab}
               setSidebarTab={setSidebarTab}
               role={role}
+              selectedReportId={selectedReportId}
+              onSelectReportId={setSelectedReportId}
             />
           </div>
         </aside>
@@ -561,12 +576,14 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "s
             sidebarTab={sidebarTab}
             setSidebarTab={setSidebarTab}
             role={role}
+            selectedReportId={selectedReportId}
+            onSelectReportId={setSelectedReportId}
           />
         </div>
       </div>
     </div>);
 }
-function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, setActiveCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, role = "admin", }: {
+function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCount, clusters, selectedCluster, setSelectedCluster, activeCategories, setActiveCategories, toggleCategory, filterInView, setFilterInView, mapBounds, t, workflowReports, workflowLoading, workflowSaving, statusDrafts, setStatusDrafts, noteDrafts, setNoteDrafts, handleWorkflowUpdate, showHeatmap, sidebarTab, setSidebarTab, role = "admin", selectedReportId, onSelectReportId }: {
     isDark: boolean;
     loading: boolean;
     totalReports: number;
@@ -612,6 +629,8 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
     sidebarTab: "map" | "queue";
     setSidebarTab: Dispatch<SetStateAction<"map" | "queue">>;
     role?: "admin" | "staff";
+    selectedReportId?: string | null;
+    onSelectReportId?: (id: string | null) => void;
 }) {
     const isAdmin = role === "admin";
 
@@ -955,29 +974,52 @@ function SidebarContent({ isDark, loading, totalReports, totalFiltered, noiseCou
                                         </a>
                                     </div>
                                 </div>
-                                <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
-                                    {(clusters[selectedCluster].reports ?? []).slice(0, 20).map((report) => (
-                                        <div key={report.id} className={`rounded-lg border px-2.5 py-2 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-black/[0.06] bg-black/[0.01]"}`}>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <p className={`text-xs font-medium ${isDark ? "text-white/80" : "text-gray-800"}`}>
-                                                    {translateCategory(report.category, t)} · Severity {report.severity}
-                                                </p>
-                                                <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>
-                                                    {new Date(report.created_at).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                                </span>
-                                            </div>
-                                            {report.receipt_id && (
-                                                <p className={`text-[10px] font-mono mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                                                    {report.receipt_id}
-                                                </p>
-                                            )}
-                                            {report.description && (
-                                                <p className={`text-[10px] mt-1 line-clamp-2 ${isDark ? "text-white/60" : "text-gray-600"}`}>
-                                                    {report.description}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
+                                <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                                    {(clusters[selectedCluster].reports ?? []).slice(0, 30).map((report, rIdx) => {
+                                        const isReportActive = selectedReportId === report.id;
+                                        return (
+                                            <button
+                                                key={report.id}
+                                                type="button"
+                                                onClick={() => onSelectReportId?.(report.id)}
+                                                className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${
+                                                    isReportActive
+                                                        ? isDark
+                                                            ? "bg-emerald-500/25 border-emerald-500/50 ring-1 ring-emerald-500/40 shadow-sm"
+                                                            : "bg-emerald-50 border-emerald-300 ring-1 ring-emerald-300 shadow-sm"
+                                                        : isDark
+                                                            ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06]"
+                                                            : "border-black/[0.06] bg-black/[0.01] hover:bg-black/[0.04]"
+                                                }`}
+                                                title="Click to take a peek at this point on the map"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <p className={`text-xs font-semibold flex items-center gap-1.5 ${isDark ? "text-white/90" : "text-gray-900"}`}>
+                                                        <Eye className="w-3 h-3 text-emerald-400 shrink-0" />
+                                                        <span>Point #{rIdx + 1} · {translateCategory(report.category, t)}</span>
+                                                    </p>
+                                                    <span className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                                                        {new Date(report.created_at).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {report.receipt_id && (
+                                                        <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${isDark ? "bg-white/5 text-emerald-300/80" : "bg-gray-100 text-emerald-800"}`}>
+                                                            {report.receipt_id}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                                        Sev {report.severity}
+                                                    </span>
+                                                </div>
+                                                {report.description && (
+                                                    <p className={`text-[10px] mt-1 line-clamp-2 ${isDark ? "text-white/70" : "text-gray-600"}`}>
+                                                        {report.description}
+                                                    </p>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

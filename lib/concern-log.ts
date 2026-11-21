@@ -52,34 +52,33 @@ export async function loadConcernLog(date: string): Promise<ConcernLogRecord[]> 
     const { data: details, error: detailsError } = await supabase
         .from("report_intake_details")
         .select("report_id, source, nature_of_concern, area, concern_department, reporter_name, reporter_contact, reporter_address, reporter_age, reporter_gender, responders, remarks, eoc_staff, eoc_status")
-        .in("report_id", reportRows.map((report) => report.id))
-        .neq("source", "web");
+        .in("report_id", reportRows.map((report) => report.id));
     if (detailsError) throw new Error(detailsError.message);
 
     const byReport = new Map(((details ?? []) as DetailRow[]).map((detail) => [detail.report_id, detail]));
-    return reportRows.flatMap((report) => {
+    return reportRows.map((report) => {
         const detail = byReport.get(report.id);
-        if (!detail || detail.source === "web") return [];
-        return [{
+        const source = (detail?.source || "web") as IntakeSource;
+        return {
             id: report.id,
             receipt_id: report.receipt_id,
             created_at: report.created_at,
-            eoc_staff: detail.eoc_staff,
-            nature: detail.nature_of_concern as NatureOfConcern | null,
-            source: detail.source as Exclude<IntakeSource, "web">,
-            name: detail.reporter_name,
-            sex: detail.reporter_gender as Gender | null,
-            age: detail.reporter_age,
-            address: detail.reporter_address,
-            area: detail.area as BarangayArea | null,
-            contact: detail.reporter_contact,
+            eoc_staff: detail?.eoc_staff || null,
+            nature: (detail?.nature_of_concern as NatureOfConcern | null) || "report",
+            source,
+            name: detail?.reporter_name || "ONLINE RESIDENT",
+            sex: (detail?.reporter_gender as Gender | null) || null,
+            age: detail?.reporter_age || null,
+            address: detail?.reporter_address || "Payatas, Quezon City",
+            area: (detail?.area as BarangayArea | null) || "others",
+            contact: detail?.reporter_contact || null,
             concern: report.description ?? "",
-            category: report.category as ReportCategory,
+            category: (report.category as ReportCategory) || "other",
             severity: report.severity ?? 3,
-            department: detail.concern_department,
-            eoc_status: eocStatusFromReport(report.status as ReportStatus | null, detail.eoc_status as EocStatus | null),
-            remarks: detail.remarks,
-            responders: detail.responders,
-        }];
+            department: detail?.concern_department || "BDRRM OFFICE",
+            eoc_status: eocStatusFromReport(report.status as ReportStatus | null, (detail?.eoc_status as EocStatus | null) || null),
+            remarks: detail?.remarks || null,
+            responders: detail?.responders || null,
+        };
     });
 }

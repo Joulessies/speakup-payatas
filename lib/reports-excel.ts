@@ -1,22 +1,25 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { getQuarterName } from "@/lib/logbook";
+import {
+    getQuarterName,
+    LOGBOOK_COLUMN_CONFIGS,
+    sanitizeExcelCell,
+} from "@/lib/logbook";
 import {
     CATEGORY_LABELS,
     BARANGAY_AREA_LABELS,
-    INTAKE_SOURCE_LABELS,
-    NATURE_OF_CONCERN_LABELS,
-    GENDER_LABELS,
-    EOC_STATUS_LABELS,
     resolveCategory,
-    type ReportCategory,
     type BarangayArea,
-    type IntakeSource,
-    type NatureOfConcern,
-    type Gender,
-    type EocStatus,
-    type ReportStatus,
 } from "@/types";
+import {
+    applyGovernmentBanner,
+    applyTableHeaders,
+    styleDataRow,
+    createKpiCard,
+    createSummaryTable,
+    type ColumnConfig,
+    EXCEL_PALETTE,
+} from "@/lib/excel-styles";
 
 export interface ExportReportsOptions {
     status?: string;
@@ -48,14 +51,14 @@ interface RawIntakeDetail {
     source?: string | null;
     nature_of_concern?: string | null;
     area?: string | null;
-    concern_department?: string | null;
     reporter_name?: string | null;
     reporter_contact?: string | null;
-    reporter_address?: string | null;
     reporter_age?: number | null;
     reporter_gender?: string | null;
-    responders?: string | null;
+    reporter_address?: string | null;
+    concern_department?: string | null;
     remarks?: string | null;
+    responders?: string | null;
     encoded_by?: string | null;
     eoc_staff?: string | null;
     eoc_status?: string | null;
@@ -135,8 +138,35 @@ function getHumanArea(area: string | null | undefined): string {
     return area.replace(/_/g, " ").toUpperCase();
 }
 
+export const MASTER_COLUMN_CONFIGS: ColumnConfig[] = [
+    { header: "Report ID", width: 38, align: "center" },
+    { header: "Reference Number", width: 18, align: "center" },
+    { header: "Date & Time (PHT)", width: 20, align: "center", type: "date" },
+    { header: "Category", width: 28, align: "left" },
+    { header: "Nature of Concern", width: 20, align: "center" },
+    { header: "Description", width: 50, align: "left", wrapText: true },
+    { header: "Urgency", width: 16, align: "center", type: "urgency" },
+    { header: "Severity (1-5)", width: 14, align: "center", type: "number" },
+    { header: "Status", width: 16, align: "center", type: "status" },
+    { header: "Verification Status", width: 20, align: "center", type: "status" },
+    { header: "Barangay Area", width: 22, align: "center" },
+    { header: "Specific Address / Landmark", width: 36, align: "left", wrapText: true },
+    { header: "Latitude", width: 14, align: "center" },
+    { header: "Longitude", width: 14, align: "center" },
+    { header: "Source of Concern", width: 20, align: "center" },
+    { header: "Concern Department", width: 28, align: "left" },
+    { header: "EOC Staff / Encoder", width: 22, align: "left" },
+    { header: "Complainant Name", width: 24, align: "left" },
+    { header: "Contact Number", width: 18, align: "center" },
+    { header: "Age", width: 10, align: "center", type: "number" },
+    { header: "Gender", width: 12, align: "center" },
+    { header: "Responders", width: 24, align: "left" },
+    { header: "Remarks / Actions Taken", width: 36, align: "left", wrapText: true },
+    { header: "Evidence Photo", width: 28, align: "center" },
+];
+
 /**
- * Builds a multi-sheet, beautifully structured Excel workbook (.xlsx)
+ * Builds a multi-sheet, executive-styled Excel workbook (.xlsx)
  * containing all reports data for Barangay Payatas administration.
  */
 export async function buildReportsExcel(options: ExportReportsOptions = {}): Promise<{
@@ -177,7 +207,6 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
     const intakeMap = new Map<string, RawIntakeDetail>();
 
     if (reportIds.length > 0) {
-        // Chunk reportIds in sets of 500 to avoid query size limits
         const chunkSize = 500;
         for (let i = 0; i < reportIds.length; i += chunkSize) {
             const chunk = reportIds.slice(i, i + chunkSize);
@@ -194,36 +223,6 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
         }
     }
 
-    // ── SHEET 1: Master Reports (Full Database Export) ──
-    const masterHeaders = [
-        "Report ID",
-        "Reference Number",
-        "Date & Time (PHT)",
-        "Category",
-        "Nature of Concern",
-        "Description",
-        "Urgency",
-        "Severity (1-5)",
-        "Status",
-        "Verification Status",
-        "Barangay Area",
-        "Specific Address / Landmark",
-        "Latitude",
-        "Longitude",
-        "Source of Concern",
-        "Concern Department",
-        "EOC Staff / Encoder",
-        "Complainant Name",
-        "Contact Number",
-        "Age",
-        "Gender",
-        "Responders",
-        "Remarks / Actions Taken",
-        "Evidence Photo URL",
-    ];
-
-    const masterRows: (string | number | null)[][] = [masterHeaders];
-
     // Analytics counters
     const categoryCounts: Record<string, number> = {};
     const statusCounts: Record<string, number> = { PENDING: 0, VERIFIED: 0, "IN PROGRESS": 0, RESOLVED: 0 };
@@ -231,30 +230,45 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
     const sourceCounts: Record<string, number> = {};
     let highUrgencyCount = 0;
 
+    // Initialize Workbook
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Barangay Payatas SpeakUp System";
+    wb.lastModifiedBy = "EOC Operations";
+    wb.created = new Date();
+    wb.modified = new Date();
+
+    // ── SHEET 1: Master Reports (Full Database Export) ──
+    const wsMaster = wb.addWorksheet("Master Reports", {
+        properties: { tabColor: { argb: EXCEL_PALETTE.EMERALD_700 } },
+    });
+
+    const filterText = `Status: ${options.status || "All"} | Category: ${options.category || "All"}`;
+    applyGovernmentBanner(wsMaster, {
+        title: "BARANGAY PAYATAS • QUEZON CITY • MASTER INCIDENT DATABASE EXPORT",
+        subtitle: "SpeakUp Payatas Central Incident Management System • Complete Database Records",
+        meta: `Exported on (PHT): ${formatManilaDateTime(new Date().toISOString())}   |   Filter: ${filterText}   |   Total Records: ${reports.length}`,
+        totalCols: MASTER_COLUMN_CONFIGS.length,
+    });
+
+    applyTableHeaders(wsMaster, 5, MASTER_COLUMN_CONFIGS);
+
     // ── SHEET 2: Official Barangay Logbook (17 Standard Columns) ──
-    const logbookHeaders = [
-        "DATE AND TIME",
-        "EOC STAFF",
-        "NATURE OF CONCERN",
-        "SOURCE OF CONCERN",
-        "NAME",
-        "SEX",
-        "AGE",
-        "ADDRESS",
-        "AREA",
-        "CONTACT NUMBER",
-        "CONCERN",
-        "TYPE OF CONCERN",
-        "URGENCY",
-        "CONCERN DEPARTMENT",
-        "STATUS",
-        "Remarks",
-        "RESPONDERS",
-    ];
+    const logbookQuarter = getQuarterName(options.startDate || options.endDate);
+    const wsLogbook = wb.addWorksheet(`${logbookQuarter} Logbook`, {
+        properties: { tabColor: { argb: "FF0F766E" } },
+    });
 
-    const logbookRows: (string | number | null)[][] = [logbookHeaders];
+    applyGovernmentBanner(wsLogbook, {
+        title: "BARANGAY PAYATAS • QUEZON CITY • EOC INCIDENT LOGBOOK",
+        subtitle: `Official Barangay Logbook Format (${logbookQuarter}) • Emergency Operations Center`,
+        meta: `Exported on (PHT): ${formatManilaDateTime(new Date().toISOString())}   |   Total Incidents: ${reports.length}   |   Standard EOC Layout`,
+        totalCols: LOGBOOK_COLUMN_CONFIGS.length,
+    });
 
-    for (const r of reports) {
+    applyTableHeaders(wsLogbook, 5, LOGBOOK_COLUMN_CONFIGS);
+
+    // Populate data for Sheets 1 & 2
+    reports.forEach((r, idx) => {
         const detail = intakeMap.get(r.id);
         const manilaDt = formatManilaDateTime(r.created_at);
         const humanCat = getHumanCategory(r.category);
@@ -271,7 +285,7 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
         if (urgency === "HIGH") highUrgencyCount += 1;
 
         // Master Row
-        masterRows.push([
+        const masterRowValues = [
             r.id,
             r.receipt_id || `PAY-${r.id.slice(0, 8).toUpperCase()}`,
             manilaDt,
@@ -295,11 +309,14 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
             detail?.reporter_gender ? detail.reporter_gender.toUpperCase() : "N/A",
             detail?.responders || "Unassigned",
             detail?.remarks || "",
-            r.photo_url || "N/A",
-        ]);
+            sanitizeExcelCell(r.photo_url) || "N/A",
+        ];
+
+        const rowMaster = wsMaster.addRow(masterRowValues.map(sanitizeExcelCell));
+        styleDataRow(rowMaster, idx, MASTER_COLUMN_CONFIGS, masterRowValues);
 
         // Official Logbook Row
-        logbookRows.push([
+        const logbookRowValues = [
             manilaDt,
             detail?.eoc_staff || detail?.encoded_by || "Online System",
             detail?.nature_of_concern ? detail.nature_of_concern.toUpperCase() : "REPORT",
@@ -317,122 +334,141 @@ export async function buildReportsExcel(options: ExportReportsOptions = {}): Pro
             getEocStatus(detail?.eoc_status, r.status),
             detail?.remarks || "",
             detail?.responders || "",
-        ]);
-    }
+        ];
 
-    // ── SHEET 3: Summary & Analytics ──
-    const summaryRows: (string | number | null)[][] = [
-        ["BARANGAY PAYATAS - REPORTS & INCIDENTS SUMMARY REPORT"],
-        ["Generated on (PHT):", formatManilaDateTime(new Date().toISOString())],
-        ["Total Reports:", reports.length],
-        ["High Urgency Emergencies:", highUrgencyCount],
-        [""],
-        ["STATUS BREAKDOWN", "TOTAL", "PERCENTAGE"],
+        const rowLogbook = wsLogbook.addRow(logbookRowValues.map(sanitizeExcelCell));
+        styleDataRow(rowLogbook, idx, LOGBOOK_COLUMN_CONFIGS, logbookRowValues);
+    });
+
+    // ── SHEET 3: Summary Analytics (Executive Dashboard) ──
+    const wsSummary = wb.addWorksheet("Summary Analytics", {
+        properties: { tabColor: { argb: "FF2563EB" } },
+    });
+
+    // Set spacer columns
+    wsSummary.getColumn(1).width = 4; // Col A spacer
+    wsSummary.getColumn(5).width = 4; // Col E spacer between side-by-side tables
+
+    applyGovernmentBanner(wsSummary, {
+        title: "BARANGAY PAYATAS • INCIDENT ANALYTICS & EXECUTIVE SUMMARY",
+        subtitle: "Quezon City Emergency Operations Center (EOC) • SpeakUp Central Records",
+        meta: `Generated on (PHT): ${formatManilaDateTime(new Date().toISOString())}   |   Total Reports: ${reports.length}   |   Confidential Administrative Summary`,
+        totalCols: 8,
+    });
+
+    // KPI Cards (Rows 5 & 6)
+    const resolvedCount = statusCounts.RESOLVED || 0;
+    const resRate = reports.length ? Math.round((resolvedCount / reports.length) * 100) : 0;
+
+    createKpiCard(wsSummary, "B5", "C6", reports.length, "Total Reports", {
+        valColor: EXCEL_PALETTE.EMERALD_900,
+        bgColor: EXCEL_PALETTE.EMERALD_50,
+        borderColor: "FF86EFAC",
+    });
+
+    createKpiCard(wsSummary, "D5", "D6", highUrgencyCount, "High Urgency", {
+        valColor: "FFDC2626",
+        bgColor: "FFFEF2F2",
+        borderColor: "FFFECACA",
+    });
+
+    createKpiCard(wsSummary, "F5", "F6", resolvedCount, "Resolved Incidents", {
+        valColor: "FF16A34A",
+        bgColor: EXCEL_PALETTE.EMERALD_50,
+        borderColor: "FFBBF7D0",
+    });
+
+    createKpiCard(wsSummary, "G5", "H6", `${resRate}%`, "Resolution Rate", {
+        valColor: "FF2563EB",
+        bgColor: "FFEFF6FF",
+        borderColor: "FFBFDBFE",
+    });
+
+    // Row 7: Spacer
+    wsSummary.getRow(7).height = 14;
+
+    // Tables 1 & 2 side by side at Row 8
+    const statusRows: [string, number, string][] = [
         ["Resolved", statusCounts.RESOLVED || 0, reports.length ? `${Math.round(((statusCounts.RESOLVED || 0) / reports.length) * 100)}%` : "0%"],
         ["In Progress", statusCounts["IN PROGRESS"] || 0, reports.length ? `${Math.round(((statusCounts["IN PROGRESS"] || 0) / reports.length) * 100)}%` : "0%"],
         ["Verified", statusCounts.VERIFIED || 0, reports.length ? `${Math.round(((statusCounts.VERIFIED || 0) / reports.length) * 100)}%` : "0%"],
         ["Pending Verification", statusCounts.PENDING || 0, reports.length ? `${Math.round(((statusCounts.PENDING || 0) / reports.length) * 100)}%` : "0%"],
-        [""],
-        ["TOP CATEGORIES OF CONCERN", "TOTAL", "PERCENTAGE"],
-        ...Object.entries(categoryCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, count]) => [
-                cat,
-                count,
-                reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
-            ]),
-        [""],
-        ["AREA DISTRIBUTION", "TOTAL", "PERCENTAGE"],
-        ...Object.entries(areaCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([area, count]) => [
-                area,
-                count,
-                reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
-            ]),
-        [""],
-        ["INTAKE SOURCE BREAKDOWN", "TOTAL", "PERCENTAGE"],
-        ...Object.entries(sourceCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([src, count]) => [
-                src,
-                count,
-                reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
-            ]),
     ];
 
-    // Build Workbook
-    const wb = XLSX.utils.book_new();
+    const nextRow1 = createSummaryTable(wsSummary, {
+        startRow: 8,
+        startCol: 2, // Col B
+        title: "Incident Status Breakdown",
+        headers: ["STATUS", "TOTAL", "PERCENTAGE"],
+        colWidths: [22, 12, 14],
+        rows: statusRows,
+        totalCount: reports.length,
+    });
 
-    // Sheet 1: Master Reports
-    const wsMaster = XLSX.utils.aoa_to_sheet(masterRows);
-    wsMaster["!cols"] = [
-        { wch: 38 }, // Report ID
-        { wch: 18 }, // Reference Number
-        { wch: 18 }, // Date & Time
-        { wch: 28 }, // Category
-        { wch: 18 }, // Nature
-        { wch: 45 }, // Description
-        { wch: 12 }, // Urgency
-        { wch: 14 }, // Severity
-        { wch: 14 }, // Status
-        { wch: 18 }, // Verification Status
-        { wch: 22 }, // Area
-        { wch: 32 }, // Specific Address
-        { wch: 12 }, // Latitude
-        { wch: 12 }, // Longitude
-        { wch: 20 }, // Source
-        { wch: 26 }, // Department
-        { wch: 20 }, // EOC Staff
-        { wch: 22 }, // Name
-        { wch: 16 }, // Contact
-        { wch: 8 },  // Age
-        { wch: 10 }, // Gender
-        { wch: 20 }, // Responders
-        { wch: 30 }, // Remarks
-        { wch: 35 }, // Photo URL
-    ];
-    XLSX.utils.book_append_sheet(wb, wsMaster, "Master Reports");
+    const areaEntries = Object.entries(areaCounts).sort((a, b) => b[1] - a[1]);
+    const areaRows: [string, number, string][] = areaEntries.map(([area, count]) => [
+        area,
+        count,
+        reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
+    ]);
 
-    // Sheet 2: Barangay Logbook
-    const wsLogbook = XLSX.utils.aoa_to_sheet(logbookRows);
-    wsLogbook["!cols"] = [
-        { wch: 18 }, // DATE AND TIME
-        { wch: 20 }, // EOC STAFF
-        { wch: 20 }, // NATURE OF CONCERN
-        { wch: 20 }, // SOURCE OF CONCERN
-        { wch: 22 }, // NAME
-        { wch: 10 }, // SEX
-        { wch: 8 },  // AGE
-        { wch: 32 }, // ADDRESS
-        { wch: 22 }, // AREA
-        { wch: 16 }, // CONTACT NUMBER
-        { wch: 45 }, // CONCERN
-        { wch: 28 }, // TYPE OF CONCERN
-        { wch: 12 }, // URGENCY
-        { wch: 26 }, // CONCERN DEPARTMENT
-        { wch: 22 }, // STATUS
-        { wch: 30 }, // Remarks
-        { wch: 22 }, // RESPONDERS
-    ];
-    const logbookQuarter = getQuarterName(options.startDate || options.endDate);
-    XLSX.utils.book_append_sheet(wb, wsLogbook, `${logbookQuarter} Logbook`);
+    const nextRow2 = createSummaryTable(wsSummary, {
+        startRow: 8,
+        startCol: 6, // Col F
+        title: "Barangay Area Distribution",
+        headers: ["BARANGAY AREA", "TOTAL", "PERCENTAGE"],
+        colWidths: [24, 12, 14],
+        rows: areaRows,
+        totalCount: reports.length,
+    });
 
-    // Sheet 3: Summary Analytics
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-    wsSummary["!cols"] = [{ wch: 38 }, { wch: 14 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary Analytics");
+    // Row after Tables 1 & 2
+    const startRowBatch2 = Math.max(nextRow1, nextRow2) + 2;
+
+    // Tables 3 & 4 side by side
+    const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+    const catRows: [string, number, string][] = catEntries.map(([cat, count]) => [
+        cat,
+        count,
+        reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
+    ]);
+
+    createSummaryTable(wsSummary, {
+        startRow: startRowBatch2,
+        startCol: 2, // Col B
+        title: "Top Categories of Concern",
+        headers: ["CATEGORY", "TOTAL", "PERCENTAGE"],
+        colWidths: [28, 12, 14],
+        rows: catRows,
+        totalCount: reports.length,
+    });
+
+    const sourceEntries = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]);
+    const sourceRows: [string, number, string][] = sourceEntries.map(([src, count]) => [
+        src,
+        count,
+        reports.length ? `${Math.round((count / reports.length) * 100)}%` : "0%",
+    ]);
+
+    createSummaryTable(wsSummary, {
+        startRow: startRowBatch2,
+        startCol: 6, // Col F
+        title: "Intake Source Breakdown",
+        headers: ["SOURCE CHANNEL", "TOTAL", "PERCENTAGE"],
+        colWidths: [24, 12, 14],
+        rows: sourceRows,
+        totalCount: reports.length,
+    });
 
     // Generate binary buffer
-    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+    const buffer = await wb.xlsx.writeBuffer();
 
     const todayDate = new Date().toISOString().slice(0, 10);
     const filename = `Payatas_Reports_Master_Export_${todayDate}.xlsx`;
 
     return {
-        buffer,
+        buffer: Buffer.from(buffer),
         filename,
         totalReports: reports.length,
     };
 }
-

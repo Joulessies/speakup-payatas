@@ -28,14 +28,24 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
     const auth = await requireStaffSession();
     if (!auth.ok) return auth.response;
-    const body = await request.json().catch(() => null) as { report_id?: unknown; eoc_status?: unknown } | null;
+    const body = await request.json().catch(() => null) as {
+        report_id?: unknown;
+        eoc_status?: unknown;
+        department?: unknown;
+        responders?: unknown;
+        remarks?: unknown;
+    } | null;
+
     const reportId = typeof body?.report_id === "string" ? body.report_id : "";
-    const eocStatus = body?.eoc_status;
     if (!reportId) return badRequest("Missing report.");
-    if (typeof eocStatus !== "string" || !(EOC_STATUSES as readonly string[]).includes(eocStatus)) {
-        return badRequest("Unknown status.");
+
+    let status: EocStatus | null = null;
+    if (body?.eoc_status !== undefined) {
+        if (typeof body.eoc_status !== "string" || !(EOC_STATUSES as readonly string[]).includes(body.eoc_status)) {
+            return badRequest("Unknown status.");
+        }
+        status = body.eoc_status as EocStatus;
     }
-    const status = eocStatus as EocStatus;
 
     try {
         const supabase = getSupabaseAdmin();
@@ -47,36 +57,57 @@ export async function PATCH(request: Request) {
         if (readError) return NextResponse.json({ error: readError.message }, { status: 500 });
         if (!report) return NextResponse.json({ error: "Report not found." }, { status: 404 });
 
-        const history = Array.isArray(report.action_history) ? [...report.action_history] : [];
-        const action: ReportAction = {
-            id: randomUUID(),
-            status: reportStatusForEoc(status),
-            note: `Status set to ${EOC_STATUS_LABELS[status]}.`,
-            actor: auth.role === "admin" ? "Admin" : "Staff",
-            created_at: new Date().toISOString(),
-        };
-        history.push(action);
+        if (status) {
+            const history = Array.isArray(report.action_history) ? [...report.action_history] : [];
+            const action: ReportAction = {
+                id: randomUUID(),
+                status: reportStatusForEoc(status),
+                note: `Status set to ${EOC_STATUS_LABELS[status]}.`,
+                actor: auth.role === "admin" ? "Admin" : "Staff",
+                created_at: new Date().toISOString(),
+            };
+            history.push(action);
 
-        const { error: reportError } = await supabase
-            .from("reports")
-            .update({ status: reportStatusForEoc(status), action_history: history })
-            .eq("id", reportId);
-        if (reportError) return NextResponse.json({ error: reportError.message }, { status: 500 });
-
-        const { error: detailError } = await supabase
-            .from(INTAKE_DETAILS_TABLE)
-            .update({ eoc_status: status })
-            .eq("report_id", reportId);
-        if (detailError) {
-            const missingColumn = /eoc_status/i.test(detailError.message);
-            if (!missingColumn) {
-                return NextResponse.json({ error: detailError.message }, { status: 500 });
-            }
-            // If eoc_status column does not exist yet, the main report status was already saved above
+            const { error: reportError } = await supabase
+                .from("reports")
+                .update({ status: reportStatusForEoc(status), action_history: history })
+                .eq("id", reportId);
+            if (reportError) return NextResponse.json({ error: reportError.message }, { status: 500 });
         }
-        return NextResponse.json({ success: true, eoc_status: status });
+
+        const detailUpdates: Record<string, unknown> = {};
+        if (status) detailUpdates.eoc_status = status;
+        if (typeof body?.department === "string") detailUpdates.concern_department = body.department.trim();
+        if (typeof body?.responders === "string") detailUpdates.responders = body.responders.trim();
+        if (typeof body?.remarks === "string") detailUpdates.remarks = body.remarks.trim();
+
+        if (Object.keys(detailUpdates).length > 0) {
+            // Check if intake details record already exists
+            const { data: existing } = await supabase
+                .from(INTAKE_DETAILS_TABLE)
+                .select("report_id")
+                .eq("report_id", reportId)
+                .maybeSingle();
+
+            if (!existing) {
+                await supabase
+                    .from(INTAKE_DETAILS_TABLE)
+                    .insert({
+                        report_id: reportId,
+                        source: "web",
+                        ...detailUpdates,
+                    });
+            } else {
+                await supabase
+                    .from(INTAKE_DETAILS_TABLE)
+                    .update(detailUpdates)
+                    .eq("report_id", reportId);
+            }
+        }
+
+        return NextResponse.json({ success: true, ...detailUpdates });
     } catch (err) {
-        const message = err instanceof Error ? err.message : "Could not update the status.";
+        const message = err instanceof Error ? err.message : "Could not update the record.";
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

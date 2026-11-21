@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, MapPinOff, ExternalLink, Maximize2, ClipboardPen, FileSpreadsheet, Download } from "lucide-react";
+import { Loader2, Search, Trash2, Edit, Eye, CheckCircle, XCircle, MoreHorizontal, X, MapPin, MapPinOff, ExternalLink, Maximize2, ClipboardPen, FileSpreadsheet, Download, Upload } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { BARANGAY_AREA_LABELS, CATEGORY_LABELS, INTAKE_SOURCE_LABELS, type BarangayArea, type IntakeSource } from "@/types";
 import { toast } from "sonner";
@@ -68,6 +68,39 @@ export default function AdminReportsPage() {
             toast.error(err instanceof Error ? err.message : "Error exporting to Excel", { id: toastId });
         } finally {
             setExportingExcel(false);
+        }
+    };
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importingExcel, setImportingExcel] = useState(false);
+
+    const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        event.target.value = "";
+        setImportingExcel(true);
+        const toastId = toast.loading("Importing records from Excel...");
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/reports/log/import", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to import records from Excel.");
+            }
+
+            toast.success(data.message || `Successfully imported ${data.imported} records!`, { id: toastId });
+            await loadReports();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error importing Excel", { id: toastId });
+        } finally {
+            setImportingExcel(false);
         }
     };
 
@@ -234,7 +267,7 @@ export default function AdminReportsPage() {
                         <button
                             type="button"
                             onClick={handleExportExcel}
-                            disabled={exportingExcel}
+                            disabled={exportingExcel || importingExcel}
                             className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-700/80 hover:bg-emerald-600 disabled:opacity-50 text-white shadow-sm transition-all border border-emerald-500/30"
                             title="Export all reports to Excel (.xlsx)"
                         >
@@ -244,6 +277,31 @@ export default function AdminReportsPage() {
                                 <FileSpreadsheet className="h-4 w-4 text-emerald-300" />
                             )}
                             <span>{exportingExcel ? "Generating Excel..." : "Export Excel (.xlsx)"}</span>
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="hidden"
+                            onChange={handleImportExcel}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={importingExcel || exportingExcel}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 ${
+                                isDark
+                                    ? "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                                    : "border-emerald-300 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100/60"
+                            }`}
+                            title="Import reports from an Excel file (.xlsx)"
+                        >
+                            {importingExcel ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                            ) : (
+                                <Upload className="h-4 w-4 text-emerald-400" />
+                            )}
+                            <span>{importingExcel ? "Importing..." : "Import Excel (.xlsx)"}</span>
                         </button>
                         <Link
                             href="/admin/intake"

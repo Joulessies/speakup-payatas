@@ -1,8 +1,7 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
     BARANGAY_AREA_LABELS,
     CATEGORY_LABELS,
-    CONCERN_DEPARTMENTS,
     EOC_STATUS_LABELS,
     EOC_STATUSES,
     INTAKE_SOURCE_LABELS,
@@ -15,12 +14,19 @@ import {
     type ReportCategory,
     type ReportStatus,
 } from "@/types";
+import {
+    applyGovernmentBanner,
+    applyTableHeaders,
+    styleDataRow,
+    type ColumnConfig,
+    EXCEL_PALETTE,
+} from "@/lib/excel-styles";
 
 export type LogbookExportRow = {
     created_at: string;
     eoc_staff: string | null;
     nature: NatureOfConcern | null;
-    source: Exclude<IntakeSource, "web">;
+    source: IntakeSource;
     name: string | null;
     sex: Gender | null;
     age: number | null;
@@ -55,6 +61,26 @@ export const LOGBOOK_HEADERS = [
     "Remarks",
     "RESPONDERS",
 ] as const;
+
+export const LOGBOOK_COLUMN_CONFIGS: ColumnConfig[] = [
+    { header: "DATE AND TIME", width: 20, align: "center", type: "date" },
+    { header: "EOC STAFF", width: 22, align: "left" },
+    { header: "NATURE OF CONCERN", width: 22, align: "center" },
+    { header: "SOURCE OF CONCERN", width: 20, align: "center" },
+    { header: "NAME", width: 24, align: "left" },
+    { header: "SEX", width: 12, align: "center" },
+    { header: "AGE", width: 10, align: "center", type: "number" },
+    { header: "ADDRESS", width: 36, align: "left", wrapText: true },
+    { header: "AREA", width: 22, align: "center" },
+    { header: "CONTACT NUMBER", width: 20, align: "center" },
+    { header: "CONCERN", width: 52, align: "left", wrapText: true },
+    { header: "TYPE OF CONCERN", width: 32, align: "left" },
+    { header: "URGENCY", width: 16, align: "center", type: "urgency" },
+    { header: "CONCERN DEPARTMENT", width: 28, align: "left" },
+    { header: "STATUS", width: 22, align: "center", type: "status" },
+    { header: "Remarks", width: 32, align: "left", wrapText: true },
+    { header: "RESPONDERS", width: 26, align: "left" },
+];
 
 export function getQuarterName(dateStr?: string): string {
     const d = dateStr ? new Date(dateStr) : new Date();
@@ -104,6 +130,37 @@ export function urgencyLabel(severity: number): "LOW" | "MEDIUM" | "HIGH" {
     return "MEDIUM";
 }
 
+/**
+ * Ensures cell values comply with Microsoft Excel / OpenXML standards.
+ * Excel has a strict hard limit of 32,767 characters per cell.
+ * Base64 image data strings (which easily reach 100,000+ chars) are replaced with a clean label.
+ */
+export function sanitizeExcelCell(val: unknown): string | number | null {
+    if (val === null || val === undefined) return "";
+    if (typeof val === "number") return Number.isFinite(val) ? val : "";
+    if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+
+    const str = String(val);
+
+    // If it's a base64 image data URI, don't dump hundreds of thousands of characters into an Excel cell!
+    if (str.startsWith("data:image/")) {
+        const mimeMatch = str.match(/^data:(image\/[a-zA-Z0-9+.-]+);/);
+        const format = mimeMatch ? mimeMatch[1].replace("image/", "").toUpperCase() : "IMAGE";
+        return `[Attached Photo: ${format}]`;
+    }
+    if (str.startsWith("data:")) {
+        return `[Attached Data URI]`;
+    }
+
+    // Hard limit in Excel (.xlsx format) is 32,767 characters per cell
+    const EXCEL_MAX_CHARS = 32700;
+    if (str.length > EXCEL_MAX_CHARS) {
+        return str.slice(0, EXCEL_MAX_CHARS) + "… [TRUNCATED: Exceeds Excel cell limit of 32,767 chars]";
+    }
+
+    return str;
+}
+
 // Official template reference rows (from PAYATAS_SPEAK_UP official logbook template)
 const TEMPLATE_REFERENCE_OPTIONS: (string | null)[][] = [
     [null, null, "INQURIES", "FACEBOOK PAGE", null, null, null, null, "AREA A", null, null, "VIOLENCE AND PUBLIC SAFETY", "LOW", "ASH / VAW", "RESPONDED"],
@@ -132,6 +189,7 @@ const TEMPLATE_REFERENCE_OPTIONS: (string | null)[][] = [
 
 /**
  * Builds an official Barangay Logbook sheet (.xlsx) adhering 100% to PAYATAS_SPEAK_UP standards
+ * with executive styling, freeze panes, auto-filter, and colored status pills.
  */
 export async function buildLogbookSheet(
     rows: LogbookExportRow[],
@@ -140,81 +198,94 @@ export async function buildLogbookSheet(
     const quarterName = getQuarterName(options.date || (rows[0] ? rows[0].created_at : undefined));
     const isBlankTemplate = options.template || rows.length === 0;
 
-    const dataRows: (string | number | null)[][] = [
-        [...LOGBOOK_HEADERS],
-    ];
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Barangay Payatas SpeakUp System";
+    wb.lastModifiedBy = "EOC Operations";
+    wb.created = new Date();
+    wb.modified = new Date();
 
+    const ws = wb.addWorksheet(quarterName, {
+        properties: { tabColor: { argb: EXCEL_PALETTE.EMERALD_700 } },
+    });
+
+    // 1. Header Banner
+    const logDateLabel = options.date ? `Date: ${options.date}` : `Generated: ${formatManilaDateTime(new Date().toISOString())}`;
+    applyGovernmentBanner(ws, {
+        title: "BARANGAY PAYATAS • QUEZON CITY • EOC INCIDENT LOGBOOK",
+        subtitle: `Emergency Operations Center (EOC) • SpeakUp Payatas Official Daily Record (${quarterName})`,
+        meta: `${logDateLabel}   |   Total Incidents Recorded: ${rows.length}   |   Barangay Operations Monitoring`,
+        totalCols: LOGBOOK_COLUMN_CONFIGS.length,
+    });
+
+    // 2. Table Headers (Row 5)
+    applyTableHeaders(ws, 5, LOGBOOK_COLUMN_CONFIGS);
+
+    // 3. Data Rows
     if (isBlankTemplate) {
         // Output template rows with pre-defined option lists
-        for (const refRow of TEMPLATE_REFERENCE_OPTIONS) {
-            dataRows.push([...refRow]);
-        }
+        TEMPLATE_REFERENCE_OPTIONS.forEach((refRow, idx) => {
+            const row = ws.addRow(refRow.map(sanitizeExcelCell));
+            styleDataRow(row, idx, LOGBOOK_COLUMN_CONFIGS, refRow);
+        });
     } else {
         // Output real incident logs
-        for (const row of rows) {
-            const humanNature = row.nature ? (NATURE_OF_CONCERN_LABELS[row.nature] ?? row.nature).toUpperCase() : "REPORT";
-            const humanSource = row.source ? (INTAKE_SOURCE_LABELS[row.source] ?? row.source).toUpperCase() : "WALK INS";
-            const humanArea = row.area ? (BARANGAY_AREA_LABELS[row.area] ?? row.area).toUpperCase() : "OTHERS";
-            const humanCategory = row.category ? (CATEGORY_LABELS[row.category] ?? row.category).toUpperCase() : "OTHERS";
-            const humanStatus = row.eoc_status ? (EOC_STATUS_LABELS[row.eoc_status] ?? row.eoc_status).toUpperCase() : "PENDING";
+        rows.forEach((r, idx) => {
+            const humanNature = r.nature ? (NATURE_OF_CONCERN_LABELS[r.nature] ?? r.nature).toUpperCase() : "REPORT";
+            const humanSource = r.source === "web"
+                ? "SPEAKUP WEBSITE"
+                : r.source
+                ? (INTAKE_SOURCE_LABELS[r.source] ?? r.source).toUpperCase()
+                : "WALK INS";
+            const humanArea = r.area ? (BARANGAY_AREA_LABELS[r.area] ?? r.area).toUpperCase() : "OTHERS";
+            const humanCategory = r.category ? (CATEGORY_LABELS[r.category] ?? r.category).toUpperCase() : "OTHERS";
+            const humanStatus = r.eoc_status ? (EOC_STATUS_LABELS[r.eoc_status] ?? r.eoc_status).toUpperCase() : "PENDING";
 
-            dataRows.push([
-                formatManilaDateTime(row.created_at),
-                (row.eoc_staff || "ONLINE SYSTEM").toUpperCase(),
+            const rowValues = [
+                formatManilaDateTime(r.created_at),
+                (r.eoc_staff || "ONLINE SYSTEM").toUpperCase(),
                 humanNature,
                 humanSource,
-                (row.name || "ANONYMOUS").toUpperCase(),
-                row.sex ? row.sex.toUpperCase() : "N/A",
-                row.age ?? "",
-                (row.address || "BARANGAY PAYATAS").toUpperCase(),
+                (r.name || "ANONYMOUS").toUpperCase(),
+                r.sex ? r.sex.toUpperCase() : "N/A",
+                r.age ?? "",
+                (r.address || "BARANGAY PAYATAS").toUpperCase(),
                 humanArea,
-                row.contact ?? "",
-                row.concern ?? "",
+                r.contact ?? "",
+                r.concern ?? "",
                 humanCategory,
-                urgencyLabel(row.severity),
-                (row.department || "BDRRM OFFICE").toUpperCase(),
+                urgencyLabel(r.severity),
+                (r.department || "BDRRM OFFICE").toUpperCase(),
                 humanStatus,
-                row.remarks ?? "",
-                row.responders ?? "",
-            ]);
-        }
+                r.remarks ?? "",
+                r.responders ?? "",
+            ];
+
+            const row = ws.addRow(rowValues.map(sanitizeExcelCell));
+            styleDataRow(row, idx, LOGBOOK_COLUMN_CONFIGS, rowValues);
+        });
     }
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(dataRows);
-    ws["!cols"] = [
-        { wch: 18 }, // DATE AND TIME
-        { wch: 20 }, // EOC STAFF
-        { wch: 22 }, // NATURE OF CONCERN
-        { wch: 22 }, // SOURCE OF CONCERN
-        { wch: 24 }, // NAME
-        { wch: 10 }, // SEX
-        { wch: 8 },  // AGE
-        { wch: 34 }, // ADDRESS
-        { wch: 22 }, // AREA
-        { wch: 18 }, // CONTACT NUMBER
-        { wch: 50 }, // CONCERN
-        { wch: 32 }, // TYPE OF CONCERN
-        { wch: 14 }, // URGENCY
-        { wch: 28 }, // CONCERN DEPARTMENT
-        { wch: 26 }, // STATUS
-        { wch: 32 }, // Remarks
-        { wch: 24 }, // RESPONDERS
-    ];
-
-    // Main sheet matches the quarter from the official barangay logbook
-    XLSX.utils.book_append_sheet(wb, ws, quarterName);
-
-    // If exporting actual data, add a separate sheet with the official Dropdown Reference Lists
+    // 4. Dropdown Reference Sheet
     if (!isBlankTemplate) {
-        const refRows: (string | null)[][] = [
-            [...LOGBOOK_HEADERS],
-            ...TEMPLATE_REFERENCE_OPTIONS,
-        ];
-        const wsRef = XLSX.utils.aoa_to_sheet(refRows);
-        wsRef["!cols"] = ws["!cols"];
-        XLSX.utils.book_append_sheet(wb, wsRef, "DROPDOWN REFERENCE");
+        const wsRef = wb.addWorksheet("DROPDOWN REFERENCE", {
+            properties: { tabColor: { argb: "FF0F766E" } },
+        });
+
+        applyGovernmentBanner(wsRef, {
+            title: "BARANGAY PAYATAS • OFFICIAL LOGBOOK REFERENCE OPTIONS",
+            subtitle: "Authorized Standard Values for Nature, Sources, Areas, Urgency, and Departments",
+            meta: "Reference Guide • Adheres to Official Quezon City Barangay Payatas EOC Template",
+            totalCols: LOGBOOK_COLUMN_CONFIGS.length,
+        });
+
+        applyTableHeaders(wsRef, 5, LOGBOOK_COLUMN_CONFIGS);
+
+        TEMPLATE_REFERENCE_OPTIONS.forEach((refRow, idx) => {
+            const row = wsRef.addRow(refRow.map(sanitizeExcelCell));
+            styleDataRow(row, idx, LOGBOOK_COLUMN_CONFIGS, refRow);
+        });
     }
 
-    return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+    const buffer = await wb.xlsx.writeBuffer();
+    return Buffer.from(buffer);
 }

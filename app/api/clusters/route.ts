@@ -72,10 +72,7 @@ function clusterReports(reports: ReportSummary[]) {
     return {
         clusters,
         noise_count: dbscan.noise.length,
-        noise_points: dbscan.noise.map((idx) => ({
-            latitude: reports[idx].latitude,
-            longitude: reports[idx].longitude,
-        })),
+        noise_points: dbscan.noise.map((idx) => reports[idx]),
     };
 }
 
